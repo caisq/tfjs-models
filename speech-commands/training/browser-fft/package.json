@@ -8,7 +8,7 @@
       "yalc": "~1.0.0-pre.21"
     },
     "scripts": {
-      "train": "ts-node data.ts"
+      "train": "ts-node model.ts"
     },
     "license": "Apache-2.0"
   }

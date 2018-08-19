@@ -17,12 +17,23 @@
 
 import * as tf from '@tensorflow/tfjs';
 import {describeWithFlags} from '@tensorflow/tfjs-core/dist/jasmine_util';
-import {normalize} from './data';
+import {Float32Concat, normalize} from './data';
 
 const testEnvs = tf.test_util.NODE_ENVS;
 
 describeWithFlags('BrowserFFT Training Data Modlue', testEnvs, () => {
-  it('Test 1`', () => {  // TODO(cais): Rename test.
-    console.log('In Test 1');  // DEBUG
+  it('normalize`', () => {
+    const xs = new Float32Array([10, 20, 30]);
+    const ys = normalize(xs);
+    tf.test_util.expectArraysClose(ys, new Float32Array([-1.2247, 0, 1.2247]));
+  });
+
+  it('Float32Concat', () => {
+    const x1 = new Float32Array([1, 2, 3]);
+    const x2 = new Float32Array([-100, -200]);
+    const x3 = new Float32Array([1.1, 2.2]);
+    const y = Float32Concat([x1, x2, x3]);
+    tf.test_util.expectArraysClose(
+        y, new Float32Array([1, 2, 3, -100, -200, 1.1, 2.2]));
   });
 });

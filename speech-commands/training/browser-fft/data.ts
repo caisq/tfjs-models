@@ -17,13 +17,11 @@
 
 import * as tf from '@tensorflow/tfjs';
 import * as fs from 'fs';
-
-import {normalize} from '../../src/browser_fft_utils';
+import * as path from 'path';
 
 // import '@tensorflow/tfjs-node';
 
 const NUM_FRAMES_CUTOFF = 43;
-const VALID_FRAME_COUNT_RANGE: [number, number] = [5, 50];
 
 function sanityCheckSpectrogram(
     spectrogram: Float32Array, numFramesCutoff: number,
@@ -39,10 +37,30 @@ function sanityCheckSpectrogram(
   return true;
 }
 
-export function loadSpectrograms(
-    datPath: string, wordLabel: string, uniqueWordLabels: string[],
-    numFramesCutoff: number, fftSize: number): {xs: tf.Tensor, ys: tf.Tensor} {
-  const spectrograms: tf.Tensor[] = [];
+function sum(xs: Float32Array): number {
+  return xs.reduce((x, p) => x + p);
+}
+
+function mean(xs: Float32Array): number {
+  return sum(xs) / xs.length;
+}
+
+export function normalize(xs: Float32Array): Float32Array {
+  const xMean = mean(xs);
+  const demeaned = xs.map(x => x - xMean);
+  const diff = xs.map(x => (x - xMean));
+  const squareDiff = diff.map(d => d * d);
+  const meanSquareDiff = sum(squareDiff) / xs.length;
+  const std = Math.sqrt(meanSquareDiff);
+  return demeaned.map(x => x / std);
+}
+
+export function loadSpectrogramsAndTargets(
+  datPath: string, wordLabel: string, uniqueWordLabels: string[],
+  numFramesCutoff: number, fftSize: number):
+  {xs: Float32Array[], ys: Float32Array[]} {
+  const spectrograms: Float32Array[] = [];
+  const targets: Float32Array[] = [];
 
   const rawBytes = fs.readFileSync(datPath);
   const bufferLen = rawBytes.byteLength;
@@ -68,7 +86,7 @@ export function loadSpectrograms(
     const n0 = frame;
     let n1 = frame + 1;
     while (n1 < numFrames && isFinite(data[fftSize * n1]) &&
-           data[fftSize * n1] !== 0) {
+            data[fftSize * n1] !== 0) {
       n1++;
     }
     if (n1 > numFrames) {
@@ -80,16 +98,14 @@ export function loadSpectrograms(
     if (!sanityCheckSpectrogram(spectrogram, numFramesCutoff, fftSize)) {
       numDiscarded++;
     } else {
-      // TODO(cais): Normalize.
-      spectrograms.push(normalize(tf.tensor2d(
-          spectrogram.slice(0, numFramesCutoff * fftSize),
-          [NUM_FRAMES_CUTOFF, fftSize])));
+      spectrograms.push(normalize(spectrogram.slice(0, numFramesCutoff * fftSize)));
       numKept++;
     }
 
     frame = n1 + 1;
-    while (frame < numFrames &&
-           (!isFinite(data[fftSize * frame]) || data[fftSize * frame] === 0)) {
+    while (
+        frame < numFrames &&
+        (!isFinite(data[fftSize * frame]) || data[fftSize * frame] === 0)) {
       frame++;
     }
     if (frame > numFrames) {
@@ -97,26 +113,88 @@ export function loadSpectrograms(
     }
   }
 
-  const xs = tf.stack(spectrograms, 0);
-  console.log(xs.shape);  // DEBUG
-  const numExamples = xs.shape[0];
-
+  const numExamples = spectrograms.length;
   const targetIndex = uniqueWordLabels.indexOf(wordLabel);
   tf.util.assert(
       targetIndex !== -1,
       `Word label '${wordLabel}' is not found in unique word labels ` +
-      `'${uniqueWordLabels}'`);
-  const indices = [];
+          `'${uniqueWordLabels}'`);
+  const oneHotVector = new Float32Array(uniqueWordLabels.length);
+  oneHotVector[targetIndex] = 1;
   for (let i = 0; i < numExamples; ++i) {
-    indices.push(targetIndex);
+    targets.push(oneHotVector);
   }
-  const ys = tf.oneHot(indices, uniqueWordLabels.length);
 
-  console.log(`Kept: ${numKept}; Discarded: ${numDiscarded}`);  // DEBUG
-  return {xs, ys};
+  if (numDiscarded > 0) {
+    console.log(`Kept: ${numKept}; Discarded: ${numDiscarded}`);
+  }
+  return {
+    xs: spectrograms,
+    ys: targets
+  };
 }
 
-const filePath =
-    '/usr/local/google/home/cais/ml-data/speech_commands_browser_clean/train/zero/0.dat';
+export function Float32Concat(arrays: Float32Array[]): Float32Array {
+  let totalLength = 0;
+  for (const array of arrays) {
+    totalLength += array.length;
+  }
+  const result = new Float32Array(totalLength);
+  let offset = 0;
+  for (const array of arrays) {
+    result.set(array, offset);
+    offset += array.length;
+  }
+  return result;
+}
 
-loadSpectrograms(filePath, 'zero', ['zero', 'one'], NUM_FRAMES_CUTOFF, 232);
+export function loadData(
+    rootDir: string, numFramesCutoff: number, fftSize: number):
+    {xs: tf.Tensor, ys: tf.Tensor, wordLabels: string[]} {
+  return tf.tidy(() => {
+    const dirContent = fs.readdirSync(rootDir);
+    const wordLabels: string[] = [];
+    for (const item of dirContent) {
+      if (fs.lstatSync(path.join(rootDir, item)).isDirectory()) {
+        wordLabels.push(item);
+      }
+    }
+    wordLabels.sort();
+
+    let xsBuffers: Float32Array[] = [];
+    let ysBuffers: Float32Array[] = [];
+    let numExamples = 0;
+    for (const wordItem of dirContent) {
+      console.log(`--- Loading data for word '${wordItem}' ---`);
+      const wordDir = fs.readdirSync(path.join(rootDir, wordItem));
+      for (const fileItem of wordDir) {
+        const filePath = path.join(rootDir, wordItem, fileItem);
+        console.log(`Loading from file ${filePath}`);
+        if (!fs.lstatSync(filePath).isFile()) {
+          continue;
+        }
+        const {xs: fileXs, ys: fileYs} =
+            loadSpectrogramsAndTargets(
+                filePath, wordItem, wordLabels, numFramesCutoff, fftSize);
+        numExamples += fileXs.length;
+        xsBuffers.push(...fileXs);
+        ysBuffers.push(...fileYs);
+      }
+    }
+
+    // Shuffle all data.
+    const xsAndYs: Array<[Float32Array, Float32Array]> = [];
+    for (let i = 0; i < xsBuffers.length; ++i) {
+      xsAndYs.push([xsBuffers[i], ysBuffers[i]]);
+    }
+    tf.util.shuffle(xsAndYs);
+
+    const xs = tf.tensor4d(
+        Float32Concat(xsAndYs.map(item => item[0])),
+        [numExamples, numFramesCutoff, fftSize, 1]);
+    const ys = tf.tensor2d(
+        Float32Concat(xsAndYs.map(item => item[1])),
+        [numExamples, wordLabels.length]);
+    return {xs, ys, wordLabels};
+  });
+}
