@@ -1,0 +1,15 @@
+{
+    "name": "@tensorflow-models/speech-commands-browser-fft-train",
+    "version": "0.0.1",
+    "description": "Training Browser FFT speech-command recognizer in TensorFlow.js",
+    "devDependencies": {
+      "ts-node": "~5.0.0",
+      "typescript": "2.9.2",
+      "yalc": "~1.0.0-pre.21"
+    },
+    "scripts": {
+      "train": "ts-node data.ts"
+    },
+    "license": "Apache-2.0"
+  }
+  

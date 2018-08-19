@@ -32,6 +32,7 @@
     "clang-format": "~1.2.2",
     "typescript": "^2.8.3",
     "nodemon": "1.18.2",
+    "promisify": "^0.0.3",
     "tslint": "~5.8.0",
     "tslint-no-circular-imports": "~0.5.0"
   }
