@@ -36,7 +36,7 @@ import '@tensorflow/tfjs-node-gpu';
 
 import {loadData} from './data';
 
-function createModel(inputShape: tf.Shape, numClasses: number) {
+function createModel(inputShape: tf.Shape, numClasses: number): tf.Model {
   const model = tf.sequential();
   model.add(tf.layers.conv2d({
     filters: 8,
@@ -47,7 +47,7 @@ function createModel(inputShape: tf.Shape, numClasses: number) {
   model.add(tf.layers.maxPooling2d({poolSize: [2, 2], strides: [2, 2]}));
   model.add(
       tf.layers.conv2d({filters: 32, kernelSize: [2, 4], activation: 'relu'}));
-  model.add(tf.layers.maxPooling2d({poolSize: [2, 2], strides: [2, 2]}));
+  model.add(tf.layers .maxPooling2d({poolSize: [2, 2], strides: [2, 2]}));
   model.add(
       tf.layers.conv2d({filters: 32, kernelSize: [2, 4], activation: 'relu'}));
   model.add(tf.layers.maxPooling2d({poolSize: [2, 2], strides: [2, 2]}));
