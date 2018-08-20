@@ -15,7 +15,21 @@
  * =============================================================================
  */
 
+/**
+ * Defining and training for BROWSER_FFT speech-commands models.
+ * 
+ * Usage example:
+ * 
+ * ```sh
+ * yarn train \
+ *     path/to/train/data/dir 43 232 \
+ *     --modelSavePath /tmp/speech-commands-model
+ * ```
+ */
+
 import * as argparse from 'argparse';
+import * as fs from 'fs';
+import * as path from 'path';
 
 import * as tf from '@tensorflow/tfjs';
 import '@tensorflow/tfjs-node-gpu';
@@ -94,7 +108,7 @@ function createModel(inputShape: tf.Shape, numClasses: number) {
   const args = parser.parseArgs();
   console.log(JSON.stringify(args));
 
-  const {xs, ys, wordLabels} = loadData(
+  const {xs, ys, words} = loadData(
       args.dataRoot, args.numFrames, args.fftSize);
 
   const model = createModel(xs.shape.slice(1), ys.shape[1]);
@@ -117,7 +131,13 @@ function createModel(inputShape: tf.Shape, numClasses: number) {
   });
 
   if (args.modelSavePath != null) {
+    // Save model.
     await model.save(`file://${args.modelSavePath}`);
     console.log(`Saved model to path: ${args.modelSavePath}`);
+
+    // Save metadata.
+    const metadata: {} = {frameSize: args.fftSize, words};
+    const metadataFilePath = path.join(args.modelSavePath, 'metadata.json');
+    fs.writeFileSync(metadataFilePath, JSON.stringify(metadata));    
   }
 })();
