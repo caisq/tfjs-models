@@ -135,7 +135,7 @@ def load_and_normalize_waveform(wav_path, target_fs, frame_size):
   return signal[:frame_size * num_frames]
 
 
-def convert(in_wav_path, target_fs, frame_size, out_data_path):
+def convert(in_wav_path, target_fs, frame_size, out_data_path, match_len=None):
   '''Convert an input wav file to an output data file.
 
   The data file consists of the resampled and truncated PCM samples.
@@ -146,16 +146,25 @@ def convert(in_wav_path, target_fs, frame_size, out_data_path):
     frame_size: Frame size in # of samples. The waveform will be
       truncated to an integer multiple length of `frame_size`.
     out_data_path: Output data file path.
+    match_len:
 
   Returns:
     Length (in # of samples) of the waveform in the file at
       `out_data_path`.
   '''
+  print('in_wav_path = %s' % in_wav_path)  # DEBUG
   waveform = load_and_normalize_waveform(in_wav_path,
                                          target_fs,
                                          frame_size)
   with open(out_data_path, 'wb') as out_file:
     out_file.write(struct.pack('f' * len(waveform), *waveform))
+  if match_len is not None:
+    if len(waveform) > match_len:
+      print('Truncating: %s --> %s' % (len(waveform), match_len))  # DEBUG
+      waveform = waveform[:match_len]
+    elif len(waveform) < match_len:
+      print('Filling: %s --> %s' % (len(waveform), match_len))  # DEBUG
+      waveform = np.concatenate([waveform, waveform[:match_len - len(waveform)]])
   return len(waveform)
 
 
@@ -239,7 +248,7 @@ def convert_wav_files_in_dir(input_dir,
           filename + '.dat' if extension_name.lower() == '.wav' else filename)
       out_path = os.path.join(subfolder, output_basename)
       converted_len = convert(
-          in_path, target_fs, frame_size, out_path)
+          in_path, target_fs, frame_size, out_path, match_len=match_len)
       if match_len is not None and match_len != converted_len:
         print('  Skipped %s due to length mismatch (%d != %d)' % (
             in_path, converted_len, match_len))
@@ -321,9 +330,6 @@ def main():
             FLAGS.target_fs, FLAGS.match_len, out_dir,
             file_begin_index=begin_file_index)
         begin_file_index += num_examples
-  else:
-    raise ValueError('input_wav_path must be a directory.')
-
 
 
 if __name__ == '__main__':
