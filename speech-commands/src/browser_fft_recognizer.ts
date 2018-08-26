@@ -470,6 +470,17 @@ export class BrowserFftSpeechCommandRecognizer implements
     });
   }
 
+  addTransferLearningExample(modelName: string, word: string, data: tf.Tensor) {
+    if (this.transferLearnExamples[modelName] == null) {
+      this.transferLearnExamples[modelName] = {};
+    }
+    if (this.transferLearnExamples[modelName][word] == null) {
+      this.transferLearnExamples[modelName][word] = [];
+    }
+    this.transferLearnExamples[modelName][word].push(data);
+    this.collectTransferLearnWords(modelName);
+  }
+
   /**
    * Clear all transfer learning examples collected so far.
    */

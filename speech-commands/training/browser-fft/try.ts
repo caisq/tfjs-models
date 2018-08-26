@@ -16,8 +16,14 @@
  */
 
 import * as tf from '@tensorflow/tfjs';
+import '@tensorflow/tfjs-node-gpu';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as fetch from 'node-fetch';
+
+import {BrowserFftSpeechCommandRecognizer} from '../../src/browser_fft_recognizer';
+
+global.fetch = fetch;
 
 // import '@tensorflow/tfjs-node';
 
@@ -199,8 +205,42 @@ export function loadData(
   });
 }
 
-const dataRootDir = process.argv[process.argv.length - 1];
-console.log(`dataRootDir: ${dataRootDir}`);
+(async function() {
+  const dataRootDir = process.argv[process.argv.length - 1];
+  console.log(`dataRootDir: ${dataRootDir}`);
 
-const data = loadData(dataRootDir, 43, 232);
-console.log(data);
+  const data = loadData(dataRootDir, 43, 232);
+  console.log(data);
+
+  const ysData = data.ys.argMax(-1).dataSync();
+  console.log(ysData);
+
+  const wordNames: string[] = [];
+  for (const y of ysData) {
+    wordNames.push(`word${y}`);
+  }
+  console.log(wordNames);
+
+  const recognizer = new BrowserFftSpeechCommandRecognizer();
+  console.log('Calling ensureModelLoaded()');
+  await recognizer.ensureModelLoaded();
+
+  const numExamples = data.xs.shape[0];
+  const exampleXs = tf.unstack(data.xs, 0);
+
+  const modelName = 'special';
+  for (let i = 0; i < numExamples; ++i) {
+    const tensor = exampleXs[i].expandDims(0);
+    recognizer.addTransferLearningExample(modelName, wordNames[i], tensor);
+  }
+  console.log(recognizer.getTransferLearningExampleCounts(modelName));
+
+  await recognizer.trainTransferLearningModel(modelName, {
+    epochs: 25,
+    callback: {
+      onEpochEnd: async (epoch: number, logs?: tf.Logs) => {
+        console.log(`epoch ${epoch}; logs: ${JSON.stringify(logs)}`);
+      }
+    }
+  });
+})();
