@@ -87,7 +87,7 @@ function confusionMatrix(
 
 /**
  * Create transfer-learning model.
- * 
+ *
  * @param baseModel Base model for transfer learning.
  * @param numTransferWords Number of transfer target words.
  * @returns Transfer-learning model.
@@ -107,21 +107,36 @@ function createTransferModel(
   const beheadedBaseOutput =
       baseModel.layers[layerIndex].output as tf.SymbolicTensor;
 
-  // Freeze layers.
+  // Freeze layers in the baseModel.
   for (const layer of baseModel.layers) {
     layer.trainable = false;
   }
-  console.log('Froze all layers of original model.');
 
-  const transferHead = tf.layers.dense({
+  const transferHead = tf.sequential();
+//   transferHead.add(tf.layers.dense({
+//     units: 20,
+//     activation: 'relu',
+//     inputShape: beheadedBaseOutput.shape.slice(1)
+//   }));
+//   transferHead.add(tf.layers.dropout({
+//     rate: 0.5
+//   }));
+//   transferHead.add(tf.layers.dense({
+//     units: numTransferWords,
+//     activation: 'softmax'
+//   }));
+  transferHead.add(tf.layers.dense({
     units: numTransferWords,
     activation: 'softmax',
     inputShape: beheadedBaseOutput.shape.slice(1)
-  });
-  const transferOutput =
-      transferHead.apply(beheadedBaseOutput) as tf.SymbolicTensor;
-  const newModel =
-      tf.model({inputs: baseModel.inputs, outputs: transferOutput});
+  }));
+
+  const beheadedModel =
+      tf.model({inputs: baseModel.inputs, outputs: beheadedBaseOutput});
+  const newModel = tf.sequential();
+  newModel.add(beheadedModel);
+  newModel.add(transferHead);
+
   newModel.compile({
     loss: 'categoricalCrossentropy',
     optimizer: tf.train.sgd(0.01),
