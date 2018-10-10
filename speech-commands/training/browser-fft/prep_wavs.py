@@ -135,7 +135,12 @@ def load_and_normalize_waveform(wav_path, target_fs, frame_size):
   return signal[:frame_size * num_frames]
 
 
-def convert(in_wav_path, target_fs, frame_size, out_data_path, match_len=None):
+def convert(in_wav_path,
+            target_fs,
+            frame_size,
+            out_data_path,
+            match_len=None,
+            multi_splits=False):
   '''Convert an input wav file to an output data file.
 
   The data file consists of the resampled and truncated PCM samples.
@@ -145,27 +150,57 @@ def convert(in_wav_path, target_fs, frame_size, out_data_path, match_len=None):
     target_fs: Target sampling frequency.
     frame_size: Frame size in # of samples. The waveform will be
       truncated to an integer multiple length of `frame_size`.
-    out_data_path: Output data file path.
-    match_len:
+    out_data_path: Output data file path. In the case of
+      `multi_splits == True`, it is used as the path prefix and
+      suffix such as '_split1' and '_split2" will be added.
+    match_len: Expected output length in number of audio samples.
+    multi_splits: Perform multiple splits. For example if the input
+      waveform has a length of 10k and `match_len` equals 4k, then
+      three output wavefiles will be generate, with starting sample
+      indices of 0, 4k and 6k, respetively.
 
   Returns:
     Length (in # of samples) of the waveform in the file at
       `out_data_path`.
   '''
-  print('in_wav_path = %s' % in_wav_path)  # DEBUG
   waveform = load_and_normalize_waveform(in_wav_path,
                                          target_fs,
                                          frame_size)
-  with open(out_data_path, 'wb') as out_file:
-    out_file.write(struct.pack('f' * len(waveform), *waveform))
+  out_waveforms = []
   if match_len is not None:
     if len(waveform) > match_len:
-      print('Truncating: %s --> %s' % (len(waveform), match_len))  # DEBUG
-      waveform = waveform[:match_len]
+      if not multi_splits:
+        out_waveforms.append(waveform[:match_len])
+      else:
+        num_splits = int(np.ceil(len(waveform) / float(match_len)))
+        for split in range(num_splits):
+          start_index = match_len * split
+          end_index = match_len * (split + 1)
+          if end_index > len(waveform):
+            end_index = len(waveform)
+            start_index = end_index - match_len
+          print('Split %d of %d: %s: %d --> %d' %
+               (split + 1, num_splits, in_wav_path, start_index, end_index))
+          out_waveforms.append(waveform[start_index : end_index])
+
     elif len(waveform) < match_len:
-      print('Filling: %s --> %s' % (len(waveform), match_len))  # DEBUG
-      waveform = np.concatenate([waveform, waveform[:match_len - len(waveform)]])
-  return len(waveform)
+      print('Filling: %s: %s --> %s' % (in_wav_path, len(waveform), match_len))
+      out_waveforms.append(
+          np.concatenate([waveform, waveform[:match_len - len(waveform)]]))
+
+  out_file_paths = []
+  if len(out_waveforms) == 1:
+    out_file_paths.append(out_data_path)
+  else:
+    file_name, ext_name = os.path.splitext(out_data_path)
+    for i in range(len(out_waveforms)):
+      out_file_paths.append('%s_split%d%s' % (file_name, i, ext_name))
+
+  for out_path, out_waveform in zip(out_file_paths, out_waveforms):
+    with open(out_path, 'wb') as out_file:
+      out_file.write(struct.pack('f' * len(out_waveform), *out_waveform))
+
+  return len(out_waveforms[0])
 
 
 def convert_wav_files_in_dir(input_dir,
@@ -175,7 +210,9 @@ def convert_wav_files_in_dir(input_dir,
                              frame_size,
                              match_len=None,
                              test_split=None,
-                             test_output_dir=None):
+                             test_output_dir=None,
+                             convert_wav_files_in_dir=False,
+                             multi_splits=False):
   '''Convert wav files from input directory and write results output dir.
 
   Args:
@@ -190,6 +227,16 @@ def convert_wav_files_in_dir(input_dir,
       as test data. If specified, test_output_dir must also be specified, else
       a ValueError will be thrown. Must be a number between 0.0 and 1.0.
     test_output_dir: Output directory for test data.
+    convert_wav_files_in_dir: Whether a single input file is to be split into
+      multiple output ones if it is long enough. For example, suppose each
+      output sample is 40k samples long and a input sample is 100k samples
+      long, then the three output samples will be generates, starting at]
+      indices 0, 40k, and 60k, respectively. The last indices is selected so
+      as to avoid going over the edge.
+    multi_splits: Perform multiple splits. For example if the input
+      waveform has a length of 10k and `match_len` equals 4k, then
+      three output wavefiles will be generate, with starting sample
+      indices of 0, 4k and 6k, respetively.
 
   Returns:
     - The number of training examples.
@@ -248,8 +295,10 @@ def convert_wav_files_in_dir(input_dir,
           filename + '.dat' if extension_name.lower() == '.wav' else filename)
       out_path = os.path.join(subfolder, output_basename)
       converted_len = convert(
-          in_path, target_fs, frame_size, out_path, match_len=match_len)
-      if match_len is not None and match_len != converted_len:
+          in_path, target_fs, frame_size, out_path, match_len=match_len,
+          multi_splits=multi_splits)
+      if (match_len is not None and match_len != converted_len
+          and os.path.exists(out_path)):
         print('  Skipped %s due to length mismatch (%d != %d)' % (
             in_path, converted_len, match_len))
         os.remove(out_path)
@@ -297,11 +346,17 @@ def main():
       word_input_dir = os.path.join(FLAGS.input_wav_path, word)
       train_out_dir = os.path.join(train_base, word)
       test_out_dir = os.path.join(test_base, word)
+
+      multi_splits = (word == _BACKGROUND_NOISE_DIR)
+      if multi_splits:
+        print('*** Will use multiple splits for word "%s"' % word)
+
       num_train_examples, num_test_examples = convert_wav_files_in_dir(
           word_input_dir, train_out_dir,
           FLAGS.recordings_per_subfolder, FLAGS.target_fs,
           FLAGS.frame_size, FLAGS.match_len,
-          FLAGS.test_split, test_out_dir)
+          FLAGS.test_split, test_out_dir,
+          multi_splits=multi_splits)
       nums_train_examples.append(num_train_examples)
       nums_test_examples.append(num_test_examples)
 
