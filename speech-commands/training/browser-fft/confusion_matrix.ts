@@ -55,7 +55,7 @@ export function collapseConfusionMatrix(
   tf.util.assert(
       confusionMatrix.shape[1] === origNumClasses,
       `Encountered non-square confusion matrix shape: ` +
-      `${JSON.stringify(confusionMatrix.shape)}`);
+          `${JSON.stringify(confusionMatrix.shape)}`);
 
   // Make sure that there are not duplicates.
   const allCollapseIndices: number[] = [];
@@ -64,12 +64,11 @@ export function collapseConfusionMatrix(
     tf.util.assert(
         nums.length > 1,
         `An element of a collapse indices array should have at least ` +
-        `two indices.`);
+            `two indices.`);
     nums.sort();
     for (let i = 0; i < nums.length; ++i) {
       const num = nums[i];
-      tf.util.assert(
-          num < origNumClasses, `Index out of bound: ${num}`);
+      tf.util.assert(num < origNumClasses, `Index out of bound: ${num}`);
       tf.util.assert(
           allCollapseIndices.indexOf(num) === -1,
           `Found duplicate index: ${num}`);
@@ -92,7 +91,7 @@ export function collapseConfusionMatrix(
   const newNumClasses = origNumClasses - offset;
   // console.log(offset);  // DEBUG
   // console.log(oldIndex2NewIndex);  // DEBUG
-  
+
   const data0 = confusionMatrix.dataSync();
   const data1 = new Float32Array(newNumClasses * newNumClasses);
   for (let i = 0; i < origNumClasses; ++i) {
@@ -117,6 +116,18 @@ export function confusionMatrix2Accuracy(confMat: tf.Tensor2D): number {
     correctCount += data[i * n + i];
   }
   return correctCount / total;
+}
+
+export function confusionMatrix2NormalizedAccuracy(confMat: tf.Tensor2D):
+    number {
+  const n = confMat.shape[0];
+  const marginalCounts = confMat.sum(-1).dataSync();
+  const marginalAccuracies: number[] = [];
+  const data = confMat.dataSync();
+  for (let i = 0; i < n; ++i) {
+    marginalAccuracies.push(data[i * n + i] / marginalCounts[i]);
+  }
+  return tf.tensor1d(marginalAccuracies).mean().dataSync()[0];
 }
 
 // // Test case.

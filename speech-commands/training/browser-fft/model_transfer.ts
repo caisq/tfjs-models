@@ -32,7 +32,7 @@ import '@tensorflow/tfjs-node-gpu';
 import * as tf from '@tensorflow/tfjs';
 import * as argparse from 'argparse';
 
-import {collapseConfusionMatrix, confusionMatrix, confusionMatrix2Accuracy} from './confusion_matrix';
+import {collapseConfusionMatrix, confusionMatrix, confusionMatrix2Accuracy, confusionMatrix2NormalizedAccuracy} from './confusion_matrix';
 import {makeCrossValidationIndices} from './cross_validation';
 import {loadData} from './data';
 
@@ -118,6 +118,9 @@ function processConfusionMatrixCollapsing(
   collapsedConfusionMatrix.print();
   const collapsedAccuracy = confusionMatrix2Accuracy(collapsedConfusionMatrix);
   console.log(`Collapsed accuracy: ${collapsedAccuracy}`);
+  console.log('Collapsed normalized accuracy:');
+  console.log(
+      confusionMatrix2NormalizedAccuracy(collapsedConfusionMatrix as tf.Tensor2D));
 }
 
 (async function() {
@@ -250,6 +253,9 @@ function processConfusionMatrixCollapsing(
   console.log(`wordLabels: ${wordLabels}`);
   console.log('Confusion matrix:');
   summedConfusion.print();
+  console.log('Normalized accuracy:');
+  console.log(
+      confusionMatrix2NormalizedAccuracy(summedConfusion as tf.Tensor2D));
 
   if (args.confusionCollapseWords != null) {
     processConfusionMatrixCollapsing(
