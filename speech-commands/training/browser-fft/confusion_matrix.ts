@@ -48,3 +48,85 @@ export function confusionMatrix(
     return oneHotLabels.transpose().matMul(oneHotPredictions);
   });
 }
+
+export function collapseConfusionMatrix(
+    confusionMatrix: tf.Tensor2D, collapseIndices: number[][]): tf.Tensor2D {
+  const origNumClasses = confusionMatrix.shape[0];
+  tf.util.assert(
+      confusionMatrix.shape[1] === origNumClasses,
+      `Encountered non-square confusion matrix shape: ` +
+      `${JSON.stringify(confusionMatrix.shape)}`);
+
+  // Make sure that there are not duplicates.
+  const allCollapseIndices: number[] = [];
+  const nonLeadingCollapseIndices: number[] = [];
+  for (const nums of collapseIndices) {
+    tf.util.assert(
+        nums.length > 1,
+        `An element of a collapse indices array should have at least ` +
+        `two indices.`);
+    nums.sort();
+    for (let i = 0; i < nums.length; ++i) {
+      const num = nums[i];
+      tf.util.assert(
+          num < origNumClasses, `Index out of bound: ${num}`);
+      tf.util.assert(
+          allCollapseIndices.indexOf(num) === -1,
+          `Found duplicate index: ${num}`);
+      allCollapseIndices.push(num);
+      if (i > 0) {
+        nonLeadingCollapseIndices.push(num);
+      }
+    }
+  }
+  allCollapseIndices.sort();
+  let offset = 0;
+  const oldIndex2NewIndex: {[oldIndx: number]: number} = {};
+  for (let i = 0; i < origNumClasses; ++i) {
+    if (nonLeadingCollapseIndices.indexOf(i) !== -1) {
+      offset++;
+    }
+    oldIndex2NewIndex[i] = i - offset;
+  }
+
+  const newNumClasses = origNumClasses - offset;
+  // console.log(offset);  // DEBUG
+  // console.log(oldIndex2NewIndex);  // DEBUG
+  
+  const data0 = confusionMatrix.dataSync();
+  const data1 = new Float32Array(newNumClasses * newNumClasses);
+  for (let i = 0; i < origNumClasses; ++i) {
+    for (let j = 0; j < origNumClasses; ++j) {
+      const origCount = data0[i * origNumClasses + j];
+      const newI = oldIndex2NewIndex[i];
+      const newJ = oldIndex2NewIndex[j];
+      // console.log(i, j, newI, newJ);  // DEBUG
+      data1[newI * newNumClasses + newJ] += origCount;
+    }
+  }
+  // console.log(data1);  // DEBUG
+  return tf.tensor2d(data1, [newNumClasses, newNumClasses]);
+}
+
+export function confusionMatrix2Accuracy(confMat: tf.Tensor2D): number {
+  const total = confMat.sum().get();
+  const data = confMat.dataSync();
+  const n = confMat.shape[0];
+  let correctCount = 0;
+  for (let i = 0; i < n; ++i) {
+    correctCount += data[i * n + i];
+  }
+  return correctCount / total;
+}
+
+// // Test case.
+// const confMat1 = tf.tensor2d([
+//     [5, 1, 0, 1],
+//     [0, 1, 2, 0],
+//     [0, 2, 1, 1],
+//     [0, 0, 0, 9]
+// ]);
+// confMat1.print();
+
+// const confMat2 = collapseConfusionMatrix(confMat1, [[0, 1]]);
+// confMat2.print();

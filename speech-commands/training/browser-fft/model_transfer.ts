@@ -32,9 +32,9 @@ import '@tensorflow/tfjs-node-gpu';
 import * as tf from '@tensorflow/tfjs';
 import * as argparse from 'argparse';
 
-import {loadData} from './data';
-import {confusionMatrix} from './confusion_matrix';
+import {collapseConfusionMatrix, confusionMatrix, confusionMatrix2Accuracy} from './confusion_matrix';
 import {makeCrossValidationIndices} from './cross_validation';
+import {loadData} from './data';
 
 global.fetch = require('node-fetch');
 
@@ -90,13 +90,34 @@ function createTransferModel(
   newModel.add(beheadedModel);
   newModel.add(transferHead);
 
-  newModel.compile({
-    loss: 'categoricalCrossentropy',
-    optimizer: tf.train.sgd(0.01),
-    metrics: ['accuracy']
-  });
-
   return newModel;
+}
+
+function processConfusionMatrixCollapsing(
+    confMat: tf.Tensor2D, wordLabels: string[], collapseWords: string) {
+  const collapseIndices: number[][] = [];
+
+  const collapseGroups = collapseWords.split('|');
+  for (const collapseGroup of collapseGroups) {
+    const words = collapseGroup.split(',');
+    const group: number[] = [];
+    console.log('Collapse Group:');
+    for (const word of words) {
+      const index = wordLabels.indexOf(word);
+      tf.util.assert(index !== -1, `Unknown word: ${word}`);
+      group.push(index);
+      console.log(' word:', word);
+    }
+    collapseIndices.push(group);
+  }
+  console.log(`collapseIndices = ${JSON.stringify(collapseIndices)}`);
+
+  const collapsedConfusionMatrix =
+      collapseConfusionMatrix(confMat, collapseIndices);
+  console.log('Collapsed confusion matrix:');
+  collapsedConfusionMatrix.print();
+  const collapsedAccuracy = confusionMatrix2Accuracy(collapsedConfusionMatrix);
+  console.log(`Collapsed accuracy: ${collapsedAccuracy}`);
 }
 
 (async function() {
@@ -115,6 +136,9 @@ function createTransferModel(
     defaultValue: 200,
     help: 'Number of epochs to train the model for.'
   });
+  parser.addArgument(
+      '--lr',
+      {type: 'float', defaultValue: 0.05, help: 'Optimizer learning rate.'});
   parser.addArgument('--batchSize', {
     type: 'int',
     defaultValue: 64,
@@ -145,6 +169,11 @@ function createTransferModel(
     type: 'string',
     help: 'Path to which the model will be saved after training.'
   });
+  parser.addArgument('--confusionCollapseWords', {
+    type: 'string',
+    help: 'Optional collapsing of words in the confusion matrix. ' +
+        'E.g., "wordA,wordB|wordC,wordD"'
+  });
   const args = parser.parseArgs();
   console.log(JSON.stringify(args));
 
@@ -164,7 +193,7 @@ function createTransferModel(
   console.log(`numUniqueWords = ${numUniqueWords}`);
 
   const folds =
-       makeCrossValidationIndices(yIndices, args.folds, args.iterations);
+      makeCrossValidationIndices(yIndices, args.folds, args.iterations);
 
   let iter = 0;
   for (const fold of folds) {
@@ -178,10 +207,17 @@ function createTransferModel(
     const newModel =
         createTransferModel(model as tf.Sequential, numUniqueWords);
 
-    // Test save the model and load the model back.
-    newModel.summary();
-    die;
+    // // Test save the model and load the model back.
+    // newModel.summary();
+    // await newModel.save('file:///tmp/model1');
+    // newModel = await tf.loadModel('file:///tmp/model1/model.json');
+    // newModel.summary();
 
+    newModel.compile({
+      loss: 'categoricalCrossentropy',
+      optimizer: tf.train.sgd(args.lr),
+      metrics: ['accuracy']
+    });
     const history = await newModel.fit(trainXs, trainYs, {
       batchSize: args.batchSize,
       epochs: args.epochs,
@@ -214,4 +250,10 @@ function createTransferModel(
   console.log(`wordLabels: ${wordLabels}`);
   console.log('Confusion matrix:');
   summedConfusion.print();
+
+  if (args.confusionCollapseWords != null) {
+    processConfusionMatrixCollapsing(
+        summedConfusion as tf.Tensor2D, wordLabels,
+        args.confusionCollapseWords);
+  }
 })();
