@@ -18,7 +18,7 @@ import * as tf from '@tensorflow/tfjs';
  */
 export function confusionMatrix(
     labels: tf.Tensor1D, predictions: tf.Tensor1D,
-    numClasses?: number): tf.Tensor2D {
+    numClasses: number): tf.Tensor2D {
   tf.util.assert(
       numClasses == null || numClasses > 0 && Number.isInteger(numClasses),
       `If provided, numClasses must be a positive integer, ` +
@@ -34,14 +34,14 @@ export function confusionMatrix(
       labels.shape[0] === predictions.shape[0],
       `Mismatch in the number of examples: ` +
           `${labels.shape[0]} vs. ${predictions.shape[0]}`);
-  if (numClasses == null) {
-    // If numClasses is not provided, determine it.
-    const labelClasses = labels.max().get();
-    const predictionClasses = predictions.max().get();
-    numClasses =
-        (labelClasses > predictionClasses ? labelClasses : predictionClasses) +
-        1;
-  }
+  // if (numClasses == null) {
+  //   // If numClasses is not provided, determine it.
+  //   const labelClasses = labels.max().get();
+  //   const predictionClasses = predictions.max().get();
+  //   numClasses =
+  //       (labelClasses > predictionClasses ? labelClasses : predictionClasses) +
+  //       1;
+  // }
   return tf.tidy(() => {
     const oneHotLabels = tf.oneHot(labels, numClasses);
     const oneHotPredictions = tf.oneHot(predictions, numClasses);
@@ -89,8 +89,6 @@ export function collapseConfusionMatrix(
   }
 
   const newNumClasses = origNumClasses - offset;
-  // console.log(offset);  // DEBUG
-  // console.log(oldIndex2NewIndex);  // DEBUG
 
   const data0 = confusionMatrix.dataSync();
   const data1 = new Float32Array(newNumClasses * newNumClasses);
@@ -99,11 +97,9 @@ export function collapseConfusionMatrix(
       const origCount = data0[i * origNumClasses + j];
       const newI = oldIndex2NewIndex[i];
       const newJ = oldIndex2NewIndex[j];
-      // console.log(i, j, newI, newJ);  // DEBUG
       data1[newI * newNumClasses + newJ] += origCount;
     }
   }
-  // console.log(data1);  // DEBUG
   return tf.tensor2d(data1, [newNumClasses, newNumClasses]);
 }
 

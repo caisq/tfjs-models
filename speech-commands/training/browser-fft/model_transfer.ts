@@ -31,6 +31,8 @@ import '@tensorflow/tfjs-node-gpu';
 
 import * as tf from '@tensorflow/tfjs';
 import * as argparse from 'argparse';
+import {writeFile} from 'fs';
+import {join} from 'path';
 
 import {collapseConfusionMatrix, confusionMatrix, confusionMatrix2Accuracy, confusionMatrix2NormalizedAccuracy} from './confusion_matrix';
 import {makeCrossValidationIndices} from './cross_validation';
@@ -119,8 +121,20 @@ function processConfusionMatrixCollapsing(
   const collapsedAccuracy = confusionMatrix2Accuracy(collapsedConfusionMatrix);
   console.log(`Collapsed accuracy: ${collapsedAccuracy}`);
   console.log('Collapsed normalized accuracy:');
-  console.log(
-      confusionMatrix2NormalizedAccuracy(collapsedConfusionMatrix as tf.Tensor2D));
+  console.log(confusionMatrix2NormalizedAccuracy(
+      collapsedConfusionMatrix as tf.Tensor2D));
+}
+
+function summedToConfusionMatrix(
+    model: tf.Model, numUniqueWords: number, summedConfusion: tf.Tensor2D,
+    xs: tf.Tensor, ys: tf.Tensor): tf.Tensor2D {
+  const predictOut = model.predict(xs) as tf.Tensor;
+  const confusion =
+      confusionMatrix(ys.argMax(-1), predictOut.argMax(-1), numUniqueWords);
+  const oldSummedConfusion = summedConfusion;
+  summedConfusion = oldSummedConfusion.add(confusion);
+  oldSummedConfusion.dispose();
+  return summedConfusion;
 }
 
 (async function() {
@@ -136,7 +150,7 @@ function processConfusionMatrixCollapsing(
       {type: 'int', help: 'Number of FFT data points per frame (e.g., 232)'});
   parser.addArgument('--epochs', {
     type: 'int',
-    defaultValue: 200,
+    defaultValue: 100,
     help: 'Number of epochs to train the model for.'
   });
   parser.addArgument(
@@ -177,8 +191,12 @@ function processConfusionMatrixCollapsing(
     help: 'Optional collapsing of words in the confusion matrix. ' +
         'E.g., "wordA,wordB|wordC,wordD"'
   });
+  parser.addArgument('--trainToDeploy', {
+    type: 'string',
+    help: 'Whether this call should train a model to be deployed. ' +
+        'This disables the n-fold cross validation'
+  });
   const args = parser.parseArgs();
-  console.log(JSON.stringify(args));
 
   const {xs, ys, wordLabels} =
       loadData(args.dataRoot, args.numFrames, args.fftSize);
@@ -188,33 +206,43 @@ function processConfusionMatrixCollapsing(
   const model = await tf.loadModel(args.baseModelURL);
 
   const numUniqueWords = wordLabels.length;
-  const valAccs: number[] = [];
-  let summedConfusion: tf.Tensor = null;
+  const accuracies: number[] = [];
+  let summedConfusion: tf.Tensor2D =
+      tf.zeros([numUniqueWords, numUniqueWords]).asType('int32') as tf.Tensor2D;
 
   // Custom train-eval split.
   const yIndices = Array.from(ys.argMax(-1).dataSync());
   console.log(`numUniqueWords = ${numUniqueWords}`);
 
-  const folds =
-      makeCrossValidationIndices(yIndices, args.folds, args.iterations);
+  let folds: Array<{trainIndices: number[], testIndices: number[]}>;
+  const trainToDeploy = args.trainToDeploy != null;
+  if (trainToDeploy) {
+    folds = [{trainIndices: yIndices, testIndices: []}]
+  } else {
+    folds = makeCrossValidationIndices(yIndices, args.folds, args.iterations);
+  }
 
-  let iter = 0;
-  for (const fold of folds) {
+  const totalIters = trainToDeploy ? 1 : folds.length;
+  for (let iter = 0; iter < totalIters; ++iter) {
     console.log(`Fold ${iter + 1} / ${folds.length}...`);
+    const fold = folds[iter];
 
-    const trainXs = xs.gather(tf.tensor1d(fold.trainIndices, 'int32'), 0);
-    const trainYs = ys.gather(tf.tensor1d(fold.trainIndices, 'int32'), 0);
-    const testXs = xs.gather(tf.tensor1d(fold.testIndices, 'int32'), 0);
-    const testYs = ys.gather(tf.tensor1d(fold.testIndices, 'int32'), 0);
+    const trainXs = trainToDeploy ?
+        xs :
+        xs.gather(tf.tensor1d(fold.trainIndices, 'int32'), 0);
+    const trainYs = trainToDeploy ?
+        ys :
+        ys.gather(tf.tensor1d(fold.trainIndices, 'int32'), 0);
+
+    let testXs: tf.Tensor;
+    let testYs: tf.Tensor;
+    if (!trainToDeploy) {
+      testXs = xs.gather(tf.tensor1d(fold.testIndices, 'int32'), 0);
+      testYs = ys.gather(tf.tensor1d(fold.testIndices, 'int32'), 0);
+    }
 
     const newModel =
         createTransferModel(model as tf.Sequential, numUniqueWords);
-
-    // // Test save the model and load the model back.
-    // newModel.summary();
-    // await newModel.save('file:///tmp/model1');
-    // newModel = await tf.loadModel('file:///tmp/model1/model.json');
-    // newModel.summary();
 
     newModel.compile({
       loss: 'categoricalCrossentropy',
@@ -224,31 +252,42 @@ function processConfusionMatrixCollapsing(
     const history = await newModel.fit(trainXs, trainYs, {
       batchSize: args.batchSize,
       epochs: args.epochs,
-      validationData: [testXs, testYs],
-      verbose: 0
+      verbose: 0,
+      validationData: trainToDeploy ? null : [testXs, testYs]
     });
-    valAccs.push(
-        history.history.val_acc[history.history.val_acc.length - 1] as number);
 
-    // Calculate the confusion matrix.
-    const predictOut = newModel.predict(testXs) as tf.Tensor;
-    const confusion = confusionMatrix(testYs.argMax(-1), predictOut.argMax(-1));
-    if (summedConfusion == null) {
-      summedConfusion = confusion;
+    if (trainToDeploy) {
+      accuracies.push(
+          history.history.acc[history.history.acc.length - 1] as number);
+      // Write model to disk.
     } else {
-      const oldSummedConfusion = summedConfusion;
-      summedConfusion = oldSummedConfusion.add(confusion);
-      oldSummedConfusion.dispose();
+      accuracies.push(
+          history.history.val_acc[history.history.val_acc.length - 1] as
+          number);
     }
 
-    iter++;
+    // Calculate the confusion matrix.
+    if (trainToDeploy) {
+      summedConfusion = summedToConfusionMatrix(
+          newModel, numUniqueWords, summedConfusion, trainXs, trainYs);
+
+      console.log(`Saving model and metadata to ${args.trainToDeploy}`);
+      await newModel.save(`file://${args.trainToDeploy}`);
+      const metadata = {frameSize: args.fftSize, words: wordLabels};
+      writeFile(
+          join(args.trainToDeploy, 'metadata.json'), JSON.stringify(metadata),
+          null);
+    } else {
+      summedConfusion = summedToConfusionMatrix(
+          newModel, numUniqueWords, summedConfusion, testXs, testYs);
+    }
   }
 
   console.log('Accuracies:');
-  console.log(valAccs);
+  console.log(accuracies);
 
   console.log('Mean accuracy:')
-  console.log(tf.tensor1d(valAccs).mean().dataSync()[0]);
+  console.log(tf.tensor1d(accuracies).mean().dataSync()[0]);
 
   console.log(`wordLabels: ${wordLabels}`);
   console.log('Confusion matrix:');
