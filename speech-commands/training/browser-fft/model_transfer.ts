@@ -48,10 +48,18 @@ global.fetch = require('node-fetch');
  * @returns Transfer-learning model.
  */
 function createTransferModel(
-    baseModel: tf.Sequential, numTransferWords: number): tf.Model {
+    baseModel: tf.Sequential, numTransferWords: number): {
+  model: tf.Model,
+  baseOutputLayer: tf.layers.Layer,
+  baseFirstLayer: tf.layers.Layer
+} {
+  // Find the second-last dense layer.
+  const baseFirstLayer = baseModel.layers[0];
+  let baseOutputLayer: tf.layers.Layer;
   let layerIndex = baseModel.layers.length - 2;
   while (layerIndex >= 0) {
     if (baseModel.layers[layerIndex].getClassName().toLowerCase() === 'dense') {
+      baseOutputLayer = baseModel.layers[layerIndex];
       break;
     }
     layerIndex--;
@@ -92,7 +100,7 @@ function createTransferModel(
   newModel.add(beheadedModel);
   newModel.add(transferHead);
 
-  return newModel;
+  return {model: newModel, baseOutputLayer, baseFirstLayer};
 }
 
 function processConfusionMatrixCollapsing(
@@ -191,6 +199,15 @@ function summedToConfusionMatrix(
     help: 'Optional collapsing of words in the confusion matrix. ' +
         'E.g., "wordA,wordB|wordC,wordD"'
   });
+  parser.addArgument('--fineTuningLearningRate', {
+    type: 'float',
+    defaultValue: 0,
+    help: 'Optional learning rate for fine-tuning. ' +
+        'If specified and is !== 0, will cause the training process ' +
+        'to unfreeze the last output layer (a Dense layer) of the ' +
+        'base model after initial transfer learning and train ' +
+        'on the same training dataset using this learning rate.'
+  });
   parser.addArgument('--trainToDeploy', {
     type: 'string',
     help: 'Whether this call should train a model to be deployed. ' +
@@ -241,7 +258,7 @@ function summedToConfusionMatrix(
       testYs = ys.gather(tf.tensor1d(fold.testIndices, 'int32'), 0);
     }
 
-    const newModel =
+    const {model: newModel, baseOutputLayer, baseFirstLayer} =
         createTransferModel(model as tf.Sequential, numUniqueWords);
 
     newModel.compile({
@@ -249,12 +266,35 @@ function summedToConfusionMatrix(
       optimizer: tf.train.sgd(args.lr),
       metrics: ['accuracy']
     });
-    const history = await newModel.fit(trainXs, trainYs, {
+
+    let history = await newModel.fit(trainXs, trainYs, {
       batchSize: args.batchSize,
       epochs: args.epochs,
       verbose: 0,
       validationData: trainToDeploy ? null : [testXs, testYs]
     });
+
+    if (args.fineTuningLearningRate !== 0) {
+      console.log(
+          `  Performing fine-tuning with learning rate ` +
+          `${args.fineTuningLearningRate}...`);
+
+      // Fine-tuning: Unfreeze the base's output layer.
+      baseOutputLayer.trainable = true;
+      newModel.compile({
+        loss: 'categoricalCrossentropy',
+        optimizer: tf.train.sgd(args.fineTuningLearningRate),
+        metrics: ['accuracy']
+      });
+
+      // Train a few more epochs after unfreezing the layer.
+      history = await newModel.fit(trainXs, trainYs, {
+        batchSize: args.batchSize,
+        epochs: args.epochs,
+        verbose: 0,
+        validationData: trainToDeploy ? null : [testXs, testYs]
+      });
+    }
 
     if (trainToDeploy) {
       accuracies.push(
