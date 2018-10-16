@@ -65,7 +65,11 @@ def read_and_resample_as_floats(wav_path, target_fs):
   fs, signal = read_as_floats(wav_path)
   num_samples = signal.shape[0]
   target_num_samples = int(math.floor(num_samples * target_fs / fs))
-  resampled_x = resample(signal, target_num_samples).astype('float32')
+
+  if len(signal) != target_num_samples:
+    resampled_x = resample(signal, target_num_samples).astype('float32')
+  else:
+    resampled_x = signal.astype('float32')
   return resampled_x
 
 
@@ -180,7 +184,7 @@ def convert(in_wav_path,
             end_index = len(waveform)
             start_index = end_index - match_len
           print('Split %d of %d: %s: %d --> %d' %
-               (split + 1, num_splits, in_wav_path, start_index, end_index))
+                (split + 1, num_splits, in_wav_path, start_index, end_index))
           out_waveforms.append(waveform[start_index : end_index])
 
     elif len(waveform) < match_len:
@@ -200,7 +204,7 @@ def convert(in_wav_path,
     with open(out_path, 'wb') as out_file:
       out_file.write(struct.pack('f' * len(out_waveform), *out_waveform))
 
-  return len(out_waveforms[0])
+  return len(out_waveforms[0]) if out_waveforms else -1
 
 
 def convert_wav_files_in_dir(input_dir,
@@ -347,9 +351,10 @@ def main():
       train_out_dir = os.path.join(train_base, word)
       test_out_dir = os.path.join(test_base, word)
 
-      multi_splits = (word == _BACKGROUND_NOISE_DIR)
+      multi_splits = ((word == _BACKGROUND_NOISE_DIR) or
+                      FLAGS.all_words_multi_splits)
       if multi_splits:
-        print('*** Will use multiple splits for word "%s"' % word)
+        print('*** Will use multiple splits for word "%s" ***' % word)
 
       num_train_examples, num_test_examples = convert_wav_files_in_dir(
           word_input_dir, train_out_dir,
@@ -432,6 +437,9 @@ if __name__ == '__main__':
   parser.add_argument(
       '--match_len', type=int, default=44032,
       help='Keep only recordings with exactly `match_length` samples.')
+  parser.add_argument(
+      '--all_words_multi_splits', action='store_true',
+      help='Use multi-splits on all words (not just _background_noise_)')
   FLAGS, _ = parser.parse_known_args()
 
   main()
