@@ -208,6 +208,12 @@ function summedToConfusionMatrix(
         'base model after initial transfer learning and train ' +
         'on the same training dataset using this learning rate.'
   });
+  parser.addArgument('--sampleUnknown', {
+    type: 'string',
+    help: 'Optional, if provided, will cause the program to sample ' +
+    'N examples randomly from the -unknown_ subfolder under the ' +
+    'specified folder.'
+  });
   parser.addArgument('--trainToDeploy', {
     type: 'string',
     help: 'Whether this call should train a model to be deployed. ' +
@@ -215,8 +221,57 @@ function summedToConfusionMatrix(
   });
   const args = parser.parseArgs();
 
-  const {xs, ys, wordLabels} =
+  let {xs, ys, wordLabels} =
       loadData(args.dataRoot, args.numFrames, args.fftSize);
+  const numExamples = xs.shape[0];
+
+  function loadUnknownExamplesAndConcat(
+      dirPath: string, numFrames: number, fftSize: number,
+      origXs: tf.Tensor, origYs: tf.Tensor, wordLabels: string[]):
+      {xs: tf.Tensor, ys: tf.Tensor} {
+    return tf.tidy(() => {
+      let {xs: unknownXs, ys: unknownYs, wordLabels: unknownWordLabel} =
+      loadData(dirPath, args.numFrames, args.fftSize, ['_unknown_']);
+      tf.util.assert(
+          unknownWordLabel.length === 1, `Unexpected unknownWordLabel length`);
+
+      const numUnknown = unknownXs.shape[0];
+      let indices = [];
+      for (let i = 0; i < numUnknown; ++i) {
+        indices.push(i);
+      }
+      tf.util.shuffle(indices);
+      indices = indices.slice(0, numExamples);
+      
+      const unknownIndices: number[] = [];
+      for (let i = 0; i < numExamples; ++i) {
+        unknownIndices.push(wordLabels.length);
+      }  
+      const indicesTensor = tf.tensor1d(indices, 'int32');
+      unknownXs = unknownXs.gather(indicesTensor);
+      unknownYs = unknownYs.gather(indicesTensor);
+    
+      // Concatenate the data and target tensors from the basic words
+      // and _unknown_.
+      const xs = tf.concat([origXs, unknownXs], 0);
+      let ys = tf.concat([origYs, tf.zeros([origYs.shape[0], 1])], 1);
+      const unknownOneHot = tf.oneHot(
+          tf.tensor1d(unknownIndices, 'int32'),
+          wordLabels.length + 1).asType('float32');
+      ys = tf.concat([ys, unknownOneHot], 0);
+      wordLabels.push(unknownWordLabel[0]);
+
+      return {xs, ys};
+    });
+  }
+
+  if (args.sampleUnknown != null) {
+    console.log('--- Loading and sampling _unknown_ tokens ---');
+    const out = loadUnknownExamplesAndConcat(
+        args.sampleUnknown, args.numFrames, args.fftSize, xs, ys, wordLabels);
+    xs = out.xs;
+    ys = out.ys;
+  }
 
   // Transfer learning code.
   console.log(`Loading base model from ${args.baseModelURL} ...`);

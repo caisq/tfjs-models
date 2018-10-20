@@ -149,12 +149,20 @@ export function Float32Concat(arrays: Float32Array[]): Float32Array {
 }
 
 export function loadData(
-    rootDir: string, numFramesCutoff: number, fftSize: number):
+    rootDir: string, numFramesCutoff: number, fftSize: number,
+    limitToWordItems?: string|string[]):
     {xs: tf.Tensor, ys: tf.Tensor, wordLabels: string[]} {
+  if (limitToWordItems != null && typeof limitToWordItems === 'string') {
+    limitToWordItems = [limitToWordItems];
+  }
+
   return tf.tidy(() => {
     const dirContent = fs.readdirSync(rootDir);
     const wordLabels: string[] = [];
     for (const item of dirContent) {
+      if (limitToWordItems != null && limitToWordItems.indexOf(item) === -1) {
+        continue;
+      }
       if (fs.lstatSync(path.join(rootDir, item)).isDirectory()) {
         wordLabels.push(item);
       }
@@ -165,6 +173,10 @@ export function loadData(
     let ysBuffers: Float32Array[] = [];
     let numExamples = 0;
     for (const wordItem of dirContent) {
+      if (limitToWordItems != null && limitToWordItems.indexOf(wordItem) === -1) {
+        continue;
+      }
+
       console.log(`--- Loading data for word '${wordItem}' ---`);
       const wordDir = fs.readdirSync(path.join(rootDir, wordItem));
       for (const fileItem of wordDir) {
