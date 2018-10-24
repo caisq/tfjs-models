@@ -144,7 +144,8 @@ def convert(in_wav_path,
             frame_size,
             out_data_path,
             match_len=None,
-            multi_splits=False):
+            multi_splits=False,
+            do_filling=True):
   '''Convert an input wav file to an output data file.
 
   The data file consists of the resampled and truncated PCM samples.
@@ -162,6 +163,8 @@ def convert(in_wav_path,
       waveform has a length of 10k and `match_len` equals 4k, then
       three output wavefiles will be generate, with starting sample
       indices of 0, 4k and 6k, respetively.
+    do_filling: Whether to perform filling for input waveforms
+      shorter than match_len.
 
   Returns:
     Length (in # of samples) of the waveform in the file at
@@ -187,10 +190,14 @@ def convert(in_wav_path,
                 (split + 1, num_splits, in_wav_path, start_index, end_index))
           out_waveforms.append(waveform[start_index : end_index])
 
-    elif len(waveform) < match_len:
+    elif len(waveform) < match_len and do_filling:
       print('Filling: %s: %s --> %s' % (in_wav_path, len(waveform), match_len))
       out_waveforms.append(
           np.concatenate([waveform, waveform[:match_len - len(waveform)]]))
+
+    else:
+      # I.e., len(waveform) == match_len
+      out_waveforms.append(waveform)
 
   out_file_paths = []
   if len(out_waveforms) == 1:
@@ -216,7 +223,8 @@ def convert_wav_files_in_dir(input_dir,
                              test_split=None,
                              test_output_dir=None,
                              convert_wav_files_in_dir=False,
-                             multi_splits=False):
+                             multi_splits=False,
+                             do_filling=True):
   '''Convert wav files from input directory and write results output dir.
 
   Args:
@@ -241,6 +249,8 @@ def convert_wav_files_in_dir(input_dir,
       waveform has a length of 10k and `match_len` equals 4k, then
       three output wavefiles will be generate, with starting sample
       indices of 0, 4k and 6k, respetively.
+    do_filling: Whether to perform filling on input waveforms shorter than
+      match_len.
 
   Returns:
     - The number of training examples.
@@ -300,7 +310,7 @@ def convert_wav_files_in_dir(input_dir,
       out_path = os.path.join(subfolder, output_basename)
       converted_len = convert(
           in_path, target_fs, frame_size, out_path, match_len=match_len,
-          multi_splits=multi_splits)
+          multi_splits=multi_splits, do_filling=do_filling)
       if (match_len is not None and match_len != converted_len
           and os.path.exists(out_path)):
         print('  Skipped %s due to length mismatch (%d != %d)' % (
@@ -361,7 +371,8 @@ def main():
           FLAGS.recordings_per_subfolder, FLAGS.target_fs,
           FLAGS.frame_size, FLAGS.match_len,
           FLAGS.test_split, test_out_dir,
-          multi_splits=multi_splits)
+          multi_splits=multi_splits,
+          do_filling=(not FLAGS.no_filling))
       nums_train_examples.append(num_train_examples)
       nums_test_examples.append(num_test_examples)
 
@@ -431,12 +442,15 @@ if __name__ == '__main__':
       '--frame_size', type=int, default='1024',
       help='Frame size at target frequency.')
   parser.add_argument(
-      '--recordings_per_subfolder', type=int, default=500,
+      '--recordings_per_subfolder', type=int, default=300,
       help='Number of recordings to store in every subfolder under '
       '`output_data_path`.')
   parser.add_argument(
       '--match_len', type=int, default=44032,
       help='Keep only recordings with exactly `match_length` samples.')
+  parser.add_argument(
+      '--no_filling', action='store_true',
+      help='Do NOT use filling for input waveforms shorter than match_len')
   parser.add_argument(
       '--all_words_multi_splits', action='store_true',
       help='Use multi-splits on all words (not just _background_noise_)')
