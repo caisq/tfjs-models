@@ -139,6 +139,25 @@ def load_and_normalize_waveform(wav_path, target_fs, frame_size):
   return signal[:frame_size * num_frames]
 
 
+def get_filling_snippet(x, fill_len, fill_type):
+  # Constant filling snippet length. Arbitrarily selected.
+  fill_snippet_len_min = 2000
+  fill_snippet_len_max = 5000  
+  fill = np.zeros([0])
+  if not (fill_type in ('head', 'tail')):
+    raise ValueError('Unrecognized fill_type: %s' % fill_type)
+  while len(fill) < fill_len:
+    increment = int(np.random.randint(
+        fill_snippet_len_min, fill_snippet_len_max, [1])[0])
+    if increment + len(fill) > fill_len:
+      increment = fill_len - len(fill)
+    if fill_type == 'head':
+      fill = np.concatenate([x[:increment], fill])
+    else:
+      fill = np.concatenate([fill, x[len(x) - increment:]])
+  return fill
+
+
 def convert(in_wav_path,
             target_fs,
             frame_size,
@@ -191,9 +210,20 @@ def convert(in_wav_path,
           out_waveforms.append(waveform[start_index : end_index])
 
     elif len(waveform) < match_len and do_filling:
-      print('Filling: %s: %s --> %s' % (in_wav_path, len(waveform), match_len))
-      out_waveforms.append(
-          np.concatenate([waveform, waveform[:match_len - len(waveform)]]))
+      orig_len = len(waveform)
+      len_diff = match_len - orig_len
+      head_len = int(np.floor(len_diff / 2))
+      tail_len = len_diff - head_len
+      if head_len > 0:
+        waveform = np.concatenate([
+          get_filling_snippet(waveform, head_len, 'head'), waveform])
+      if tail_len > 0:
+        waveform = np.concatenate([
+            waveform, get_filling_snippet(waveform, tail_len, 'tail')])
+      assert len(waveform) == match_len, 'Length mismatch after filling'
+      print('Filling: %s: (head=%d; tail=%d) %s --> %s' %
+            (in_wav_path, head_len, tail_len, orig_len, match_len))
+      out_waveforms.append(waveform)
 
     else:
       # I.e., len(waveform) == match_len
