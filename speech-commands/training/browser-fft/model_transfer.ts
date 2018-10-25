@@ -211,8 +211,8 @@ function summedToConfusionMatrix(
   parser.addArgument('--sampleUnknown', {
     type: 'string',
     help: 'Optional, if provided, will cause the program to sample ' +
-    'N examples randomly from the -unknown_ subfolder under the ' +
-    'specified folder.'
+        'N examples randomly from the -unknown_ subfolder under the ' +
+        'specified folder.'
   });
   parser.addArgument('--trainToDeploy', {
     type: 'string',
@@ -226,12 +226,11 @@ function summedToConfusionMatrix(
   const numExamples = xs.shape[0];
 
   function loadUnknownExamplesAndConcat(
-      dirPath: string, numFrames: number, fftSize: number,
-      origXs: tf.Tensor, origYs: tf.Tensor, wordLabels: string[]):
-      {xs: tf.Tensor, ys: tf.Tensor} {
+      dirPath: string, numFrames: number, fftSize: number, origXs: tf.Tensor,
+      origYs: tf.Tensor, wordLabels: string[]): {xs: tf.Tensor, ys: tf.Tensor} {
     return tf.tidy(() => {
       let {xs: unknownXs, ys: unknownYs, wordLabels: unknownWordLabel} =
-      loadData(dirPath, args.numFrames, args.fftSize, ['_unknown_']);
+          loadData(dirPath, args.numFrames, args.fftSize, ['_unknown_']);
       tf.util.assert(
           unknownWordLabel.length === 1, `Unexpected unknownWordLabel length`);
 
@@ -242,25 +241,24 @@ function summedToConfusionMatrix(
       }
       tf.util.shuffle(indices);
       indices = indices.slice(0, numExamples);
-      
+
       const unknownIndices: number[] = [];
       for (let i = 0; i < numExamples; ++i) {
         unknownIndices.push(wordLabels.length);
-      }  
+      }
       const indicesTensor = tf.tensor1d(indices, 'int32');
       unknownXs = unknownXs.gather(indicesTensor);
       unknownYs = unknownYs.gather(indicesTensor);
-    
+
       // Concatenate the data and target tensors from the basic words
       // and _unknown_.
       const xs = tf.concat([origXs, unknownXs], 0);
       let ys = tf.concat([origYs, tf.zeros([origYs.shape[0], 1])], 1);
-      const unknownOneHot = tf.oneHot(
-          tf.tensor1d(unknownIndices, 'int32'),
-          wordLabels.length + 1).asType('float32');
+      const unknownOneHot =
+          tf.oneHot(tf.tensor1d(unknownIndices, 'int32'), wordLabels.length + 1)
+              .asType('float32');
       ys = tf.concat([ys, unknownOneHot], 0);
       wordLabels.push(unknownWordLabel[0]);
-
       return {xs, ys};
     });
   }
@@ -296,10 +294,10 @@ function summedToConfusionMatrix(
 
   const totalIters = trainToDeploy ? 1 : folds.length;
   for (let iter = 0; iter < totalIters; ++iter) {
-    console.log(`Fold ${iter + 1} / ${folds.length}...`);
+    console.log(`Iteration ${iter + 1} / ${folds.length}...`);
     const fold = folds[iter];
 
-    const trainXs = trainToDeploy ?
+    let trainXs = trainToDeploy ?
         xs :
         xs.gather(tf.tensor1d(fold.trainIndices, 'int32'), 0);
     const trainYs = trainToDeploy ?
@@ -321,6 +319,20 @@ function summedToConfusionMatrix(
       optimizer: tf.train.sgd(args.lr),
       metrics: ['accuracy']
     });
+
+    const modelNumFrames = model.inputs[0].shape[1];
+    if (trainXs.shape[1] != modelNumFrames) {
+      console.log(
+          `Performing bilinear interpolation along the time axis: ` +
+          `${trainXs.shape[1]} --> ${modelNumFrames}`);
+      const oldTrainXs = trainXs;
+      const oldTestXs = testXs;
+      trainXs = tf.image.resizeBilinear(
+          trainXs as tf.Tensor4D, [modelNumFrames, model.inputs[0].shape[2]]);
+      testXs = tf.image.resizeBilinear(
+          testXs as tf.Tensor4D, [modelNumFrames, model.inputs[0].shape[2]]);
+      tf.dispose([oldTrainXs, oldTestXs]);
+    }
 
     let history = await newModel.fit(trainXs, trainYs, {
       batchSize: args.batchSize,
@@ -382,14 +394,14 @@ function summedToConfusionMatrix(
   console.log(accuracies);
 
   console.log('Mean accuracy:')
-  console.log(tf.tensor1d(accuracies).mean().dataSync()[0]);
+  console.log(tf.tensor1d(accuracies).mean().dataSync()[0].toFixed(4));
 
   console.log(`wordLabels: ${wordLabels}`);
   console.log('Confusion matrix:');
   summedConfusion.print();
   console.log('Normalized accuracy:');
-  console.log(
-      confusionMatrix2NormalizedAccuracy(summedConfusion as tf.Tensor2D));
+  console.log(confusionMatrix2NormalizedAccuracy(summedConfusion as tf.Tensor2D)
+                  .toFixed(4));
 
   if (args.confusionCollapseWords != null) {
     processConfusionMatrixCollapsing(
