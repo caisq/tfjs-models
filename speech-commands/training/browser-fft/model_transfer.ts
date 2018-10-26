@@ -326,12 +326,15 @@ function summedToConfusionMatrix(
           `Performing bilinear interpolation along the time axis: ` +
           `${trainXs.shape[1]} --> ${modelNumFrames}`);
       const oldTrainXs = trainXs;
-      const oldTestXs = testXs;
       trainXs = tf.image.resizeBilinear(
           trainXs as tf.Tensor4D, [modelNumFrames, model.inputs[0].shape[2]]);
-      testXs = tf.image.resizeBilinear(
-          testXs as tf.Tensor4D, [modelNumFrames, model.inputs[0].shape[2]]);
-      tf.dispose([oldTrainXs, oldTestXs]);
+      tf.dispose(oldTrainXs);
+      if (testXs != null) {
+        const oldTestXs = testXs;
+        testXs = tf.image.resizeBilinear(
+            testXs as tf.Tensor4D, [modelNumFrames, model.inputs[0].shape[2]]);
+        tf.dispose(oldTestXs);
+      }
     }
 
     let history = await newModel.fit(trainXs, trainYs, {
