@@ -26,11 +26,13 @@ export class FakeAudioContext {
     return new FakeAudioContext();
   }
 
-  createMediaStreamSource() {
+  // tslint:disable-next-line:no-any
+  createMediaStreamSource(): any {
     return new FakeMediaStreamAudioSourceNode();
   }
 
-  createAnalyser() {
+  // tslint:disable-next-line:no-any
+  createAnalyser(): any {
     return new FakeAnalyser();
   }
 
@@ -39,14 +41,13 @@ export class FakeAudioContext {
 
 export class FakeAudioMediaStream {
   constructor() {}
-  getTracks(): Array<{}> {
-    return [];
-  }
 }
 
 class FakeMediaStreamAudioSourceNode {
   constructor() {}
-  connect(node: {}): void {}
+
+  // tslint:disable-next-line:no-any
+  connect(node: any): void {}
 }
 
 class FakeAnalyser {

@@ -15,6 +15,7 @@
  * =============================================================================
  */
 
+import * as tf from '@tensorflow/tfjs';
 import Plotly from 'plotly.js-dist';
 
 import * as SpeechCommands from '../src';
@@ -24,10 +25,10 @@ import {hideCandidateWords, logToStatusDisplay, plotPredictions, plotSpectrogram
 const startButton = document.getElementById('start');
 const stopButton = document.getElementById('stop');
 const predictionCanvas = document.getElementById('prediction-canvas');
-const spectrogramCanvas = document.getElementById('spectrogram-canvas');
 
 const probaThresholdInput = document.getElementById('proba-threshold');
 const epochsInput = document.getElementById('epochs');
+const fineTuningEpochsInput = document.getElementById('fine-tuning-epochs');
 
 /**
  * Transfer learning-related UI componenets.
@@ -40,6 +41,10 @@ const startTransferLearnButton =
 
 const XFER_MODEL_NAME = 'xfer-model';
 
+// Minimum required number of examples per class for transfer learning.
+// TODO(cais): Change to 8 before submitting. DO NOT SUBMIT.
+const MIN_EXAPMLES_PER_CLASS = 4;
+
 let recognizer;
 let transferRecognizer;
 
@@ -49,7 +54,7 @@ let transferRecognizer;
 
   // Make sure the tf.Model is loaded through HTTP. If this is not
   // called here, the tf.Model will be loaded the first time
-  // `listen()` is called.
+  // `startStreaming()` is called.
   recognizer.ensureModelLoaded()
       .then(() => {
         startButton.disabled = false;
@@ -79,7 +84,7 @@ startButton.addEventListener('click', () => {
   populateCandidateWords(activeRecognizer.wordLabels());
 
   activeRecognizer
-      .listen(
+      .startStreaming(
           result => {
             plotPredictions(
                 predictionCanvas, activeRecognizer.wordLabels(), result.scores,
@@ -104,14 +109,14 @@ startButton.addEventListener('click', () => {
 stopButton.addEventListener('click', () => {
   const activeRecognizer =
       transferRecognizer == null ? recognizer : transferRecognizer;
-  activeRecognizer.stopListening()
+  activeRecognizer.stopStreaming()
       .then(() => {
         startButton.disabled = false;
         stopButton.disabled = true;
         hideCandidateWords();
         logToStatusDisplay('Streaming recognition stopped.');
       })
-      .catch(err => {
+      .catch(error => {
         logToStatusDisplay(
             'ERROR: Failed to stop streaming display: ' + err.message);
       });
@@ -172,11 +177,28 @@ enterLearnWordsButton.addEventListener('click', () => {
           exampleCanvas, spectrogram.data, spectrogram.frameSize,
           spectrogram.frameSize);
       const exampleCounts = transferRecognizer.countExamples();
+      const classNames = Object.keys(exampleCounts);
+      let minCountByClass;
+      if (classNames.length < transferWords.length) {
+        minCountByClass = 0;
+      } else {
+        minCountByClass = Infinity;
+        for (const className of classNames) {
+          if (exampleCounts[className] < minCountByClass) {
+            minCountByClass = exampleCounts[className];
+          }
+        }
+      }
+
       button.textContent = `${displayWord} (${exampleCounts[word]})`;
       logToStatusDisplay(`Collect one sample of word "${word}"`);
       enableAllCollectWordButtons();
-      if (Object.keys(exampleCounts).length > 1) {
+      if (classNames.length > 1 && minCountByClass >= MIN_EXAPMLES_PER_CLASS) {
+        startTransferLearnButton.textContent = 'Start transfer learning';
         startTransferLearnButton.disabled = false;
+      } else {
+        startTransferLearnButton.textContent =
+            `Need at least ${MIN_EXAPMLES_PER_CLASS} examples per word`;
       }
     });
   }
@@ -199,41 +221,111 @@ startTransferLearnButton.addEventListener('click', async () => {
   startTransferLearnButton.disabled = true;
   startButton.disabled = true;
 
-  const epochs = Number.parseInt(epochsInput.value);
-  const lossValues =
-      {x: [], y: [], name: 'train', mode: 'lines', line: {width: 1}};
-  const accuracyValues =
-      {x: [], y: [], name: 'train', mode: 'lines', line: {width: 1}};
-  function plotLossAndAccuracy(epoch, loss, acc) {
-    lossValues.x.push(epoch);
-    lossValues.y.push(loss);
-    accuracyValues.x.push(epoch);
-    accuracyValues.y.push(acc);
-    Plotly.newPlot('loss-plot', [lossValues], {
-      width: 360,
-      height: 300,
-      xaxis: {title: 'Epoch #'},
-      yaxis: {title: 'Loss'},
-      font: {size: 18}
-    });
-    Plotly.newPlot('accuracy-plot', [accuracyValues], {
-      width: 360,
-      height: 300,
-      xaxis: {title: 'Epoch #'},
-      yaxis: {title: 'Accuracy'},
-      font: {size: 18}
-    });
-    startTransferLearnButton.textContent =
-        `Transfer-learning... (${(epoch / epochs * 1e2).toFixed(0)}%)`;
+  const INITIAL_PHASE = 'initial';
+  const FINE_TUNING_PHASE = 'fineTuningPhase';
+
+  const epochs = parseInt(epochsInput.value);
+  const fineTuningEpochs = parseInt(fineTuningEpochsInput.value);
+  const trainLossValues = {};
+  const valLossValues = {};
+  const trainAccValues = {};
+  const valAccValues = {};
+
+  for (const phase of [INITIAL_PHASE, FINE_TUNING_PHASE]) {
+    const phaseSuffix = phase === FINE_TUNING_PHASE ? ' (FT)' : '';
+    const lineWidth = phase === FINE_TUNING_PHASE ? 2 : 1;
+    trainLossValues[phase] = {
+      x: [],
+      y: [],
+      name: 'train' + phaseSuffix,
+      mode: 'lines',
+      line: {width: lineWidth}
+    };
+    valLossValues[phase] = {
+      x: [],
+      y: [],
+      name: 'val' + phaseSuffix,
+      mode: 'lines',
+      line: {width: lineWidth}
+    };
+    trainAccValues[phase] = {
+      x: [],
+      y: [],
+      name: 'train' + phaseSuffix,
+      mode: 'lines',
+      line: {width: lineWidth}
+    };
+    valAccValues[phase] = {
+      x: [],
+      y: [],
+      name: 'val' + phaseSuffix,
+      mode: 'lines',
+      line: {width: lineWidth}
+    };
+  }
+
+  function plotLossAndAccuracy(epoch, loss, acc, val_loss, val_acc, phase) {
+    const displayEpoch = phase === FINE_TUNING_PHASE ? (epoch + epochs) : epoch;
+    trainLossValues[phase].x.push(displayEpoch);
+    trainLossValues[phase].y.push(loss);
+    trainAccValues[phase].x.push(displayEpoch);
+    trainAccValues[phase].y.push(acc);
+    valLossValues[phase].x.push(displayEpoch);
+    valLossValues[phase].y.push(val_loss);
+    valAccValues[phase].x.push(displayEpoch);
+    valAccValues[phase].y.push(val_acc);
+
+    Plotly.newPlot(
+        'loss-plot',
+        [
+          trainLossValues[INITIAL_PHASE], valLossValues[INITIAL_PHASE],
+          trainLossValues[FINE_TUNING_PHASE], valLossValues[FINE_TUNING_PHASE]
+        ],
+        {
+          width: 480,
+          height: 360,
+          xaxis: {title: 'Epoch #'},
+          yaxis: {title: 'Loss'},
+          font: {size: 18}
+        });
+    Plotly.newPlot(
+        'accuracy-plot',
+        [
+          trainAccValues[INITIAL_PHASE], valAccValues[INITIAL_PHASE],
+          trainAccValues[FINE_TUNING_PHASE], valAccValues[FINE_TUNING_PHASE]
+        ],
+        {
+          width: 480,
+          height: 360,
+          xaxis: {title: 'Epoch #'},
+          yaxis: {title: 'Accuracy'},
+          font: {size: 18}
+        });
+    startTransferLearnButton.textContent = phase === INITIAL_PHASE ?
+        `Transfer-learning... (${(epoch / epochs * 1e2).toFixed(0)}%)` :
+        `Transfer-learning (fine-tuning)... (${
+            (epoch / fineTuningEpochs * 1e2).toFixed(0)}%)`
+
     scrollToPageBottom();
   }
 
   disableAllCollectWordButtons();
   await transferRecognizer.train({
     epochs,
+    validationSplit: 0.25,
     callback: {
       onEpochEnd: async (epoch, logs) => {
-        plotLossAndAccuracy(epoch, logs.loss, logs.acc);
+        plotLossAndAccuracy(
+            epoch, logs.loss, logs.acc, logs.val_loss, logs.val_acc,
+            INITIAL_PHASE);
+      }
+    },
+    fineTuningEpochs,
+    fineTuningCallback: {
+      onEpochEnd: async (epoch, logs) => {
+        plotLossAndAccuracy(
+            epoch, logs.loss, logs.acc, logs.val_loss, logs.val_acc,
+            FINE_TUNING_PHASE);
       }
     }
   });

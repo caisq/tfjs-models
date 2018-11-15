@@ -15,7 +15,6 @@
  * =============================================================================
  */
 
-// tslint:disable-next-line:no-require-imports
 const packageJSON = require('../package.json');
 import * as speechCommands from './index';
 

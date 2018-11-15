@@ -38,52 +38,43 @@ export interface SpeechCommandRecognizer {
   ensureModelLoaded(): Promise<void>;
 
   /**
-   * Start listening continuously to microphone input and perform recognition
-   * in a streaming fashion.
+   * Start recognition in a streaming fashion.
    *
    * @param callback the callback that will be invoked every time
    *   a recognition result is available.
-   * @param config optional configuration.
+   * @param options optional configuration.
    * @throws Error if there is already ongoing streaming recognition.
    */
-  listen(callback: RecognizerCallback, config?: StreamingRecognitionConfig):
-      Promise<void>;
+  startStreaming(
+      callback: RecognizerCallback,
+      config?: StreamingRecognitionConfig): Promise<void>;
 
   /**
    *  Stop the ongoing streaming recognition (if any).
    *
    * @throws Error if no streaming recognition is ongoing.
    */
-  stopListening(): Promise<void>;
+  stopStreaming(): Promise<void>;
 
   /**
    * Check if this instance is currently performing
    * streaming recognition.
    */
-  isListening(): boolean;
+  isStreaming(): boolean;
 
   /**
    * Recognize a single example of audio.
    *
-   * If `input` is provided, will perform offline prediction.
-   * If `input` is not provided, a single frame of audio
-   *   will be collected from the microhpone via WebAudio and predictions
-   *   will be made on it.
-   *
-   * @param input (Optional) tf.Tensor of Float32Array.
-   *     If provided and a tf.Tensor, must match the input shape of the
-   *     underlying tf.Model. If a Float32Array, the length must be
+   * @param input tf.Tensor of Float32Array. If a tf.Tensor,
+   *     must match the input shape of the underlying
+   *     tf.Model. If a Float32Array, the length must be
    *     equal to (the model’s required FFT length) *
    *     (the model’s required frame count).
-   * @returns A Promise of recognition result, with the following fields:
-   *   - scores: the probability scores.
-   *   - embedding: the embedding for the input audio (i.e., an internal
-   *     activation from the model). Provided if and only if `includeEmbedding`
-   *     is `true` in `config`.
+   * @returns A Promise of recognition result: the probability scores.
    * @throws Error on incorrect shape or length.
    */
-  recognize(input?: tf.Tensor|Float32Array, config?: RecognizeConfig):
-      Promise<SpeechCommandRecognizerResult>;
+  recognize(input: tf.Tensor|
+            Float32Array): Promise<SpeechCommandRecognizerResult>;
 
   /**
    * Get the input shape of the tf.Model the underlies the recognizer.
@@ -108,8 +99,8 @@ export interface SpeechCommandRecognizer {
    * @param name Required name of the transfer learning recognizer. Must be a
    *   non-empty string.
    * @returns An instance of TransferSpeechCommandRecognizer, which supports
-   *     `collectExample()`, `train()`, as well as the same `listen()`
-   *     `stopListening()` and `recognize()` as the base recognizer.
+   *     `collectExample()`, `train()`, as well as the same `startStreaming()`
+   *     `stopStreaming()` and `recognize()` as the base recognizer.
    */
   createTransfer(name: string): TransferSpeechCommandRecognizer;
 }
@@ -165,7 +156,8 @@ export interface TransferSpeechCommandRecognizer extends
    * @throws Error, if `modelName` is invalid or if not sufficient training
    *   examples have been collected yet.
    */
-  train(config?: TransferLearnConfig): Promise<tf.History>;
+  train(config?: TransferLearnConfig):
+      Promise<tf.History|[tf.History, tf.History]>;
 }
 
 /**
@@ -204,26 +196,23 @@ export interface SpeechCommandRecognizerResult {
    * Optional spectrogram data.
    */
   spectrogram?: SpectrogramData;
-
-  /**
-   * Embedding (internal activation) for the input.
-   *
-   * This field is populated if and only if `includeEmbedding`
-   * is `true` in the configuration object used during the `recognize` call.
-   */
-  embedding?: tf.Tensor;
 }
 
 export interface StreamingRecognitionConfig {
   /**
-   * Overlap factor. Must be >=0 and <1.
+   * Overlap factor. Must be a number between >=0 and <1.
    * Defaults to 0.5.
    * For example, if the model takes a frame length of 1000 ms,
-   * and if overlap factor is 0.4, there will be a 400ms
+   * and if overlap factor is 0.4, there will be a 400-ms
    * overlap between two successive frames, i.e., frames
    * will be taken every 600 ms.
    */
   overlapFactor?: number;
+
+  /**
+   * Minimum samples of the same label for reliable prediction.
+   */
+  minSamples?: number;
 
   /**
    * Amount to time in ms to suppress recognizer after a word is recognized.
@@ -239,8 +228,6 @@ export interface StreamingRecognitionConfig {
    *
    * Must be a number >=0 and <=1.
    *
-   * The value will be overridden to `0` if `includeEmbedding` is `true`.
-   *
    * If `null` or `undefined`, will default to `0`.
    */
   probabilityThreshold?: number;
@@ -248,9 +235,7 @@ export interface StreamingRecognitionConfig {
   /**
    * Invoke the callback for background noise and unknown.
    *
-   * The value will be overridden to `true` if `includeEmbedding` is `true`.
-   *
-   * Default: `false`.
+   * Default: false.
    */
   invokeCallbackOnNoiseAndUnknown?: boolean;
 
@@ -261,36 +246,6 @@ export interface StreamingRecognitionConfig {
    * Default: `false`.
    */
   includeSpectrogram?: boolean;
-
-  /**
-   * Whether to include the embedding (internal activation).
-   *
-   * If set as `true`, the values of the following configuration fields
-   * in this object will be overridden:
-   *
-   * - `probabilityThreshold` will be overridden to 0.
-   * - `invokeCallbackOnNoiseAndUnknown` will be overridden to `true`.
-   *
-   * Default: `false`.
-   */
-  includeEmbedding?: boolean;
-}
-
-export interface RecognizeConfig {
-  /**
-   * Whether the spectrogram is to be provided in the each recognition
-   * callback call.
-   *
-   * Default: `false`.
-   */
-  includeSpectrogram?: boolean;
-
-  /**
-   * Whether to include the embedding (internal activation).
-   *
-   * Default: `false`.
-   */
-  includeEmbedding?: boolean;
 }
 
 /**
@@ -316,22 +271,71 @@ export interface TransferLearnConfig {
   batchSize?: number;
 
   /**
-   * Validation split to be used during training (default: 0).
+   * Validation split to be used during training.
    *
-   * Must be a number between 0 and 1.
+   * Default: null (no validation split).
+   *
+   * Note that this is split is different from the basic validation-split
+   * paradigm in TensorFlow.js. It makes sure that the distribution of the
+   * classes in the training and validation sets are approximately balanced.
+   *
+   * If specified, must be a number > 0 and < 1.
    */
   validationSplit?: number;
 
   /**
-   * tf.Callback to be used during the training.
+   * Number of fine-tuning epochs to run after the initial `epochs` epochs
+   * of transfer-learning training.
+   *
+   * During the fine-tuning, the last dense layer of the decapitated base
+   * model (i.e., the second-last dense layer of the original model) is
+   * unfrozen and updated through backpropagation.
+   *
+   * If specified, must be an integer > 0.
+   */
+  fineTuningEpochs?: number;
+
+  /**
+   * The optimizer for fine-tuning after the initial transfer-learning
+   * training.
+   *
+   * This parameter is used only if `fineTuningEpochs` is specified
+   * and is a positive integre.
+   *
+   * Default: 'sgd'.
+   */
+  fineTuningOptimizer?: string|tf.Optimizer;
+
+  /**
+   * tf.Callback to be used during the initial training (i.e., not
+   * the fine-tuning phase).
    */
   callback?: tf.CustomCallbackConfig;
+
+  /**
+   * tf.Callback to be used durnig the fine-tuning phase.
+   *
+   * This parameter is used only if `fineTuningEpochs` is specified
+   * and is a positive integer.
+   */
+  fineTuningCallback?: tf.CustomCallbackConfig;
 }
 
 /**
  * Parameters for a speech-command recognizer.
  */
 export interface RecognizerParams {
+  /**
+   * Audio sample window size per spectrogram column.
+   */
+  columnBufferLength?: number;
+
+  /**
+   * Audio sample window hopping size between two consecutive spectrogram
+   * columns.
+   */
+  columnHopLength?: number;
+
   /**
    * Total duration per spectragram, in milliseconds.
    */
@@ -341,6 +345,11 @@ export interface RecognizerParams {
    * FFT encoding size per spectrogram column.
    */
   fftSize?: number;
+
+  /**
+   * Post FFT filter size for spectorgram column.
+   */
+  filterSize?: number;
 
   /**
    * Sampling rate, in Hz.
@@ -360,7 +369,7 @@ export interface FeatureExtractor {
   /**
    * Start the feature extraction from the audio samples.
    */
-  start(): Promise<Float32Array[]|void>;
+  start(samples?: Float32Array): Promise<Float32Array[]|void>;
 
   /**
    * Stop the feature extraction.

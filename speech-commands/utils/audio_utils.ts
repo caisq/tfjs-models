@@ -15,6 +15,7 @@
  */
 import * as DCT from 'dct';
 import * as KissFFT from 'kissfft-js';
+import {nextPowerOfTwo} from './util';
 
 const SR = 16000;
 const hannWindowMap: {[key: number]: number[]} = {};
@@ -246,14 +247,4 @@ export class AudioUtils {
       offlineCtx.startRendering();
     });
   }
-}
-
-/**
- * Next power of two value for the given number.
- * @param value
- * @returns
- */
-function nextPowerOfTwo(value: number) {
-  const exponent = Math.ceil(Math.log2(value));
-  return 1 << exponent;
 }
