@@ -145,10 +145,10 @@ export async function plotSpectrogram(
 
   if (config.markMaxIntensityFrame) {
     const maxIntensityFrameIndex =
-        await SpeechCommands.getMaxIntensityFrameIndex({
-          data: frequencyData,
-          frameSize: fftSize
-        }).data();
+        await SpeechCommands
+            .getMaxIntensityFrameIndex(
+                {data: frequencyData, frameSize: fftSize})
+            .data();
     // Draw lines to mark the maximum-intensity frame.
     context.strokeStyle = 'black';
     context.beginPath();
@@ -189,6 +189,11 @@ export function plotPredictions(canvas, candidateWords, probabilities, topK) {
     for (const word in candidateWordSpans) {
       if (word === topWord) {
         candidateWordSpans[word].classList.add('candidate-word-active');
+        // Remove the active word highlighting after a period of time.
+        setTimeout(
+            () => candidateWordSpans[word].classList.remove(
+                'candidate-word-active'),
+            1000);
       } else {
         candidateWordSpans[word].classList.remove('candidate-word-active');
       }
