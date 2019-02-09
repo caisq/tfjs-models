@@ -20,12 +20,18 @@ import * as tf from '@tensorflow/tfjs';
 
 import * as SpeechCommands from '../src';
 
-import {hideCandidateWords, logToStatusDisplay, plotPredictions, populateCandidateWords, showCandidateWords} from './ui';
+import {drawActionTree, executeTimedMenuAction, parseActionTreeConfig} from './action-tree';
 import {DatasetViz, removeNonFixedChildrenFromWordDiv} from './dataset-vis';
+import {hideCandidateWords, logToStatusDisplay, plotPredictions, populateCandidateWords, showCandidateWords} from './ui';
 
 const startButton = document.getElementById('start');
+const startActionTreeButton = document.getElementById('start-action-tree');
 const stopButton = document.getElementById('stop');
+const actionTreeGroupDiv = document.getElementById('action-tree-group');
 const predictionCanvas = document.getElementById('prediction-canvas');
+
+const actionTreeConfigButton = document.getElementById('action-tree-config');
+const actionTreeConfigInner = document.getElementById('action-tree-config-inner');
 
 const probaThresholdInput = document.getElementById('proba-threshold');
 const epochsInput = document.getElementById('epochs');
@@ -82,6 +88,7 @@ let transferDurationMultiplier;
   recognizer.ensureModelLoaded()
       .then(() => {
         startButton.disabled = false;
+        startActionTreeButton.disabled = false;
         enterLearnWordsButton.disabled = false;
         loadTransferModelButton.disabled = false;
         deleteTransferModelButton.disabled = false;
@@ -106,6 +113,8 @@ let transferDurationMultiplier;
       });
 })();
 
+let timedMenu;
+
 startButton.addEventListener('click', () => {
   const activeRecognizer =
       transferRecognizer == null ? recognizer : transferRecognizer;
@@ -126,6 +135,82 @@ startButton.addEventListener('click', () => {
           })
       .then(() => {
         startButton.disabled = true;
+        startActionTreeButton.disabled = true;
+        stopButton.disabled = false;
+        showCandidateWords();
+        logToStatusDisplay('Streaming recognition started.');
+      })
+      .catch(err => {
+        logToStatusDisplay(
+            'ERROR: Failed to start streaming display: ' + err.message);
+      });
+});
+
+const cachedAudioObjects = {};
+function playAudio(audioFile) {
+  if (!(audioFile in cachedAudioObjects)) {
+    cachedAudioObjects[audioFile] = new Audio(audioFile);
+  }
+  cachedAudioObjects[audioFile].play();
+}
+
+startActionTreeButton.addEventListener('click',  () =>  {
+  actionTreeGroupDiv.style.display = 'block';
+  const activeRecognizer =
+      transferRecognizer == null ? recognizer : transferRecognizer;
+  populateCandidateWords(activeRecognizer.wordLabels());
+
+  // Constrct TimedMenu.
+  const timedMenuConfig = parseActionTreeConfig();
+  const timedMenuTickMillis = 500;
+  timedMenu = new SpeechCommands.TimedMenu(
+      timedMenuConfig, timedMenuTickMillis,
+      async (stateSequence, stateChangeType, timeOutAction) => {
+        if (stateChangeType === 'advance') {
+          playAudio('blip-c-04.wav');
+        } else if (stateChangeType === 'regress') {
+          playAudio('cancel-miss-chime.wav');
+          if (timeOutAction != null) {
+            executeTimedMenuAction(timeOutAction);
+          }
+        }
+        drawActionTree('action-tree', timedMenuConfig, stateSequence);
+      });
+
+  const suppressionTimeMillis = 1000;
+  activeRecognizer
+      .listen(
+          result => {
+            plotPredictions(
+                predictionCanvas, activeRecognizer.wordLabels(), result.scores,
+                3, suppressionTimeMillis);
+
+            const wordLabels = activeRecognizer.wordLabels();
+            let maxScore = -Infinity;
+            let winningWord;
+            for (let i = 0; i < wordLabels.length; ++i) {
+              if (result.scores[i] > maxScore) {
+                winningWord = wordLabels[i];
+                maxScore = result.scores[i];
+              }
+            }
+            console.log(
+                `Winning word: ${winningWord} (p=${maxScore.toFixed(4)})`);
+
+            const action = timedMenu.registerEvent(winningWord);
+            if (action != null) {
+              executeTimedMenuAction(action);
+            }
+            console.log(`Timed-menu action: ${action}`);
+          },
+          {
+            includeSpectrogram: true,
+            suppressionTimeMillis,
+            probabilityThreshold: Number.parseFloat(probaThresholdInput.value)
+          })
+      .then(() => {
+        startButton.disabled = true;
+        startActionTreeButton.disabled = true;
         stopButton.disabled = false;
         showCandidateWords();
         logToStatusDisplay('Streaming recognition started.');
@@ -137,11 +222,17 @@ startButton.addEventListener('click', () => {
 });
 
 stopButton.addEventListener('click', () => {
+  if (timedMenu != null) {
+    timedMenu.stopTimer();
+    timedMenu = null;
+    actionTreeGroupDiv.style.display = 'none';
+  }
   const activeRecognizer =
       transferRecognizer == null ? recognizer : transferRecognizer;
   activeRecognizer.stopListening()
       .then(() => {
         startButton.disabled = false;
+        startActionTreeButton.disabled = false;
         stopButton.disabled = true;
         hideCandidateWords();
         logToStatusDisplay('Streaming recognition stopped.');
@@ -313,6 +404,7 @@ function disableFileUploadControls() {
 startTransferLearnButton.addEventListener('click', async () => {
   startTransferLearnButton.disabled = true;
   startButton.disabled = true;
+  startActionTreeButton.disabled = true;
   startTransferLearnButton.textContent = 'Transfer learning starting...';
   await tf.nextFrame();
 
@@ -430,6 +522,7 @@ startTransferLearnButton.addEventListener('click', async () => {
   startTransferLearnButton.textContent = 'Transfer learning complete.';
   transferModelNameInput.disabled = false;
   startButton.disabled = false;
+  startActionTreeButton.disabled = false;
   evalModelOnDatasetButton.disabled = false;
 });
 
@@ -639,6 +732,18 @@ loadTransferModelButton.addEventListener('click', async () => {
   loadTransferModelButton.textContent = 'Model loaded!';
 });
 
+actionTreeConfigButton.addEventListener('click', () => {
+  if (actionTreeConfigButton.textContent.endsWith(' >>')) {
+    actionTreeConfigInner.style.display = 'inline-block';
+    actionTreeConfigButton.textContent =
+        actionTreeConfigButton.textContent.replace(' >>', ' <<');
+  } else {
+    actionTreeConfigInner.style.display = 'none';
+    actionTreeConfigButton.textContent =
+        actionTreeConfigButton.textContent.replace(' <<', ' >>');
+  }
+});
+
 modelIOButton.addEventListener('click', () => {
   if (modelIOButton.textContent.endsWith(' >>')) {
     transferModelSaveLoadInnerDiv.style.display = 'inline-block';
@@ -672,4 +777,3 @@ datasetIOButton.addEventListener('click', () => {
         datasetIOButton.textContent.replace(' <<', ' >>');
   }
 });
-

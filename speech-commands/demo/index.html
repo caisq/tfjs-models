@@ -5,6 +5,7 @@
 <head>
   <meta charset="UTF-8">
   <title>TensorFlow.js Speech Commands Model Demo</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/treant-js/1.0/Treant.css" rel="stylesheet" type="text/css">
   <link href="style.css" rel="stylesheet" type="text/css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -12,8 +13,32 @@
 <body>
   <div class="start-stop">
     <button id="start" disabled="true">Start</button>
+    <button id="start-action-tree" disabled="true">Start Action Tree</button>
     <button id="stop" disabled="true">Stop</button>
+    <div id="action-tree-group" style="display:none">
+      <div class="chart" id="action-tree" ></div>
+      <div id="action-tree-text-area">
+        <input id="action-tree-text-input" placeholder="Text entered through actions will appear here">
+        <button class="action-tree-text-button" id="action-tree-convert-morse">Convert Morse</button>
+        <button class="action-tree-text-button" id="action-tree-say">Say</button>
+        <button class="action-tree-text-button" id="action-tree-undo">Undo</button>
+        <button class="action-tree-text-button" id="action-tree-clear">Clear</button>
+        <button class="action-tree-text-button" id="action-tree-email">Email to</button>
+      </div>
+    </div>
   </div>
+
+  <div class="collapsible-region">
+    <button id="action-tree-config">Action Tree Settings >></button>
+    <div class="collapsible-region-inner" id="action-tree-config-inner">
+      <div>
+        <div>
+          <textarea cols="80" rows="16" id="action-tree-config-json"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class='main-model'>
     <div class="settings">
       <span style="display:none">Prob. threshold:</span>
@@ -52,7 +77,7 @@
 
     <div class="settings">
       <span>Epochs:</span>
-      <input class="settings" size="5" id="epochs" value="100">
+      <input class="settings" size="5" id="epochs" value="50">
       <span>Fine-tuning (FT) epochs:</span>
       <input class="settings" size="5" id="fine-tuning-epochs" value="0">
       <button id="start-transfer-learn" disabled="true">Start transfer learning</button>
@@ -85,6 +110,32 @@
       </div>
     </div>
   </div>
+
+  <button id="authorize_button" style="display: none;">Authorize</button>
+  <button id="signout_button" style="display: none;">Sign Out</button>
+
+  <div style="display:none;">
+    <span>Email recipient</span>
+    <input id="email-recipient" size="100" value=""></input>
+  </div>
+  <div style="display:none;">
+    <span>Email message</span>
+    <input id="email-text" size="100"></input>
+  </div>
+  <div>
+    <span>GMail API key</span>
+    <input id="gmail-api-key"></input>
+    <button id="activate-gmail-api">Activate GMail API</button>
+  </div>
+
+  <pre id="content" style="white-space: pre-wrap;"></pre>
+
+  <script src="https://apis.google.com/js/api.js"></script>
+  <!-- <script async defer src="https://apis.google.com/js/api.js"
+    onreadystatechange="if (this.readyState === 'complete') this.onload()">
+  </script> -->
+  <script src="https://cdn.jsdelivr.net/npm/raphael@2.2.7/raphael.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/treant-js@1.0.1/Treant.min.js"></script>
 
   <script src="index.js"></script>
 </body>

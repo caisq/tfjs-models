@@ -13,8 +13,8 @@
     "stats.js": "^0.17.0"
   },
   "scripts": {
-    "watch": "cross-env NODE_ENV=development parcel index.html --no-hmr --open",
-    "build": "cross-env NODE_ENV=production parcel build index.html  --no-minify --public-url ./",
+    "watch": "cross-env NODE_ENV=development parcel index.html assets/ --no-hmr --open",
+    "build": "cross-env NODE_ENV=production parcel build index.html --no-minify --public-url ./",
     "lint": "eslint .",
     "link-local": "yalc link @tensorflow-models/speech-commands"
   },
@@ -31,7 +31,9 @@
     "eslint": "^4.19.1",
     "eslint-config-google": "^0.9.1",
     "parcel-bundler": "~1.10.3",
+    "parcel-plugin-static-files-copy": "^2.0.0",
     "plotly.js-dist": "^1.39.4",
+    "treant-js": "^1.0.1",
     "yalc": "~1.0.0-pre.21"
   },
   "eslintConfig": {
@@ -50,5 +52,9 @@
   },
   "eslintIgnore": [
     "dist/"
-  ]
+  ],
+  "staticFiles": {
+    "staticPath": "assets",
+    "watcherGlob": "**"
+  }
 }

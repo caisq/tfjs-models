@@ -147,7 +147,7 @@ textarea {
   font-size: 17px;
 }
 
-.settings input {
+input {
   color: #0000ff;
   background-color: #ffffff;
   border-style: solid;
@@ -168,4 +168,71 @@ textarea {
 
 .eval-results {
   font-size: 17px;
+}
+
+#action-tree {
+  width: 100vw;
+  height: 40vh;
+}
+
+#action-tree-config-json {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* optional Container STYLES */
+#action-tree-group {
+  align-content: center;
+}
+
+#action-tree {
+  margin: 5px;
+  width: 100vw;
+  height: 65vh;
+  resize: both;
+}
+
+#action-tree-text-area {
+  display: inline-block;
+}
+
+#action-tree-text-input {
+  width: 75vw;
+  font-size: 17px;
+  padding: 15px;
+}
+
+#action-tree-email-recipient {
+  padding: 5px;
+}
+
+.Treant > p {
+  font-family: sans-serif;
+  font-weight: bold;
+  font-size: 13px;
+  background-color: #A2BDFD;
+  text-align: center;
+}
+
+.node-name { font-weight: bold;}
+
+.nodeExample1 {
+  padding: 1px;
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+  background-color: #ffffff;
+  border: 1px solid #000;
+  width: 100px;
+  font-family: sans-serif;
+  font-size: 11px;
+  text-align: center;
+  word-wrap: break-word;
+}
+
+.green {
+    background-color: #00F000;
+}
+
+.blue {
+    background-color: #A2BDFD;
 }
