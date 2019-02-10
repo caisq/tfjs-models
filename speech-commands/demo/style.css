@@ -55,6 +55,18 @@ select {
   position: relative;
 }
 
+#learning-region {
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+.transfer-label-span {
+  display: inline-block;
+  vertical-align: middle;
+  width: 8em;
+  max-width: 8em;
+}
+
 textarea {
   font-size: 20px;
   width: 90%;
@@ -126,9 +138,10 @@ textarea {
 .collapsible-region {
   font-size: 17px;
   border-style: solid;
-  border-width: 1px;
-  border-color: #808080;
+  border-width: 2px;
+  border-color: #888;
   border-radius: 10px;
+  margin: 5px;
 }
 
 .collapsible-region-inner {
@@ -145,6 +158,11 @@ textarea {
 
 .start-stop {
   font-size: 17px;
+}
+
+.inference-switch {
+  position: relative;
+  float: right;
 }
 
 input {
