@@ -17,6 +17,9 @@
 
 import {drawActionTree, executeTimedMenuAction, parseActionTreeConfig} from './action-tree';
 
+let recognizer;
+let transferRecognizer;  // TODO(cais): Make use of these.
+
 const toTrainingButton = document.getElementById('to-training');
 
 toTrainingButton.addEventListener('click', () => {

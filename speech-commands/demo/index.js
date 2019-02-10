@@ -21,6 +21,7 @@ import * as tf from '@tensorflow/tfjs';
 import * as SpeechCommands from '../src';
 
 import {DatasetViz, removeNonFixedChildrenFromWordDiv} from './dataset-vis';
+import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferRecognizer, registerTransferRecognizerCreationCallback, enableLoadAndDeleteModelButtons, enableSaveModelButton} from './model-io';
 import {hideCandidateWords, logToStatusDisplay, plotPredictions, populateCandidateWords, showCandidateWords} from './ui';
 
 const toInferenceButton = document.getElementById('to-inference');
@@ -42,13 +43,6 @@ const uploadFilesButton = document.getElementById('upload-dataset');
 const evalModelOnDatasetButton = document.getElementById('eval-model-on-dataset');
 const evalResultsSpan = document.getElementById('eval-results');
 
-const modelIOButton = document.getElementById('model-io');
-const transferModelSaveLoadInnerDiv = document.getElementById('transfer-model-save-load-inner');
-const loadTransferModelButton = document.getElementById('load-transfer-model');
-const saveTransferModelButton = document.getElementById('save-transfer-model');
-const savedTransferModelsSelect = document.getElementById('saved-transfer-models');
-const deleteTransferModelButton = document.getElementById('delete-transfer-model');
-
 const BACKGROUND_NOISE_TAG = SpeechCommands.BACKGROUND_NOISE_TAG;
 
 /**
@@ -66,9 +60,13 @@ const startTransferLearnButton =
 const MIN_EXAMPLES_PER_CLASS = 16;
 
 let recognizer;
-let transferWords;
 let transferRecognizer;
+let transferWords;
 let transferDurationMultiplier;
+
+registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
+  transferRecognizer = createdTransferRecognizer;
+});
 
 (async function() {
   logToStatusDisplay('Creating recognizer...');
@@ -79,13 +77,15 @@ let transferDurationMultiplier;
   // Make sure the tf.Model is loaded through HTTP. If this is not
   // called here, the tf.Model will be loaded the first time
   // `listen()` is called.
+  console.log('Ensuring model loaded...');
   recognizer.ensureModelLoaded()
       .then(() => {
+        registerRecognizer(recognizer);
         startButton.disabled = false;
         enterLearnWordsButton.disabled = false;
-        loadTransferModelButton.disabled = false;
-        deleteTransferModelButton.disabled = false;
+        enableLoadAndDeleteModelButtons();
 
+        console.log('Setting name of input words');  // DEBUG
         transferModelNameInput.value = `model-${getDateString()}`;
 
         logToStatusDisplay('Model loaded.');
@@ -101,6 +101,7 @@ let transferDurationMultiplier;
             `${JSON.stringify(recognizer.modelInputShape())}`);
       })
       .catch(err => {
+        console.error(err);
         logToStatusDisplay(
             'Failed to load model for recognizer: ' + err.message);
       });
@@ -304,6 +305,7 @@ enterLearnWordsButton.addEventListener('click', () => {
   }
 
   transferRecognizer = recognizer.createTransfer(modelName);
+  registerTransferRecognizer(transferRecognizer);
   createWordDivs(transferWords);
 
   scrollToPageBottom();
@@ -440,7 +442,7 @@ startTransferLearnButton.addEventListener('click', async () => {
       }
     }
   });
-  saveTransferModelButton.disabled = false;
+  enableSaveModelButton();
   transferModelNameInput.value = transferRecognizer.name;
   transferModelNameInput.disabled = true;
   startTransferLearnButton.textContent = 'Transfer learning complete.';
@@ -521,6 +523,7 @@ async function loadDatasetInTransferRecognizer(serialized) {
 
   if (transferRecognizer == null) {
     transferRecognizer = recognizer.createTransfer(modelName);
+    registerTransferRecognizer(transferRecognizer);
   }
   transferRecognizer.loadExamples(serialized);
   const exampleCounts = transferRecognizer.countExamples();
@@ -613,68 +616,6 @@ evalModelOnDatasetButton.addEventListener('click', async () => {
   datasetFileReader.onerror = () =>
       console.error(`Failed to binary data from file '${dataFile.name}'.`);
   datasetFileReader.readAsArrayBuffer(files[0]);
-});
-
-async function populateSavedTransferModelsSelect() {
-  const savedModelKeys = await SpeechCommands.listSavedTransferModels();
-  while (savedTransferModelsSelect.firstChild) {
-    savedTransferModelsSelect.removeChild(
-        savedTransferModelsSelect.firstChild);
-  }
-  if (savedModelKeys.length > 0) {
-    for (const key of savedModelKeys) {
-      const option = document.createElement('option');
-      option.textContent = key;
-      option.id = key;
-      savedTransferModelsSelect.appendChild(option);
-    }
-    loadTransferModelButton.disabled = false;
-  }
-}
-
-saveTransferModelButton.addEventListener('click', async () => {
-  await transferRecognizer.save();
-  await populateSavedTransferModelsSelect();
-  saveTransferModelButton.textContent = 'Model saved!';
-  saveTransferModelButton.disabled = true;
-});
-
-loadTransferModelButton.addEventListener('click', async () => {
-  const transferModelName = savedTransferModelsSelect.value;
-  await recognizer.ensureModelLoaded();
-  transferRecognizer = recognizer.createTransfer(transferModelName);
-  await transferRecognizer.load();
-  transferModelNameInput.value = transferModelName;
-  transferModelNameInput.disabled = true;
-  learnWordsInput.value = transferRecognizer.wordLabels().join(',');
-  learnWordsInput.disabled = true;
-  durationMultiplierSelect.disabled = true;
-  enterLearnWordsButton.disabled = true;
-  saveTransferModelButton.disabled = true;
-  loadTransferModelButton.disabled = true;
-  loadTransferModelButton.textContent = 'Model loaded!';
-});
-
-modelIOButton.addEventListener('click', () => {
-  if (modelIOButton.textContent.endsWith(' >>')) {
-    transferModelSaveLoadInnerDiv.style.display = 'inline-block';
-    modelIOButton.textContent =
-        modelIOButton.textContent.replace(' >>', ' <<');
-  } else {
-    transferModelSaveLoadInnerDiv.style.display = 'none';
-    modelIOButton.textContent =
-        modelIOButton.textContent.replace(' <<', ' >>');
-  }
-});
-
-deleteTransferModelButton.addEventListener('click', async () => {
-  const transferModelName = savedTransferModelsSelect.value;
-  await recognizer.ensureModelLoaded();
-  transferRecognizer = recognizer.createTransfer(transferModelName);
-  await SpeechCommands.deleteSavedTransferModel(transferModelName);
-  deleteTransferModelButton.disabled = true;
-  deleteTransferModelButton.textContent = `Deleted "${transferModelName}"`;
-  await populateSavedTransferModelsSelect();
 });
 
 datasetIOButton.addEventListener('click', () => {
