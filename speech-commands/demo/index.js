@@ -63,7 +63,7 @@ const startTransferLearnButton =
     document.getElementById('start-transfer-learn');
 
 // Minimum required number of examples per class for transfer learning.
-const MIN_EXAMPLES_PER_CLASS = 8;
+const MIN_EXAMPLES_PER_CLASS = 16;
 
 let recognizer;
 let transferWords;
@@ -202,6 +202,7 @@ function createWordDivs(transferWords) {
     wordDivs[word] = wordDiv;
     wordDiv.setAttribute('word', word);
     const button = document.createElement('button');
+    button.classList.add('word-button');
     button.setAttribute('isFixed', 'true');
     button.style['display'] = 'inline-block';
     button.style['vertical-align'] = 'middle';
@@ -220,7 +221,7 @@ function createWordDivs(transferWords) {
       durationInput = document.createElement('input');
       durationInput.setAttribute('isFixed', 'true');
       durationInput.value = '10';
-      durationInput.style['width'] = '100px';
+      durationInput.style['width'] = '70px';
       wordDiv.appendChild(durationInput);
       // Create time-unit span for noise duration.
       const timeUnitSpan = document.createElement('span');
@@ -293,6 +294,9 @@ enterLearnWordsButton.addEventListener('click', () => {
   learnWordsInput.disabled = true;
   enterLearnWordsButton.disabled = true;
   transferWords = learnWordsInput.value.trim().split(',').map(w => w.trim());
+  if (transferWords.indexOf(BACKGROUND_NOISE_TAG)) {
+    transferWords.push(BACKGROUND_NOISE_TAG);
+  }
   transferWords.sort();
   if (transferWords == null || transferWords.length <= 1) {
     logToStatusDisplay('ERROR: Invalid list of transfer words.');

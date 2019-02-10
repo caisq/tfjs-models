@@ -90,6 +90,13 @@ textarea {
   margin: 3px;
 }
 
+.word-button {
+  display: inline-block;
+  width: 150px;
+  max-width: 150px;
+  font-size: 90%;
+}
+
 .candidate-word {
   border: 1px solid gray;
   background-color: lightyellow;
