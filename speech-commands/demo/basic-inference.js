@@ -30,7 +30,7 @@ export function setRecognizer(r) {
 if (startButton != null) {
   startButton.addEventListener('click', () => {
     populateCandidateWords(recognizer.wordLabels());
-  
+
     const suppressionTimeMillis = 1000;
     recognizer
         .listen(

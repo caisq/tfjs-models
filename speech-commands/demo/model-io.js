@@ -21,6 +21,8 @@ const modelIOButton = document.getElementById('model-io');
 const transferModelSaveLoadInnerDiv = document.getElementById('transfer-model-save-load-inner');
 
 const loadTransferModelButton = document.getElementById('load-transfer-model');
+console.log(`loadTransferModelButton:`, loadTransferModelButton,
+            loadTransferModelButton.disabled);  // DEBUG
 const saveTransferModelButton = document.getElementById('save-transfer-model');
 const savedTransferModelsSelect = document.getElementById('saved-transfer-models');
 const deleteTransferModelButton = document.getElementById('delete-transfer-model');
@@ -33,6 +35,10 @@ const enterLearnWordsButton = document.getElementById('enter-learn-words');
 let recognizer;
 export function registerRecognizer(inputRecognizer) {
   recognizer = inputRecognizer;
+  console.log(`recognizer!!!`);  // DEBUG
+  if (recognizer != null) {
+    loadTransferModelButton.disabled = false;
+  }
 }
 
 let transferRecognizer;
@@ -122,7 +128,6 @@ export async function populateSavedTransferModelsSelect() {
       option.id = key;
       savedTransferModelsSelect.appendChild(option);
     }
-    loadTransferModelButton.disabled = false;
   }
 }
 

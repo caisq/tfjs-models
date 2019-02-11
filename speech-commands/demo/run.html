@@ -7,6 +7,10 @@
   <title>TensorFlow.js Speech Commands Model Demo</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/treant-js/1.0/Treant.css" rel="stylesheet" type="text/css">
   <link href="style.css" rel="stylesheet" type="text/css">
+
+  <link href="https://cdn.jsdelivr.net/npm/jsoneditor@5.28.2/dist/jsoneditor.css" rel="stylesheet" type="text/css">
+  <script src="https://cdn.jsdelivr.net/npm/jsoneditor@5.28.2/dist/jsoneditor.min.js"></script>
+
   <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
@@ -34,13 +38,11 @@
   </div>
 
   <div class="collapsible-region">
-    <button id="action-tree-config">Action Tree Settings >></button>
+    <div>
+      <button id="action-tree-config">Action Tree Settings >></button>
+    </div>
     <div class="collapsible-region-inner" id="action-tree-config-inner">
-      <div>
-        <div>
-          <textarea cols="80" rows="16" id="action-tree-config-json"></textarea>
-        </div>
-      </div>
+        <div id="json-editor"></div>
     </div>
   </div>
 

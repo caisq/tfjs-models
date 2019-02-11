@@ -478,7 +478,7 @@ async function loadDatasetInTransferRecognizer(serialized) {
   if (transferRecognizer == null) {
     transferRecognizer = recognizer.createTransfer(modelName);
     registerTransferRecognizer(transferRecognizer);
-    basicInference.setRecognizer(transferRecognizer); 
+    basicInference.setRecognizer(transferRecognizer);
   }
   transferRecognizer.loadExamples(serialized);
   const exampleCounts = transferRecognizer.countExamples();

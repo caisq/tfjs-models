@@ -22,7 +22,10 @@ import * as basicInference from './basic-inference';
 import * as SpeechCommands from '../src';
 
 const startButton = document.getElementById('start');
+const stopButton = document.getElementById('stop');
 const startActionTreeButton = document.getElementById('start-action-tree');
+const probaThresholdInput = document.getElementById('proba-threshold');
+const actionTreeGroupDiv = document.getElementById('action-tree-group');
 
 let recognizer;
 let transferRecognizer;
@@ -58,6 +61,78 @@ actionTreeConfigButton.addEventListener('click', () => {
   }
 });
 
+let timedMenu;
+
+startActionTreeButton.addEventListener('click',  async () =>  {
+  actionTreeGroupDiv.style.display = 'block';
+  const activeRecognizer =
+      transferRecognizer == null ? recognizer : transferRecognizer;
+
+   // Constrct TimedMenu.
+  const timedMenuConfig = parseActionTreeConfig();
+  const timedMenuTickMillis = 500;
+  timedMenu = new SpeechCommands.TimedMenu(
+      timedMenuConfig, timedMenuTickMillis,
+      async (stateSequence, stateChangeType, timeOutAction) => {
+        if (stateChangeType === 'advance') {
+          playAudio('blip-c-04.wav');
+        } else if (stateChangeType === 'regress') {
+          playAudio('cancel-miss-chime.wav');
+          if (timeOutAction != null) {
+            executeTimedMenuAction(timeOutAction);
+          }
+        }
+        drawActionTree('action-tree', timedMenuConfig, stateSequence);
+      });
+
+   const suppressionTimeMillis = 1000;
+   await activeRecognizer.listen(result => {
+      const wordLabels = activeRecognizer.wordLabels();
+      let maxScore = -Infinity;
+      let winningWord;
+      for (let i = 0; i < wordLabels.length; ++i) {
+        if (result.scores[i] > maxScore) {
+          winningWord = wordLabels[i];
+          maxScore = result.scores[i];
+        }
+      }
+      console.log(
+          `Winning word: ${winningWord} (p=${maxScore.toFixed(4)})`);
+
+      const action = timedMenu.registerEvent(winningWord);
+      if (action != null) {
+        executeTimedMenuAction(action);
+      }
+      console.log(`Timed-menu action: ${action}`);
+    }, {
+      includeSpectrogram: true,
+      suppressionTimeMillis,
+      probabilityThreshold: Number.parseFloat(probaThresholdInput.value)
+    });
+    startButton.disabled = true;
+    startActionTreeButton.disabled = true;
+    stopButton.disabled = false;
+});
+
+
+stopButton.addEventListener('click', () => {
+  console.log('Callback stop!');  // DEBUG
+  if (timedMenu != null) {
+    timedMenu.stopTimer();
+    timedMenu = null;
+    actionTreeGroupDiv.style.display = 'none';
+  }
+  startActionTreeButton.disabled = false;
+});
+
+const cachedAudioObjects = {};
+function playAudio(audioFile) {
+  if (!(audioFile in cachedAudioObjects)) {
+    cachedAudioObjects[audioFile] = new Audio(audioFile);
+  }
+  cachedAudioObjects[audioFile].play();
+}
+
 (async function() {
   recognizer = SpeechCommands.create('BROWSER_FFT');
 
@@ -65,6 +140,9 @@ actionTreeConfigButton.addEventListener('click', () => {
     registerRecognizer(recognizer);
     basicInference.setRecognizer(recognizer);
   });
+
+  const modelIOButton = document.getElementById('model-io');
+  modelIOButton.click();
 
   populateSavedTransferModelsSelect();
 })();

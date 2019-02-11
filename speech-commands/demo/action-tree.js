@@ -19,9 +19,6 @@ import {handleEmailAuthClick} from './emailing';
 import {MorseTextBox} from './morse-text-box';
 import {ttsSpeak} from './tts';
 
-const actionTreeConfigJsonInput = document.getElementById('action-tree-config-json');
-const actionTreeTextInput = document.getElementById('action-tree-text-input');
-
 const initialActionTreeConfig = {
   nodes: [{
     name: 'hello',
@@ -113,7 +110,9 @@ const initialActionTreeConfig = {
     }]
   }]
 };
-actionTreeConfigJsonInput.value = JSON.stringify(initialActionTreeConfig, null, 2);
+const actionTreeJSONEditor = new JSONEditor(
+    document.getElementById("json-editor"), {mode: 'code'});
+actionTreeJSONEditor.set(initialActionTreeConfig);
 
 function getTreantConfig(containerId, timedMenuConfig, stateSequence) {
   const treantConfig = {
@@ -185,7 +184,10 @@ export function drawActionTree(containerId, timedMenuConfig, stateSequence) {
   }
   const treantConfig =
       getTreantConfig(containerId, timedMenuConfig, stateSequence);
-  new Treant(treantConfig);
+  const tree = new Treant(treantConfig);
+  console.log('tree:', tree);  // DEBUG
+  console.log('tree.node:', tree.node);  // DEBUG
+  console.log('tree.nodes:', tree.nodes);  // DEBUG
 }
 
 const morseTextBox = new MorseTextBox(
@@ -255,5 +257,5 @@ export function executeTimedMenuAction(action) {
 }
 
 export function parseActionTreeConfig() {
-  return JSON.parse(actionTreeConfigJsonInput.value);
+  return actionTreeJSONEditor.get();
 }
