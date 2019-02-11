@@ -16,14 +16,31 @@
  */
 
 import {drawActionTree, executeTimedMenuAction, parseActionTreeConfig} from './action-tree';
+import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferRecognizerCreationCallback} from './model-io';
+import * as basicInference from './basic-inference';
+
+import * as SpeechCommands from '../src';
+
+const startButton = document.getElementById('start');
+const startActionTreeButton = document.getElementById('start-action-tree');
 
 let recognizer;
-let transferRecognizer;  // TODO(cais): Make use of these.
+let transferRecognizer;
+
+registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
+  transferRecognizer = createdTransferRecognizer;
+  basicInference.setRecognizer(transferRecognizer);
+  console.log(
+      `Transfer recognizer loaded with parameters: ` +
+      `${JSON.stringify(transferRecognizer.params())}`);
+  startButton.disabled = false;
+  startActionTreeButton.disabled = false;
+});
 
 const toTrainingButton = document.getElementById('to-training');
 
 toTrainingButton.addEventListener('click', () => {
-  window.location.href = './index.html';
+  window.location.href = './train.html';
 });
 
 const actionTreeConfigButton = document.getElementById('action-tree-config');
@@ -40,3 +57,14 @@ actionTreeConfigButton.addEventListener('click', () => {
         actionTreeConfigButton.textContent.replace(' <<', ' >>');
   }
 });
+
+(async function() {
+  recognizer = SpeechCommands.create('BROWSER_FFT');
+
+  recognizer.ensureModelLoaded().then(() => {
+    registerRecognizer(recognizer);
+    basicInference.setRecognizer(recognizer);
+  });
+
+  populateSavedTransferModelsSelect();
+})();

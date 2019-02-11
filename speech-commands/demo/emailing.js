@@ -49,7 +49,7 @@ function initClient() {
     discoveryDocs: DISCOVERY_DOCS,
     scope: SCOPES
   }).then(function () {
-    console.log('iniClient success');
+    console.log('initClient success');
     activateGMailAPIButton.textContent = 'GMail API activated';
     activateGMailAPIButton.disabled = true;
     // Listen for sign-in state changes.

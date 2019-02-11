@@ -19,12 +19,16 @@
     <div id="action-tree-group" style="display:none">
       <div class="chart" id="action-tree" ></div>
       <div id="action-tree-text-area">
-        <input id="action-tree-text-input" placeholder="Text entered through actions will appear here">
-        <button class="action-tree-text-button" id="action-tree-convert-morse">Convert Morse</button>
-        <button class="action-tree-text-button" id="action-tree-say">Say</button>
-        <button class="action-tree-text-button" id="action-tree-undo">Undo</button>
-        <button class="action-tree-text-button" id="action-tree-clear">Clear</button>
-        <button class="action-tree-text-button" id="action-tree-email">Email to</button>
+        <div>
+          <input id="action-tree-text-input" placeholder="Text entered through actions will appear here">
+        </div>
+        <div>
+          <button class="action-tree-text-button" id="action-tree-convert-morse">Convert Morse</button>
+          <button class="action-tree-text-button" id="action-tree-say">Say</button>
+          <button class="action-tree-text-button" id="action-tree-undo">Undo</button>
+          <button class="action-tree-text-button" id="action-tree-clear">Clear</button>
+          <button class="action-tree-text-button" id="action-tree-email">Email to</button>
+        </div>
       </div>
     </div>
   </div>
@@ -104,8 +108,7 @@
   <script src="https://cdn.jsdelivr.net/npm/raphael@2.2.7/raphael.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/treant-js@1.0.1/Treant.min.js"></script>
 
-  <script src="inference.js"></script>
-  <script src="model-io.js"></script>
+  <script src="run.js"></script>
 </body>
 
 </html>

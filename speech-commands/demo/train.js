@@ -22,15 +22,13 @@ import * as SpeechCommands from '../src';
 
 import {DatasetViz, removeNonFixedChildrenFromWordDiv} from './dataset-vis';
 import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferRecognizer, registerTransferRecognizerCreationCallback, enableLoadAndDeleteModelButtons, enableSaveModelButton} from './model-io';
-import {hideCandidateWords, logToStatusDisplay, plotPredictions, populateCandidateWords, showCandidateWords} from './ui';
+import {logToStatusDisplay} from './ui';
+import * as basicInference from './basic-inference';
 
 const toInferenceButton = document.getElementById('to-inference');
 
 const startButton = document.getElementById('start');
-const stopButton = document.getElementById('stop');
-const predictionCanvas = document.getElementById('prediction-canvas');
 
-const probaThresholdInput = document.getElementById('proba-threshold');
 const epochsInput = document.getElementById('epochs');
 const fineTuningEpochsInput = document.getElementById('fine-tuning-epochs');
 
@@ -66,6 +64,7 @@ let transferDurationMultiplier;
 
 registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
   transferRecognizer = createdTransferRecognizer;
+  basicInference.setRecognizer(transferRecognizer);
 });
 
 (async function() {
@@ -77,10 +76,11 @@ registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
   // Make sure the tf.Model is loaded through HTTP. If this is not
   // called here, the tf.Model will be loaded the first time
   // `listen()` is called.
-  console.log('Ensuring model loaded...');
+  console.log('Ensuring model loaded ...');
   recognizer.ensureModelLoaded()
       .then(() => {
         registerRecognizer(recognizer);
+        basicInference.setRecognizer(recognizer);
         startButton.disabled = false;
         enterLearnWordsButton.disabled = false;
         enableLoadAndDeleteModelButtons();
@@ -108,37 +108,7 @@ registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
 })();
 
 toInferenceButton.addEventListener('click', () => {
-  window.location.href = './inference.html';
-});
-
-startButton.addEventListener('click', () => {
-  const activeRecognizer =
-      transferRecognizer == null ? recognizer : transferRecognizer;
-  populateCandidateWords(activeRecognizer.wordLabels());
-
-  const suppressionTimeMillis = 1000;
-  activeRecognizer
-      .listen(
-          result => {
-            plotPredictions(
-                predictionCanvas, activeRecognizer.wordLabels(), result.scores,
-                3, suppressionTimeMillis);
-          },
-          {
-            includeSpectrogram: true,
-            suppressionTimeMillis,
-            probabilityThreshold: Number.parseFloat(probaThresholdInput.value)
-          })
-      .then(() => {
-        startButton.disabled = true;
-        stopButton.disabled = false;
-        showCandidateWords();
-        logToStatusDisplay('Streaming recognition started.');
-      })
-      .catch(err => {
-        logToStatusDisplay(
-            'ERROR: Failed to start streaming display: ' + err.message);
-      });
+  window.location.href = './run.html';
 });
 
 const cachedAudioObjects = {};
@@ -148,22 +118,6 @@ function playAudio(audioFile) {
   }
   cachedAudioObjects[audioFile].play();
 }
-
-stopButton.addEventListener('click', () => {
-  const activeRecognizer =
-      transferRecognizer == null ? recognizer : transferRecognizer;
-  activeRecognizer.stopListening()
-      .then(() => {
-        startButton.disabled = false;
-        stopButton.disabled = true;
-        hideCandidateWords();
-        logToStatusDisplay('Streaming recognition stopped.');
-      })
-      .catch(err => {
-        logToStatusDisplay(
-            'ERROR: Failed to stop streaming display: ' + err.message);
-      });
-});
 
 /**
  * Transfer learning logic.
@@ -524,6 +478,7 @@ async function loadDatasetInTransferRecognizer(serialized) {
   if (transferRecognizer == null) {
     transferRecognizer = recognizer.createTransfer(modelName);
     registerTransferRecognizer(transferRecognizer);
+    basicInference.setRecognizer(transferRecognizer); 
   }
   transferRecognizer.loadExamples(serialized);
   const exampleCounts = transferRecognizer.countExamples();

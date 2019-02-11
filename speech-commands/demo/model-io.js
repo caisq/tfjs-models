@@ -45,17 +45,20 @@ export function registerTransferRecognizerCreationCallback(callback) {
   transferRecognizerCreationCallback = callback;
 }
 
-modelIOButton.addEventListener('click', () => {
-  if (modelIOButton.textContent.endsWith(' >>')) {
-    transferModelSaveLoadInnerDiv.style.display = 'inline-block';
-    modelIOButton.textContent =
-        modelIOButton.textContent.replace(' >>', ' <<');
-  } else {
-    transferModelSaveLoadInnerDiv.style.display = 'none';
-    modelIOButton.textContent =
-        modelIOButton.textContent.replace(' <<', ' >>');
-  }
-});
+if (modelIOButton != null) {
+  modelIOButton.addEventListener('click', () => {
+
+    if (modelIOButton.textContent.endsWith(' >>')) {
+      transferModelSaveLoadInnerDiv.style.display = 'inline-block';
+      modelIOButton.textContent =
+          modelIOButton.textContent.replace(' >>', ' <<');
+    } else {
+      transferModelSaveLoadInnerDiv.style.display = 'none';
+      modelIOButton.textContent =
+          modelIOButton.textContent.replace(' <<', ' >>');
+    }
+  });
+}
 
 loadTransferModelButton.addEventListener('click', async () => {
   const transferModelName = savedTransferModelsSelect.value;
@@ -75,9 +78,13 @@ loadTransferModelButton.addEventListener('click', async () => {
   if (enterLearnWordsButton != null) {
     enterLearnWordsButton.disabled = true;
   }
-  saveTransferModelButton.disabled = true;
-  loadTransferModelButton.disabled = true;
-  loadTransferModelButton.textContent = 'Model loaded!';
+  if (saveTransferModelButton != null) {
+    saveTransferModelButton.disabled = true;
+  }
+  if (loadTransferModelButton != null) {
+    loadTransferModelButton.disabled = true;
+    loadTransferModelButton.textContent = 'Model loaded!';
+  }
   if (transferRecognizerCreationCallback != null) {
     transferRecognizerCreationCallback(transferRecognizer);
   }
