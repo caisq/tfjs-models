@@ -130,21 +130,24 @@ function getTreantConfig(containerId, timedMenuConfig, stateSequence) {
     nodeStructure: {  // Root node.
       text: {
         name: ''
-      }
+      },
+      HTMLid: 'tree-level-0',  // TODO(cais): Carry tree-level information here.
+      HTMLclass: 'blue'
     }
   }
   getTreantConfigInner(
-      timedMenuConfig.nodes, stateSequence, treantConfig.nodeStructure);
+      timedMenuConfig.nodes, stateSequence, treantConfig.nodeStructure, 1);
   return treantConfig;
 }
 
-function getTreantConfigInner(timedMenuNodes, stateSequence, treantConfig) {
+function getTreantConfigInner(timedMenuNodes, stateSequence, treantConfig, level) {
   treantConfig.children = [];
   for (const node of timedMenuNodes) {
     const nodeConfig = {
       text: {
         name: node.name
-      }
+      },
+      HTMLid: `tree-level-${level}-${node.name}`
     };
     const stateMatch =
         stateSequence.length > 0 && stateSequence[0] === node.name;
@@ -171,7 +174,8 @@ function getTreantConfigInner(timedMenuNodes, stateSequence, treantConfig) {
         getTreantConfigInner(
             node.children,
             stateMatch ? stateSequence.slice(1) : [],
-            treantConfig.children[treantConfig.children.length - 1]);
+            treantConfig.children[treantConfig.children.length - 1],
+            level + 1);
     }
   }
   return treantConfig;
@@ -184,10 +188,45 @@ export function drawActionTree(containerId, timedMenuConfig, stateSequence) {
   }
   const treantConfig =
       getTreantConfig(containerId, timedMenuConfig, stateSequence);
-  const tree = new Treant(treantConfig);
-  console.log('tree:', tree);  // DEBUG
-  console.log('tree.node:', tree.node);  // DEBUG
-  console.log('tree.nodes:', tree.nodes);  // DEBUG
+  new Treant(treantConfig);
+  // Scroll to the active element(s).
+  scrollToLastNode();
+}
+
+function scrollToLastNode() {
+  const actionTreeElement = document.getElementById('action-tree');
+  const nodeElements = document.getElementsByClassName('blue');
+  if (nodeElements.length === 0) {
+    return;
+  }
+
+  let offsetTop;
+  let offsetLeft;
+  let currentTreeLevel = -1;
+  for (const element of nodeElements) {
+    const treeLevel = parseTreeLevelFromElementID(element.id);
+    if (treeLevel > currentTreeLevel) {
+      // Tree nodes closer to the leaves (i.e., with higher value of tree-level)
+      // take precedence.
+      offsetTop = element.offsetTop;
+      offsetLeft = element.offsetLeft;
+      currentTreeLevel = treeLevel;
+    }
+  }
+  // TODO(cais): Add animation.
+
+  const targetScrollTop = offsetTop - actionTreeElement.offsetHeight / 2;
+  const targetScrollLeft = offsetLeft - actionTreeElement.offsetWidth / 2;
+  actionTreeElement.scrollTop = Math.max(0, targetScrollTop);
+  actionTreeElement.scrollLeft = Math.max(0, targetScrollLeft);
+}
+
+function parseTreeLevelFromElementID(id) {
+  if (!(id.startsWith('tree-level-'))) {
+    throw new Error(
+        `Expected element ID to start with "tree-level-", but got ID ${id}`);
+  }
+  return Number.parseInt(id.split('-')[2]);
 }
 
 const morseTextBox = new MorseTextBox(
