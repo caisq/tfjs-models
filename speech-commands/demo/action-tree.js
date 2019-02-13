@@ -21,128 +21,134 @@ import {handleEmailAuthClick} from './emailing';
 import {MorseTextBox} from './morse-text-box';
 import {ttsSpeak} from './tts';
 
+class ActionTreeSet {
+  constructor() {
+    this.trees_ = {};
+  }
+
+  add(name, actionTreeObject) {
+    util.assert(
+        name != null && typeof name === 'string' && name.length > 0,
+        `Expected name to be a non-empty string, but got ${name}`);
+    util.assert(
+        typeof actionTreeObject === 'object',
+        `Expected actionTreeObject to be an object, ` +
+            `but got ${actionTreeObject}`);
+    if (name in this.trees_) {
+      throw new Error(`There is already an action tree with the name ${name}`);
+    }
+  }
+
+  names() {
+    return Object.keys(this.trees_);
+  }
+
+  remove(name) {
+    util.assert(
+        name in this.trees_, `Attempt to delete nonexistent tree: ${name}`);
+    delete this.trees_[name];
+  }
+}
+
 const initialActionTreeConfig = {
-  nodes: [{
-    name: 'hello',
-    timeToLiveMillis: 5000,
-    timeOutAction: 'say Node 1 has timed out.',
-    children: [{
+  nodes: [
+    {
       name: 'hello',
       timeToLiveMillis: 5000,
-      timeOutAction: 'say Node 2 has timed out.',
-      children: [{
-        name: 'hello',
-        action: 'say how are you'
-      }, {
-        name: 'testing',
-        action: 'say what\'s your name'
-      }]
-    }, {
+      timeOutAction: 'say Node 1 has timed out.',
+      children: [
+        {
+          name: 'hello',
+          timeToLiveMillis: 5000,
+          timeOutAction: 'say Node 2 has timed out.',
+          children: [
+            {name: 'hello', action: 'say how are you'},
+            {name: 'testing', action: 'say what\'s your name'}
+          ]
+        },
+        {
+          name: 'testing',
+          timeToLiveMillis: 5000,
+          children: [
+            {name: 'hello', action: 'say i am fine'},
+            {name: 'testing', action: 'say goodbye'}
+          ]
+        }
+      ]
+    },
+    {
       name: 'testing',
       timeToLiveMillis: 5000,
-      children: [{
-        name: 'hello',
-        action: 'say i am fine'
-      }, {
-        name: 'testing',
-        action: 'say goodbye'
-      }]
-    }]
-  }, {
-    name: 'testing',
-    timeToLiveMillis: 5000,
-    children: [{
-      name: 'hello',
-      action: 'email shanqing.cai@gmail.com i am okay'
-    }, {
-      name: 'testing',
-      action: 'email shanqing.cai@gmail.com help'
-    }]
-  }, {
-    name: 'aa',
-    timeToLiveMillis: 5000,
-    children: [{
+      children: [
+        {name: 'hello', action: 'email shanqing.cai@gmail.com i am okay'},
+        {name: 'testing', action: 'email shanqing.cai@gmail.com help'}
+      ]
+    },
+    {
       name: 'aa',
       timeToLiveMillis: 5000,
-      children: [{
-        name: 'aa',
-        regressSteps: 1,
-        action: 'type .'
-      }, {
-        name: 'ee',
-        regressSteps: 1,
-        action: 'type -'
-      }, {
-        name: 'uu',
-        timeToLiveMillis: 5000,
-        children: [{
+      children: [
+        {
           name: 'aa',
-          regressSteps: 2,
-          action: 'typeSpace'
-        }, {
-          name: 'ee',
-          regressSteps: 2,
-          action: 'morseConvertText'
-        }]
-      }]
-    }, {
-      name: 'uu',
-      timeToLiveMillis: 5000,
-      children: [{
-        name: 'aa',
-        timeToLiveMillis: 5000,
-        children: [{
-          name: 'aa',
-          regressSteps: 1,
-          action: 'sayText'
-        }, {
-          name: 'ee',
-          regressSteps: 1,
-          action: 'emailText shanqing.cai@gmail.com'
-        }]
-      }, {
-        name: 'ee',
-        regressSteps: 2,
-        action: 'undoText'
-      }, {
-        name: 'uu',
-        regressSteps: 2,
-        action: 'clearText'
-      }]
-    }]
-  }]
+          timeToLiveMillis: 5000,
+          children: [
+            {name: 'aa', regressSteps: 1, action: 'type .'},
+            {name: 'ee', regressSteps: 1, action: 'type -'}, {
+              name: 'uu',
+              timeToLiveMillis: 5000,
+              children: [
+                {name: 'aa', regressSteps: 2, action: 'typeSpace'},
+                {name: 'ee', regressSteps: 2, action: 'morseConvertText'}
+              ]
+            }
+          ]
+        },
+        {
+          name: 'uu',
+          timeToLiveMillis: 5000,
+          children: [
+            {
+              name: 'aa',
+              timeToLiveMillis: 5000,
+              children: [
+                {name: 'aa', regressSteps: 1, action: 'sayText'}, {
+                  name: 'ee',
+                  regressSteps: 1,
+                  action: 'emailText shanqing.cai@gmail.com'
+                }
+              ]
+            },
+            {name: 'ee', regressSteps: 2, action: 'undoText'},
+            {name: 'uu', regressSteps: 2, action: 'clearText'}
+          ]
+        }
+      ]
+    }
+  ]
 };
-const actionTreeJSONEditor = new JSONEditor(
-    document.getElementById("json-editor"), {mode: 'code'});
+const actionTreeJSONEditor =
+    new JSONEditor(document.getElementById('json-editor'), {mode: 'code'});
 actionTreeJSONEditor.set(initialActionTreeConfig);
 
 function getTreantConfig(containerId, timedMenuConfig, stateSequence) {
   const treantConfig = {
     chart: {
-      container:
-          containerId.startsWith('#') ? containerId : `#${containerId}`,
+      container: containerId.startsWith('#') ? containerId : `#${containerId}`,
       nodeAlign: 'BOTTOM',
       rootOrientation: 'WEST',
       siblingSeparation: 5,
       levelSeparation: 40,
       subTeeSeparation: 5,
-      connectors: {
-        type: 'step'
-      },
-      node: {
-        HTMLclass: 'node-element'
-      }
+      connectors: {type: 'step'},
+      node: {HTMLclass: 'node-element'}
     },
-    nodeStructure: {  // Root node.
-      text: {
-        name: ''
-      },
+    nodeStructure: {
+      // Root node.
+      text: {name: ''},
       HTMLid: 'tree-level-0',  // Carry tree-level information here.
       HTMLclass: 'action-tree-node'
     }
-  }
-  getTreantConfigInner(
-      timedMenuConfig.nodes, treantConfig.nodeStructure, 1);
+  } getTreantConfigInner(timedMenuConfig.nodes, treantConfig.nodeStructure, 1);
   return treantConfig;
 }
 
@@ -150,9 +156,7 @@ function getTreantConfigInner(timedMenuNodes, treantConfig, level, levelName) {
   treantConfig.children = [];
   for (const node of timedMenuNodes) {
     const nodeConfig = {
-      text: {
-        name: node.name
-      },
+      text: {name: node.name},
       HTMLid: levelName == null ?
           `tree-level-${level}-${node.name}` :
           `tree-level-${level}-${levelName}-${node.name}`,
@@ -172,8 +176,7 @@ function getTreantConfigInner(timedMenuNodes, treantConfig, level, levelName) {
       // Non-leaf node.
       getTreantConfigInner(
           node.children,
-          treantConfig.children[treantConfig.children.length - 1],
-          level + 1,
+          treantConfig.children[treantConfig.children.length - 1], level + 1,
           levelName == null ? `${node.name}` : `${levelName}-${node.name}`);
     }
   }
@@ -203,8 +206,8 @@ function colorNodesByStateSequence(stateSequence) {
     const elementPath = parseStateSequenceFromElementID(element.id);
     if (elementPath.length === 0 ||
         stateSequence.length >= elementPath.length &&
-        util.arraysEqual(
-            stateSequence.slice(0, elementPath.length), elementPath)) {
+            util.arraysEqual(
+                stateSequence.slice(0, elementPath.length), elementPath)) {
       if (elementPath.length !== 0 &&
           stateSequence.length === elementPath.length) {
         element.classList.add('green');
@@ -214,8 +217,8 @@ function colorNodesByStateSequence(stateSequence) {
 
       const treeLevel = parseTreeLevelFromElementID(element.id);
       if (treeLevel > currentTreeLevel) {
-        // Tree nodes closer to the leaves (i.e., with higher value of tree-level)
-        // take precedence.
+        // Tree nodes closer to the leaves (i.e., with higher value of
+        // tree-level) take precedence.
         offsetTop = element.offsetTop;
         offsetLeft = element.offsetLeft;
         currentTreeLevel = treeLevel;
@@ -283,8 +286,7 @@ export function executeTimedMenuAction(action) {
     emailMessage = emailMessage.slice(emailMessage.indexOf(' '));
     ttsSpeak(`Sending email to ${emailRecipient}`);
     document.getElementById('email-recipient').value = emailRecipient;
-    document.getElementById('email-text').value =
-        `Message: ${emailMessage} ` +
+    document.getElementById('email-text').value = `Message: ${emailMessage} ` +
         `(Timestamp: ${new Date().toString()})`;
     try {
       handleEmailAuthClick();  // Experiment: email sending.
@@ -300,7 +302,7 @@ export function executeTimedMenuAction(action) {
     morseTextBox.convertMorse();
   } else if (action.toLowerCase().trim() === UNDO_TEXT_COMMAND) {
     morseTextBox.undo();
-  }  else if (action.toLowerCase().trim() === CLEAR_TEXT_COMMAND) {
+  } else if (action.toLowerCase().trim() === CLEAR_TEXT_COMMAND) {
     morseTextBox.clear();
   } else if (action.toLowerCase().trim() === SAY_TEXT_COMMAND) {
     morseTextBox.say();
