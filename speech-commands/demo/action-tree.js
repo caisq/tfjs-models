@@ -234,33 +234,6 @@ function colorNodesByStateSequence(stateSequence) {
       Math.max(0, offsetLeft - actionTreeElement.offsetWidth / 2);
   actionTreeElement.scrollTop = targetScrollTop;
   actionTreeElement.scrollLeft = targetScrollLeft;
-  // smoothScroll(
-  //     actionTreeElement, actionTreeElement.scrollTop, targetScrollTop,
-  //     actionTreeElement.scrollLeft, targetScrollLeft);
-}
-
-async function sleep(millis) {
-  return new Promise(resolve => {
-    setTimeout(resolve, millis);
-  });
-}
-
-async function smoothScroll(element, beginTop, endTop, beginLeft, endLeft) {
-  console.log(  // DEBUG
-      `smooth scroll: ${beginTop}-->${endTop}; ${beginLeft}-->${endLeft}`);
-  if (endLeft === beginLeft) {
-    return;
-  }
-  const SCROLL_DUR_MILLIS = 100;
-  const STEPS = 20;
-  const STEP_MILLIS = SCROLL_DUR_MILLIS / STEPS;
-  for (let i = 0; i < STEPS; ++i) {
-    await sleep(STEP_MILLIS);
-    const currTop = (endTop - beginTop) / STEPS * (i + 1) + beginTop;
-    const currLeft = (endLeft - beginLeft) / STEPS * (i + 1) + beginLeft;
-    element.scrollTop = currTop;
-    element.scrollLeft = currLeft;
-  }
 }
 
 function parseTreeLevelFromElementID(id) {
@@ -333,7 +306,7 @@ export function executeTimedMenuAction(action) {
     morseTextBox.say();
   } else if (action.toLowerCase().indexOf(EMAIL_TEXT_COMMAND) === 0) {
     const emailRecipient = action.slice(EMAIL_TEXT_COMMAND.length).trim();
-    console.log(`Sending email to ${emailRecipient}`);  // DEBUG
+    console.log(`Sending email to ${emailRecipient}`);
     ttsSpeak(`Sending email to ${emailRecipient}`);
     document.getElementById('email-recipient').value = emailRecipient;
     document.getElementById('email-text').value = morseTextBox.getText();
