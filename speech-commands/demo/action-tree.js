@@ -15,6 +15,8 @@
  * =============================================================================
  */
 
+import {util} from '@tensorflow/tfjs';
+
 import {handleEmailAuthClick} from './emailing';
 import {MorseTextBox} from './morse-text-box';
 import {ttsSpeak} from './tts';
@@ -120,45 +122,42 @@ function getTreantConfig(containerId, timedMenuConfig, stateSequence) {
       container:
           containerId.startsWith('#') ? containerId : `#${containerId}`,
       nodeAlign: 'BOTTOM',
+      rootOrientation: 'WEST',
+      siblingSeparation: 5,
+      levelSeparation: 40,
+      subTeeSeparation: 5,
       connectors: {
         type: 'step'
       },
       node: {
-        HTMLclass: 'nodeExample1'
+        HTMLclass: 'node-element'
       }
     },
     nodeStructure: {  // Root node.
       text: {
         name: ''
       },
-      HTMLid: 'tree-level-0',  // TODO(cais): Carry tree-level information here.
-      HTMLclass: 'blue'
+      HTMLid: 'tree-level-0',  // Carry tree-level information here.
+      HTMLclass: 'action-tree-node'
     }
   }
   getTreantConfigInner(
-      timedMenuConfig.nodes, stateSequence, treantConfig.nodeStructure, 1);
+      timedMenuConfig.nodes, treantConfig.nodeStructure, 1);
   return treantConfig;
 }
 
-function getTreantConfigInner(timedMenuNodes, stateSequence, treantConfig, level) {
+function getTreantConfigInner(timedMenuNodes, treantConfig, level, levelName) {
   treantConfig.children = [];
   for (const node of timedMenuNodes) {
     const nodeConfig = {
       text: {
         name: node.name
       },
-      HTMLid: `tree-level-${level}-${node.name}`
+      HTMLid: levelName == null ?
+          `tree-level-${level}-${node.name}` :
+          `tree-level-${level}-${levelName}-${node.name}`,
+      HTMLclass: 'action-tree-node'
     };
-    const stateMatch =
-        stateSequence.length > 0 && stateSequence[0] === node.name;
-    if (stateMatch) {
-      if (node.children == null || node.children.lengths === 0) {
-        // Leaf node.
-        nodeConfig.HTMLclass = 'green';
-      } else {
-        nodeConfig.HTMLclass = 'blue';
-      }
-    }
     if (node.action != null && node.action.length > 0) {
       nodeConfig.text.title = node.action;
     }
@@ -171,54 +170,97 @@ function getTreantConfigInner(timedMenuNodes, stateSequence, treantConfig, level
     treantConfig.children.push(nodeConfig);
     if (node.children != null && node.children.length > 0) {
       // Non-leaf node.
-        getTreantConfigInner(
-            node.children,
-            stateMatch ? stateSequence.slice(1) : [],
-            treantConfig.children[treantConfig.children.length - 1],
-            level + 1);
+      getTreantConfigInner(
+          node.children,
+          treantConfig.children[treantConfig.children.length - 1],
+          level + 1,
+          levelName == null ? `${node.name}` : `${levelName}-${node.name}`);
     }
   }
   return treantConfig;
 }
 
+let tree;
 export function drawActionTree(containerId, timedMenuConfig, stateSequence) {
-  const element = document.getElementById(containerId);
-  while (element.firstChild) {
-    element.removeChild(element.firstChild);
+  if (tree == null) {
+    const element = document.getElementById(containerId);
+    while (element.firstChild) {
+      element.removeChild(element.firstChild);
+    }
+    tree = new Treant(
+        getTreantConfig(containerId, timedMenuConfig, stateSequence));
   }
-  const treantConfig =
-      getTreantConfig(containerId, timedMenuConfig, stateSequence);
-  new Treant(treantConfig);
-  // Scroll to the active element(s).
-  scrollToLastNode();
+  colorNodesByStateSequence(stateSequence);
 }
 
-function scrollToLastNode() {
-  const actionTreeElement = document.getElementById('action-tree');
-  const nodeElements = document.getElementsByClassName('blue');
-  if (nodeElements.length === 0) {
-    return;
-  }
+function colorNodesByStateSequence(stateSequence) {
+  const treeElements = document.getElementsByClassName('action-tree-node');
 
-  let offsetTop;
-  let offsetLeft;
+  let offsetTop = 0;
+  let offsetLeft = 0;
   let currentTreeLevel = -1;
-  for (const element of nodeElements) {
-    const treeLevel = parseTreeLevelFromElementID(element.id);
-    if (treeLevel > currentTreeLevel) {
-      // Tree nodes closer to the leaves (i.e., with higher value of tree-level)
-      // take precedence.
-      offsetTop = element.offsetTop;
-      offsetLeft = element.offsetLeft;
-      currentTreeLevel = treeLevel;
+  for (const element of treeElements) {
+    const elementPath = parseStateSequenceFromElementID(element.id);
+    if (elementPath.length === 0 ||
+        stateSequence.length >= elementPath.length &&
+        util.arraysEqual(
+            stateSequence.slice(0, elementPath.length), elementPath)) {
+      if (elementPath.length !== 0 &&
+          stateSequence.length === elementPath.length) {
+        element.classList.add('green');
+      } else {
+        element.classList.add('blue');
+      }
+
+      const treeLevel = parseTreeLevelFromElementID(element.id);
+      if (treeLevel > currentTreeLevel) {
+        // Tree nodes closer to the leaves (i.e., with higher value of tree-level)
+        // take precedence.
+        offsetTop = element.offsetTop;
+        offsetLeft = element.offsetLeft;
+        currentTreeLevel = treeLevel;
+      }
+    } else {
+      element.classList.remove('blue');
+      element.classList.remove('green');
     }
   }
-  // TODO(cais): Add animation.
 
-  const targetScrollTop = offsetTop - actionTreeElement.offsetHeight / 2;
-  const targetScrollLeft = offsetLeft - actionTreeElement.offsetWidth / 2;
-  actionTreeElement.scrollTop = Math.max(0, targetScrollTop);
-  actionTreeElement.scrollLeft = Math.max(0, targetScrollLeft);
+  // Scroll to the active element(s).
+  const actionTreeElement = document.getElementById('action-tree');
+  const targetScrollTop =
+      Math.max(0, offsetTop - actionTreeElement.offsetHeight / 2);
+  const targetScrollLeft =
+      Math.max(0, offsetLeft - actionTreeElement.offsetWidth / 2);
+  actionTreeElement.scrollTop = targetScrollTop;
+  actionTreeElement.scrollLeft = targetScrollLeft;
+  // smoothScroll(
+  //     actionTreeElement, actionTreeElement.scrollTop, targetScrollTop,
+  //     actionTreeElement.scrollLeft, targetScrollLeft);
+}
+
+async function sleep(millis) {
+  return new Promise(resolve => {
+    setTimeout(resolve, millis);
+  });
+}
+
+async function smoothScroll(element, beginTop, endTop, beginLeft, endLeft) {
+  console.log(  // DEBUG
+      `smooth scroll: ${beginTop}-->${endTop}; ${beginLeft}-->${endLeft}`);
+  if (endLeft === beginLeft) {
+    return;
+  }
+  const SCROLL_DUR_MILLIS = 100;
+  const STEPS = 20;
+  const STEP_MILLIS = SCROLL_DUR_MILLIS / STEPS;
+  for (let i = 0; i < STEPS; ++i) {
+    await sleep(STEP_MILLIS);
+    const currTop = (endTop - beginTop) / STEPS * (i + 1) + beginTop;
+    const currLeft = (endLeft - beginLeft) / STEPS * (i + 1) + beginLeft;
+    element.scrollTop = currTop;
+    element.scrollLeft = currLeft;
+  }
 }
 
 function parseTreeLevelFromElementID(id) {
@@ -227,6 +269,14 @@ function parseTreeLevelFromElementID(id) {
         `Expected element ID to start with "tree-level-", but got ID ${id}`);
   }
   return Number.parseInt(id.split('-')[2]);
+}
+
+function parseStateSequenceFromElementID(id) {
+  if (!(id.startsWith('tree-level-'))) {
+    throw new Error(
+        `Expected element ID to start with "tree-level-", but got ID ${id}`);
+  }
+  return id.split('-').slice(3);
 }
 
 const morseTextBox = new MorseTextBox(

@@ -116,7 +116,6 @@ startActionTreeButton.addEventListener('click',  async () =>  {
 
 
 stopButton.addEventListener('click', () => {
-  console.log('Callback stop!');  // DEBUG
   if (timedMenu != null) {
     timedMenu.stopTimer();
     timedMenu = null;

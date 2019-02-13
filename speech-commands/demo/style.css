@@ -216,6 +216,7 @@ input {
   width: 96vw;
   height: 80vh;
   resize: both;
+  scroll-behavior: smooth;
 }
 
 #action-tree-text-input {
@@ -238,14 +239,14 @@ input {
 
 .node-name { font-weight: bold;}
 
-.nodeExample1 {
+.node-element {
   padding: 1px;
   -webkit-border-radius: 10px;
   -moz-border-radius: 10px;
   border-radius: 10px;
   background-color: #ffffff;
   border: 1px solid #000;
-  width: 200px;
+  width: 250px;
   font-family: sans-serif;
   font-size: 15px;
   text-align: center;
