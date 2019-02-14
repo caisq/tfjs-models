@@ -19,36 +19,14 @@ import {util} from '@tensorflow/tfjs';
 
 import {handleEmailAuthClick} from './emailing';
 import {MorseTextBox} from './morse-text-box';
+import {showMessage} from './run';
 import {ttsSpeak} from './tts';
 
-class ActionTreeSet {
-  constructor() {
-    this.trees_ = {};
-  }
-
-  add(name, actionTreeObject) {
-    util.assert(
-        name != null && typeof name === 'string' && name.length > 0,
-        `Expected name to be a non-empty string, but got ${name}`);
-    util.assert(
-        typeof actionTreeObject === 'object',
-        `Expected actionTreeObject to be an object, ` +
-            `but got ${actionTreeObject}`);
-    if (name in this.trees_) {
-      throw new Error(`There is already an action tree with the name ${name}`);
-    }
-  }
-
-  names() {
-    return Object.keys(this.trees_);
-  }
-
-  remove(name) {
-    util.assert(
-        name in this.trees_, `Attempt to delete nonexistent tree: ${name}`);
-    delete this.trees_[name];
-  }
-}
+const savedTreesSelect = document.getElementById('saved-trees');
+const loadTreeButton = document.getElementById('load-tree');
+const saveTreeButton = document.getElementById('save-tree');
+const deleteTreeButton = document.getElementById('delete-tree');
+const newTreeButton = document.getElementById('new-tree');
 
 const initialActionTreeConfig = {
   nodes: [
@@ -126,11 +104,175 @@ const initialActionTreeConfig = {
     }
   ]
 };
+
+const defaultNewTreeConfig = {
+  nodes: [
+    {
+      name: 'one',
+      timeToLiveMillis: 5000,
+      timeOutAction: "say Node 1 has timed out.",
+      children: [
+        {
+          name: 'one',
+          action: 'say how are you'
+        },
+        {
+          name: 'two',
+          action: 'say goodbye'
+        }
+      ]
+    }
+  ]
+}
+
+class ActionTreeSet {
+  static get LOCAL_STORAGE_KEY() {
+    return 'action-tree-set';
+  }
+
+  constructor(trees) {
+    if (trees == null) {
+      this.trees_ = {};
+    } else {
+      this.trees_ = trees;
+      util.assert(typeof trees === 'object', `Expected trees to be an object`);
+    }
+  }
+
+  set(name, actionTreeObject) {
+    util.assert(
+        name != null && typeof name === 'string' && name.length > 0,
+        `Expected name to be a non-empty string, but got ${name}`);
+    util.assert(
+        typeof actionTreeObject === 'object',
+        `Expected actionTreeObject to be an object, ` +
+            `but got ${actionTreeObject}`);
+    this.trees_[name] = actionTreeObject;
+  }
+
+  get(name) {
+    util.assert(name in this.trees_, `There is no tree named ${tree}`);
+    return this.trees_[name];
+  }
+
+  names() {
+    return Object.keys(this.trees_);
+  }
+
+  remove(name) {
+    util.assert(
+        name in this.trees_, `Attempt to delete nonexistent tree: ${name}`);
+    delete this.trees_[name];
+  }
+
+  save() {
+    window.localStorage.setItem(
+        ActionTreeSet.LOCAL_STORAGE_KEY, JSON.stringify(this.trees_));
+  }
+}
+
+function createOrLoadTreeSet() {
+  const serializedTree = window.localStorage.getItem(ActionTreeSet.LOCAL_STORAGE_KEY);
+  if (serializedTree == null) {
+    console.log('Creating new action tree...');
+    const treeSet = new ActionTreeSet();
+    treeSet.set('hello-testing-aa-ee-uu', initialActionTreeConfig);
+    treeSet.save();
+    return treeSet;
+  } else {
+    console.log('Loading action tree...');
+    return new ActionTreeSet(JSON.parse(serializedTree));
+  }
+}
+
+let treeSet;
+if (savedTreesSelect != null) {
+  treeSet = createOrLoadTreeSet();
+  populateSavedTreeSelect(treeSet);
+  saveTreeButton.disabled = true;
+  deleteTreeButton.disabled = false;
+}
+
+function populateSavedTreeSelect(treeSet) {
+  while(savedTreesSelect.firstChild) {
+    savedTreesSelect.removeChild(savedTreesSelect.firstChild);
+  }
+  const names = treeSet.names();
+  names.sort();
+  for (const name of names) {
+    const option = document.createElement('option');
+    option.textContent = name;
+    savedTreesSelect.appendChild(option);
+  }
+}
+
+if (loadTreeButton != null) {
+  loadTreeButton.addEventListener('click', () => {
+    const actionTree = treeSet.get(savedTreesSelect.value);
+    savedTreesSelect.disabled = true;
+    loadTreeButton.disabled = true;
+    actionTreeJSONEditor.set(actionTree);
+    saveTreeButton.disabled = false;
+  });
+}
+
+if (saveTreeButton != null) {
+  saveTreeButton.addEventListener('click', () => {
+    try {
+      const tree = actionTreeJSONEditor.get();
+      console.log('tree:', tree);  // DEBUG
+      treeSet.set(savedTreesSelect.value, tree);
+      treeSet.save();
+      showMessage(`Tree "${savedTreesSelect.value}" is saved.`);
+    } catch (err) {
+      showMessage(err.message, 'error');
+    }
+  });
+}
+
+if (deleteTreeButton != null) {
+  deleteTreeButton.addEventListener('click', () => {
+    try {
+      const treeName = savedTreesSelect.value;
+      if (window.confirm(`Do you really want to delete tree "${treeName}"?`)) {
+        treeSet.remove(treeName);
+        deleteTreeButton.disabled = true;
+        populateSavedTreeSelect(treeSet);
+        showMessage(`Tree ${treeName} has been deleted.`);
+      }
+    } catch (error) {
+      showMessage(error.message, 'error');
+    }
+  });
+}
+
+if (newTreeButton != null) {
+  newTreeButton.addEventListener('click', () => {
+    const newTreeName = window.prompt('Enter name for new model:');
+    if (newTreeName == null || newTreeName.length === 0) {
+      showMessage('Model name cannot be empty!', 'error');
+    }
+    if (treeSet.names ().indexOf(newTreeName) !== -1) {
+      showMessage(
+          `There is already a tree with the name ${newTreeName}`, 'error');
+    } else {
+      treeSet.set(newTreeName, defaultNewTreeConfig);
+      treeSet.save();
+      populateSavedTreeSelect(treeSet);
+      savedTreesSelect.value = newTreeName;
+      deleteTreeButton.disabled = false;
+      savedTreesSelect.disabled = true;
+      loadTreeButton.disabled = true;
+      actionTreeJSONEditor.set(treeSet.get(newTreeName));
+      saveTreeButton.disabled = false;
+    }
+  });
+}
+
 const actionTreeJSONEditor =
     new JSONEditor(document.getElementById('json-editor'), {mode: 'code'});
-actionTreeJSONEditor.set(initialActionTreeConfig);
 
-function getTreantConfig(containerId, timedMenuConfig, stateSequence) {
+function getTreantConfig(containerId, timedMenuConfig) {
   const treantConfig = {
     chart: {
       container: containerId.startsWith('#') ? containerId : `#${containerId}`,
@@ -148,7 +290,8 @@ function getTreantConfig(containerId, timedMenuConfig, stateSequence) {
       HTMLid: 'tree-level-0',  // Carry tree-level information here.
       HTMLclass: 'action-tree-node'
     }
-  } getTreantConfigInner(timedMenuConfig.nodes, treantConfig.nodeStructure, 1);
+  } 
+  getTreantConfigInner(timedMenuConfig.nodes, treantConfig.nodeStructure, 1);
   return treantConfig;
 }
 
@@ -321,5 +464,12 @@ export function executeTimedMenuAction(action) {
 }
 
 export function parseActionTreeConfig() {
-  return actionTreeJSONEditor.get();
+  const config = actionTreeJSONEditor.get();
+  console.log('config:', config);  // DEBUG
+  if (config == null ||
+      typeof config === 'string' && config.length === 0 ||
+      typeof config === 'object' && Object.keys(config).length === 0) {
+    throw new Error('Invalid action tree! Load a tree first.');
+  }
+  return config;
 }

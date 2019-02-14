@@ -19,6 +19,7 @@
     <button id="start" disabled="true">Start</button>
     <button id="start-action-tree" disabled="true">Start Action Tree</button>
     <button id="stop" disabled="true">Stop</button>
+    <span id="message"></span>
     <button class="inference-switch" id="to-training">Train models ⇗</button>
     <div id="action-tree-group" style="display:none">
       <div class="chart" id="action-tree" ></div>
@@ -41,8 +42,19 @@
     <div>
       <button id="action-tree-config">Action Tree Settings >></button>
     </div>
+    
     <div class="collapsible-region-inner" id="action-tree-config-inner">
-        <div id="json-editor"></div>
+      <div>
+        <span>Saved action trees:</span>
+        <select id="saved-trees">
+          <option value="1"></option>
+        </select>
+        <button id="load-tree">Load tree</button>
+        <button id="save-tree">Save tree</button>
+        <button id="delete-tree" disabled="true">Delete tree</button>
+        <button id="new-tree">New tree</button>
+      </div>
+      <div id="json-editor"></div>
     </div>
   </div>
 

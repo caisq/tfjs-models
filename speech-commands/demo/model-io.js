@@ -35,7 +35,6 @@ const enterLearnWordsButton = document.getElementById('enter-learn-words');
 let recognizer;
 export function registerRecognizer(inputRecognizer) {
   recognizer = inputRecognizer;
-  console.log(`recognizer!!!`);  // DEBUG
   if (recognizer != null) {
     loadTransferModelButton.disabled = false;
   }

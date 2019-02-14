@@ -20,12 +20,14 @@ import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferR
 import * as basicInference from './basic-inference';
 
 import * as SpeechCommands from '../src';
+import { getTextureShapeFromLogicalShape } from '@tensorflow/tfjs-core/dist/kernels/webgl/webgl_util';
 
 const startButton = document.getElementById('start');
 const stopButton = document.getElementById('stop');
 const startActionTreeButton = document.getElementById('start-action-tree');
 const probaThresholdInput = document.getElementById('proba-threshold');
 const actionTreeGroupDiv = document.getElementById('action-tree-group');
+const messageSpan = document.getElementById('message');
 
 let recognizer;
 let transferRecognizer;
@@ -64,54 +66,68 @@ actionTreeConfigButton.addEventListener('click', () => {
 let timedMenu;
 
 startActionTreeButton.addEventListener('click',  async () =>  {
-  actionTreeGroupDiv.style.display = 'block';
-  const activeRecognizer =
-      transferRecognizer == null ? recognizer : transferRecognizer;
+  try {
+    actionTreeGroupDiv.style.display = 'block';
+    const activeRecognizer =
+        transferRecognizer == null ? recognizer : transferRecognizer;
 
-   // Constrct TimedMenu.
-  const timedMenuConfig = parseActionTreeConfig();
-  const timedMenuTickMillis = 500;
-  timedMenu = new SpeechCommands.TimedMenu(
-      timedMenuConfig, timedMenuTickMillis,
-      async (stateSequence, stateChangeType, timeOutAction) => {
-        if (stateChangeType === 'advance') {
-          playAudio('blip-c-04.wav');
-        } else if (stateChangeType === 'regress') {
-          playAudio('cancel-miss-chime.wav');
-          if (timeOutAction != null) {
-            executeTimedMenuAction(timeOutAction);
+    // Constrct TimedMenu.
+    const timedMenuConfig = parseActionTreeConfig();
+    const timedMenuTickMillis = 500;
+    timedMenu = new SpeechCommands.TimedMenu(
+        timedMenuConfig, timedMenuTickMillis,
+        async (stateSequence, stateChangeType, timeOutAction) => {
+          if (stateChangeType === 'advance') {
+            playAudio('blip-c-04.wav');
+          } else if (stateChangeType === 'regress') {
+            playAudio('cancel-miss-chime.wav');
+            if (timeOutAction != null) {
+              executeTimedMenuAction(timeOutAction);
+            }
+          }
+          drawActionTree('action-tree', timedMenuConfig, stateSequence);
+        });
+
+    const suppressionTimeMillis = 1000;
+    await activeRecognizer.listen(result => {
+        const wordLabels = activeRecognizer.wordLabels();
+        let maxScore = -Infinity;
+        let winningWord;
+        for (let i = 0; i < wordLabels.length; ++i) {
+          if (result.scores[i] > maxScore) {
+            winningWord = wordLabels[i];
+            maxScore = result.scores[i];
           }
         }
-        drawActionTree('action-tree', timedMenuConfig, stateSequence);
-      });
+        console.log(
+            `Winning word: ${winningWord} (p=${maxScore.toFixed(4)})`);
 
-   const suppressionTimeMillis = 1000;
-   await activeRecognizer.listen(result => {
-      const wordLabels = activeRecognizer.wordLabels();
-      let maxScore = -Infinity;
-      let winningWord;
-      for (let i = 0; i < wordLabels.length; ++i) {
-        if (result.scores[i] > maxScore) {
-          winningWord = wordLabels[i];
-          maxScore = result.scores[i];
+        const action = timedMenu.registerEvent(winningWord);
+        if (action != null) {
+          executeTimedMenuAction(action);
         }
-      }
-      console.log(
-          `Winning word: ${winningWord} (p=${maxScore.toFixed(4)})`);
-
-      const action = timedMenu.registerEvent(winningWord);
-      if (action != null) {
-        executeTimedMenuAction(action);
-      }
-      console.log(`Timed-menu action: ${action}`);
-    }, {
-      includeSpectrogram: true,
-      suppressionTimeMillis,
-      probabilityThreshold: Number.parseFloat(probaThresholdInput.value)
-    });
+        console.log(`Timed-menu action: ${action}`);
+      }, {
+        includeSpectrogram: true,
+        suppressionTimeMillis,
+        probabilityThreshold: Number.parseFloat(probaThresholdInput.value)
+      });
     startButton.disabled = true;
     startActionTreeButton.disabled = true;
     stopButton.disabled = false;
+
+    const wordLabels = activeRecognizer.wordLabels().slice();
+    if (wordLabels.indexOf(SpeechCommands.BACKGROUND_NOISE_TAG) !== -1) {
+      wordLabels.splice(
+          wordLabels.indexOf(SpeechCommands.BACKGROUND_NOISE_TAG), 1);
+    }
+    showMessage(
+        `Action tree started, recognizing words: ${wordLabels.join(', ')}`);
+  } catch (err) {
+    actionTreeGroupDiv.style.display = 'none';
+    showMessage(
+        'Invalid action tree. Create or load a valid tree first.', 'error');
+  }
 });
 
 
@@ -145,3 +161,18 @@ function playAudio(audioFile) {
 
   populateSavedTransferModelsSelect();
 })();
+
+const MESSAGE_DURATION_MILLIS = 4000;
+export function showMessage(message, type) {
+  messageSpan.textContent = message;
+  if (type === 'error') {
+    messageSpan.style['color'] = 'red';
+    messageSpan.style['font-weight'] = 'bold';
+  } else {
+    messageSpan.style['color'] = 'blue';
+    messageSpan.style['font-weight'] = 'regular';
+  }
+  setTimeout(() => {
+    messageSpan.textContent = '';
+  }, MESSAGE_DURATION_MILLIS);
+}
