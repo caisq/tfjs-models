@@ -19,7 +19,7 @@ import {util} from '@tensorflow/tfjs';
 
 import {handleEmailAuthClick} from './emailing';
 import {MorseTextBox} from './morse-text-box';
-import {showMessage} from './run';
+import {showMessage, refreshStartActionTreeButtonStatus} from './run';
 import {ttsSpeak} from './tts';
 
 const savedTreesSelect = document.getElementById('saved-trees');
@@ -213,6 +213,7 @@ if (loadTreeButton != null) {
     loadTreeButton.disabled = true;
     actionTreeJSONEditor.set(actionTree);
     saveTreeButton.disabled = false;
+    refreshStartActionTreeButtonStatus();
   });
 }
 
@@ -220,7 +221,6 @@ if (saveTreeButton != null) {
   saveTreeButton.addEventListener('click', () => {
     try {
       const tree = actionTreeJSONEditor.get();
-      console.log('tree:', tree);  // DEBUG
       treeSet.set(savedTreesSelect.value, tree);
       treeSet.save();
       showMessage(`Tree "${savedTreesSelect.value}" is saved.`);
@@ -235,8 +235,9 @@ if (deleteTreeButton != null) {
     try {
       const treeName = savedTreesSelect.value;
       if (window.confirm(`Do you really want to delete tree "${treeName}"?`)) {
-        treeSet.remove(treeName);
         deleteTreeButton.disabled = true;
+        treeSet.remove(treeName);
+        treeSet.save();
         populateSavedTreeSelect(treeSet);
         showMessage(`Tree ${treeName} has been deleted.`);
       }
@@ -254,7 +255,8 @@ if (newTreeButton != null) {
     }
     if (treeSet.names ().indexOf(newTreeName) !== -1) {
       showMessage(
-          `There is already a tree with the name ${newTreeName}`, 'error');
+          `Cannot create tree: There is already a tree with the name ` +
+          `"${newTreeName}"`, 'error');
     } else {
       treeSet.set(newTreeName, defaultNewTreeConfig);
       treeSet.save();
@@ -290,7 +292,7 @@ function getTreantConfig(containerId, timedMenuConfig) {
       HTMLid: 'tree-level-0',  // Carry tree-level information here.
       HTMLclass: 'action-tree-node'
     }
-  } 
+  }
   getTreantConfigInner(timedMenuConfig.nodes, treantConfig.nodeStructure, 1);
   return treantConfig;
 }
@@ -463,13 +465,41 @@ export function executeTimedMenuAction(action) {
   }
 }
 
+/**
+ * Get all names (i.e,. trigger words) from an action tree config.
+ *
+ * @param {object} actionTreeConfig The configuration of the action tree.
+ * @returns An array of all unique names from the action tree.
+ */
+function getAllNodeNames(actionTreeConfig) {
+  const uniqueNames = [];
+  if (actionTreeConfig.nodes != null) {
+    actionTreeConfig = actionTreeConfig.nodes;
+  }
+  for (const nodeItem of actionTreeConfig) {
+    if (uniqueNames.indexOf(nodeItem.name) === -1) {
+      uniqueNames.push(nodeItem.name);
+      if (nodeItem.children != null) {
+        const childrenNames = getAllNodeNames(nodeItem.children);
+        childrenNames.forEach(name => {
+          if (uniqueNames.indexOf(name) === -1) {
+            uniqueNames.push(name);
+          }
+        });
+      }
+    }
+  }
+  uniqueNames.sort();
+  return uniqueNames;
+}
+
 export function parseActionTreeConfig() {
   const config = actionTreeJSONEditor.get();
-  console.log('config:', config);  // DEBUG
   if (config == null ||
       typeof config === 'string' && config.length === 0 ||
       typeof config === 'object' && Object.keys(config).length === 0) {
     throw new Error('Invalid action tree! Load a tree first.');
   }
-  return config;
+  const uniqueNames = getAllNodeNames(config);
+  return {config, uniqueNames};
 }

@@ -38,11 +38,19 @@
     </div>
   </div>
 
+  <div class='main-model'>
+    <div class="settings">
+      <span style="display:none">Prob. threshold:</span>
+      <input style="display:none" class="settings" size="5" id="proba-threshold" value="0.75">
+    </div>
+    <div id="candidate-words" class="candidate-words-hidden"></div>
+  </div>
+
   <div class="collapsible-region">
     <div>
       <button id="action-tree-config">Action Tree Settings >></button>
     </div>
-    
+
     <div class="collapsible-region-inner" id="action-tree-config-inner">
       <div>
         <span>Saved action trees:</span>
@@ -58,13 +66,6 @@
     </div>
   </div>
 
-  <div class='main-model'>
-    <div class="settings">
-      <span style="display:none">Prob. threshold:</span>
-      <input style="display:none" class="settings" size="5" id="proba-threshold" value="0.75">
-    </div>
-    <div id="candidate-words" class="candidate-words-hidden"></div>
-  </div>
   <div class="footer" style="display: none;">
     <textarea id="status-display" style="display: none" cols="80" readonly="true"></textarea>
   </div>

@@ -39,8 +39,19 @@ registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
       `Transfer recognizer loaded with parameters: ` +
       `${JSON.stringify(transferRecognizer.params())}`);
   startButton.disabled = false;
-  startActionTreeButton.disabled = false;
+  refreshStartActionTreeButtonStatus();
 });
+
+export function refreshStartActionTreeButtonStatus() {
+  try {
+    parseActionTreeConfig();
+    if (transferRecognizer != null) {
+      startActionTreeButton.disabled = false;
+    }
+  } catch (err) {
+    startActionTreeButton.disabled = true;
+  }
+}
 
 const toTrainingButton = document.getElementById('to-training');
 
@@ -72,7 +83,25 @@ startActionTreeButton.addEventListener('click',  async () =>  {
         transferRecognizer == null ? recognizer : transferRecognizer;
 
     // Constrct TimedMenu.
-    const timedMenuConfig = parseActionTreeConfig();
+    const configAndUniqueNames = parseActionTreeConfig();
+    const timedMenuConfig = configAndUniqueNames.config;
+    const uniqueNames = configAndUniqueNames.uniqueNames;
+    console.log('timedMenuConfig:', timedMenuConfig);  // DEBUG
+    console.log('uniqueNames:', uniqueNames);  // DEBUG
+
+    const wordLabelsNoNoise = activeRecognizer.wordLabels().slice();
+    if (wordLabelsNoNoise.indexOf(SpeechCommands.BACKGROUND_NOISE_TAG) !== -1) {
+      wordLabelsNoNoise.splice(
+          wordLabelsNoNoise.indexOf(SpeechCommands.BACKGROUND_NOISE_TAG), 1);
+    }
+    uniqueNames.forEach(name => {
+      if (wordLabelsNoNoise.indexOf(name) === -1) {
+        throw new Error(
+            `Cannot start action tree: ` +
+            `The word "${name}" is missing from the model.`);
+      }
+    });
+
     const timedMenuTickMillis = 500;
     timedMenu = new SpeechCommands.TimedMenu(
         timedMenuConfig, timedMenuTickMillis,
@@ -113,23 +142,19 @@ startActionTreeButton.addEventListener('click',  async () =>  {
         probabilityThreshold: Number.parseFloat(probaThresholdInput.value)
       });
     startButton.disabled = true;
-    startActionTreeButton.disabled = true;
     stopButton.disabled = false;
+    refreshStartActionTreeButtonStatus();
 
-    const wordLabels = activeRecognizer.wordLabels().slice();
-    if (wordLabels.indexOf(SpeechCommands.BACKGROUND_NOISE_TAG) !== -1) {
-      wordLabels.splice(
-          wordLabels.indexOf(SpeechCommands.BACKGROUND_NOISE_TAG), 1);
-    }
     showMessage(
-        `Action tree started, recognizing words: ${wordLabels.join(', ')}`);
+        `Action tree started, recognizing words: ` +
+        `${wordLabelsNoNoise.join(', ')}`);
   } catch (err) {
+    console.error(err);
     actionTreeGroupDiv.style.display = 'none';
-    showMessage(
-        'Invalid action tree. Create or load a valid tree first.', 'error');
+    showMessage(err.message, 'error');
+        // 'Invalid action tree. Create or load a valid tree first.', 'error');
   }
 });
-
 
 stopButton.addEventListener('click', () => {
   if (timedMenu != null) {
@@ -137,7 +162,7 @@ stopButton.addEventListener('click', () => {
     timedMenu = null;
     actionTreeGroupDiv.style.display = 'none';
   }
-  startActionTreeButton.disabled = false;
+  refreshStartActionTreeButtonStatus();
 });
 
 const cachedAudioObjects = {};
