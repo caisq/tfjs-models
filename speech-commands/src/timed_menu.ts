@@ -155,8 +155,8 @@ export class TimedMenu {
       const currNode = this.stateSequence[this.stateSequence.length - 1];
       const nowMillis = tf.util.now();
       if (currNode.timeToLiveMillis > 0 &&
-          nowMillis - this.lastEventTimeMillis * this.timeToLiveMultiplier >
-              currNode.timeToLiveMillis) {
+          nowMillis - this.lastEventTimeMillis >
+              currNode.timeToLiveMillis * this.timeToLiveMultiplier) {
         // Timed out. Update sequence.
         this.stateSequence.pop();
         this.lastEventTimeMillis = nowMillis;

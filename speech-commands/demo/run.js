@@ -20,13 +20,14 @@ import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferR
 import * as basicInference from './basic-inference';
 
 import * as SpeechCommands from '../src';
-import { getTextureShapeFromLogicalShape } from '@tensorflow/tfjs-core/dist/kernels/webgl/webgl_util';
 
 const startButton = document.getElementById('start');
 const stopButton = document.getElementById('stop');
 const startActionTreeButton = document.getElementById('start-action-tree');
 const probaThresholdInput = document.getElementById('proba-threshold');
 const actionTreeGroupDiv = document.getElementById('action-tree-group');
+const ttlMultiplierSlider = document.getElementById('ttl-multiplier');
+const ttlMultiplierDisplay = document.getElementById('ttl-multiplier-display');
 const messageSpan = document.getElementById('message');
 
 let recognizer;
@@ -100,7 +101,10 @@ startActionTreeButton.addEventListener('click',  async () =>  {
       }
     });
 
-    const timedMenuTickMillis = 500;
+    const tickMillis = 500;
+    const timeToLiveMultiplier =
+        ttlMultiplierSlider == null ? 1 : ttlMultiplierSlider.value;
+    console.log(`Using time-to-live multiplier: ${timeToLiveMultiplier}`);
     timedMenu = new SpeechCommands.TimedMenu(
         timedMenuConfig,
         async (stateSequence, stateChangeType, timeOutAction) => {
@@ -113,7 +117,7 @@ startActionTreeButton.addEventListener('click',  async () =>  {
             }
           }
           drawActionTree('action-tree', timedMenuConfig, stateSequence);
-        }, {tickMillis: timedMenuTickMillis});
+        }, {tickMillis, timeToLiveMultiplier});
 
     const suppressionTimeMillis = 1000;
     await activeRecognizer.listen(result => {
@@ -173,19 +177,12 @@ function playAudio(audioFile) {
   cachedAudioObjects[audioFile].play();
 }
 
-(async function() {
-  recognizer = SpeechCommands.create('BROWSER_FFT');
-
-  recognizer.ensureModelLoaded().then(() => {
-    registerRecognizer(recognizer);
-    basicInference.setRecognizer(recognizer);
+if (ttlMultiplierSlider != null) {
+  ttlMultiplierDisplay.textContent = `${ttlMultiplierSlider.value}`;
+  ttlMultiplierSlider.addEventListener('change', () => {
+    ttlMultiplierDisplay.textContent = `${ttlMultiplierSlider.value}`;
   });
-
-  const modelIOButton = document.getElementById('model-io');
-  modelIOButton.click();
-
-  populateSavedTransferModelsSelect();
-})();
+}
 
 const MESSAGE_DURATION_MILLIS = 4000;
 export function showMessage(message, type) {
@@ -201,3 +198,17 @@ export function showMessage(message, type) {
     messageSpan.textContent = '';
   }, MESSAGE_DURATION_MILLIS);
 }
+
+(async function() {
+  recognizer = SpeechCommands.create('BROWSER_FFT');
+
+  recognizer.ensureModelLoaded().then(() => {
+    registerRecognizer(recognizer);
+    basicInference.setRecognizer(recognizer);
+  });
+
+  const modelIOButton = document.getElementById('model-io');
+  modelIOButton.click();
+
+  populateSavedTransferModelsSelect();
+})();
