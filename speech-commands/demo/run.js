@@ -82,12 +82,10 @@ startActionTreeButton.addEventListener('click',  async () =>  {
     const activeRecognizer =
         transferRecognizer == null ? recognizer : transferRecognizer;
 
-    // Constrct TimedMenu.
+    // Construct TimedMenu.
     const configAndUniqueNames = parseActionTreeConfig();
     const timedMenuConfig = configAndUniqueNames.config;
     const uniqueNames = configAndUniqueNames.uniqueNames;
-    console.log('timedMenuConfig:', timedMenuConfig);  // DEBUG
-    console.log('uniqueNames:', uniqueNames);  // DEBUG
 
     const wordLabelsNoNoise = activeRecognizer.wordLabels().slice();
     if (wordLabelsNoNoise.indexOf(SpeechCommands.BACKGROUND_NOISE_TAG) !== -1) {
@@ -104,7 +102,7 @@ startActionTreeButton.addEventListener('click',  async () =>  {
 
     const timedMenuTickMillis = 500;
     timedMenu = new SpeechCommands.TimedMenu(
-        timedMenuConfig, timedMenuTickMillis,
+        timedMenuConfig,
         async (stateSequence, stateChangeType, timeOutAction) => {
           if (stateChangeType === 'advance') {
             playAudio('blip-c-04.wav');
@@ -115,7 +113,7 @@ startActionTreeButton.addEventListener('click',  async () =>  {
             }
           }
           drawActionTree('action-tree', timedMenuConfig, stateSequence);
-        });
+        }, {tickMillis: timedMenuTickMillis});
 
     const suppressionTimeMillis = 1000;
     await activeRecognizer.listen(result => {
@@ -135,7 +133,9 @@ startActionTreeButton.addEventListener('click',  async () =>  {
         if (action != null) {
           executeTimedMenuAction(action);
         }
-        console.log(`Timed-menu action: ${action}`);
+        if (action != null) {
+          console.log(`Timed-menu action: ${action}`);
+        }
       }, {
         includeSpectrogram: true,
         suppressionTimeMillis,

@@ -44,7 +44,7 @@
     "build": "rimraf node_modules/@tensorflow/tfjs-node && tsc",
     "lint": "tslint -p . -t verbose",
     "publish-local": "rimraf dist && yarn build && rollup -c && yalc push",
-    "test": "rimraf node_modules && yarn && ts-node run_tests.ts"
+    "test": "ts-node run_tests.ts"
   },
   "license": "Apache-2.0"
 }

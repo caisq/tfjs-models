@@ -61,17 +61,34 @@ export type TimedMenuTickCallback =
     (stateSequence: string[], stateChangeType: StateChangeType,
      timeOutAction?: TimedMenuAction) => Promise<void>;
 
+export interface TimedMenuRuntimeOptions {
+  tickMillis?: number;
+
+  timeToLiveMultiplier?: number;
+}
+
 export class TimedMenu {
   private stateSequence: TimedMenuNodeSpec[];
   private lastEventTimeMillis: number;
   // tslint:disable-next-line:no-any
   private intervalTask: any;
+  private tickMillis: number;
+  private timeToLiveMultiplier: number;
 
   constructor(
-      readonly config: TimedMenuSpec, readonly tickMillis: number,
-      readonly callback?: TimedMenuTickCallback) {
+      readonly config: TimedMenuSpec, 
+      readonly callback?: TimedMenuTickCallback,
+      runtimeOptions?: TimedMenuRuntimeOptions) {
     // Initial state: `[]` corresponds to the root node.
+    if (runtimeOptions == null) {
+      runtimeOptions = {};
+    }
     this.stateSequence = [];
+    this.tickMillis =
+        runtimeOptions.tickMillis == null ? 500 : runtimeOptions.tickMillis;
+    this.timeToLiveMultiplier =
+        runtimeOptions.timeToLiveMultiplier == null ? 1 :
+        runtimeOptions.timeToLiveMultiplier;
     this.intervalTask = setInterval(this.tick.bind(this), this.tickMillis);
     // Invoke callback in the beginning.
     if (this.callback != null) {
@@ -138,7 +155,8 @@ export class TimedMenu {
       const currNode = this.stateSequence[this.stateSequence.length - 1];
       const nowMillis = tf.util.now();
       if (currNode.timeToLiveMillis > 0 &&
-          nowMillis - this.lastEventTimeMillis > currNode.timeToLiveMillis) {
+          nowMillis - this.lastEventTimeMillis * this.timeToLiveMultiplier >
+              currNode.timeToLiveMillis) {
         // Timed out. Update sequence.
         this.stateSequence.pop();
         this.lastEventTimeMillis = nowMillis;

@@ -17,6 +17,12 @@
 
 import {TimedMenu, TimedMenuSpec} from './timed_menu';
 
+async function sleep(millis: number) {
+  return new Promise(resolve => {
+    setTimeout(() => resolve(), millis);
+  });
+}
+
 describe('TimedMenu', () => {
   const ONE_LEVEL_MENU_SPEC: TimedMenuSpec = {
     nodes:
@@ -40,81 +46,96 @@ describe('TimedMenu', () => {
     ]
   };
 
-  it('One-level menu: correct state and actions', () => {
-    const menu = new TimedMenu(ONE_LEVEL_MENU_SPEC, 10);
+  fit('One-level menu: correct state and actions', async () => {
+    const tickMillis = 10;
+    const menu = new TimedMenu(ONE_LEVEL_MENU_SPEC, null, {tickMillis});
     expect(menu.registerEvent('foo')).toEqual('fooAction');
+    await sleep(tickMillis);
     expect(menu.registerEvent('bar')).toEqual('barAction');
+    await sleep(tickMillis);
     expect(menu.registerEvent('foo')).toEqual('fooAction');
+    await sleep(tickMillis);
     expect(menu.registerEvent('qux')).toEqual(null);
   });
 
-  it('Two-level menu: correct state and actions', () => {
-    const menu = new TimedMenu(TWO_LEVEL_MENU_SPEC, 10);
+  fit('Two-level menu: correct state and actions', async () => {
+    const tickMillis = 10;
+    const menu = new TimedMenu(TWO_LEVEL_MENU_SPEC, null, {tickMillis});
 
     expect(menu.registerEvent('foo')).toEqual('fooAction');
+    await sleep(tickMillis);
     expect(menu.registerEvent('qux')).toEqual('quxAction');
+    await sleep(tickMillis);
     expect(menu.registerEvent('bar')).toEqual('barAction');
+    await sleep(tickMillis);
     expect(menu.registerEvent('bralt')).toEqual('braltAction');
+    await sleep(tickMillis);
     expect(menu.registerEvent('foo')).toEqual('fooAction');
+    await sleep(tickMillis);
     expect(menu.registerEvent('qux')).toEqual('quxAction');
+    await sleep(tickMillis);
 
     expect(menu.registerEvent('bar')).toEqual('barAction');
+    await sleep(tickMillis);
     expect(menu.registerEvent('qux')).toEqual(null);
+    await sleep(tickMillis);
     expect(menu.registerEvent('bralt')).toEqual('braltAction');
+    await sleep(tickMillis);
 
     expect(menu.registerEvent('foo')).toEqual('fooAction');
+    await sleep(tickMillis);
     expect(menu.registerEvent('bralt')).toEqual(null);
+    await sleep(tickMillis);
     expect(menu.registerEvent('qux')).toEqual('quxAction');
   });
 
-  it('Two-level menu: timeout', done => {
-    const menu = new TimedMenu(TWO_LEVEL_MENU_SPEC, 10);
+  fit('Two-level menu: timeout', done => {
+    const tickMillis = 10;
+    const menu = new TimedMenu(TWO_LEVEL_MENU_SPEC, null, {tickMillis});
 
     menu.registerEvent('foo');
-    setTimeout(() => {
+    setTimeout(async () => {
       // 'foo' should have timed out.
       expect(menu.registerEvent('qux')).toEqual(null);
+      await sleep(tickMillis);
 
       expect(menu.registerEvent('bar')).toEqual('barAction');
+      await sleep(tickMillis);
       expect(menu.registerEvent('bralt')).toEqual('braltAction');
       done();
     }, 150);
   });
 
-  it('Two-level menu: callback is invokved', done => {
+  fit('Two-level menu: callback is invoked', async () => {
     const callbackInvokeRecords: string[][] = [];
-    const callback =
-        async (stateSequence: string[]) => {
+    const callback = async (stateSequence: string[]) => {
       callbackInvokeRecords.push(stateSequence);
     };
 
-    const menu = new TimedMenu(TWO_LEVEL_MENU_SPEC, 10, callback);
+    const tickMillis = 10;
+    const menu = new TimedMenu(TWO_LEVEL_MENU_SPEC, callback, {tickMillis});
     menu.registerEvent('foo');
+    await sleep(tickMillis);
 
-    setTimeout(() => {
-      expect(callbackInvokeRecords.length).toBeGreaterThan(0);
-      for (const record of callbackInvokeRecords) {
-        expect(record).toEqual(['foo']);
-      }
-      done();
-    }, 50);
+    expect(callbackInvokeRecords.length).toBeGreaterThan(0);
+    expect(callbackInvokeRecords[callbackInvokeRecords.length - 1])
+        .toEqual(['foo']);
   });
 
-  it('Two-level menu: callback is invokved: before any events', done => {
+  fit('Two-level menu: callback is invoked: before any events', async () => {
     const callbackInvokeRecords: string[][] = [];
     const callback =
         async (stateSequence: string[]) => {
       callbackInvokeRecords.push(stateSequence);
     };
 
-    new TimedMenu(TWO_LEVEL_MENU_SPEC, 10, callback);
+    const tickMillis = 10;
+    new TimedMenu(TWO_LEVEL_MENU_SPEC, callback, {tickMillis});
+    await sleep(tickMillis);
 
-    setTimeout(() => {
-      expect(callbackInvokeRecords.length).toBeGreaterThan(0);
-      for (const record of callbackInvokeRecords) {
-        expect(record).toEqual([]);
-      }
-      done();
-    }, 50);
+    expect(callbackInvokeRecords.length).toBeGreaterThan(0);
+    for (const record of callbackInvokeRecords) {
+      expect(record).toEqual([]);
+    }
   });
 });
