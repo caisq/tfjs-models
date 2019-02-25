@@ -38,6 +38,9 @@ const downloadAsFileButton = document.getElementById('download-dataset');
 const datasetFileInput = document.getElementById('dataset-file-input');
 const uploadFilesButton = document.getElementById('upload-dataset');
 
+const remoteDatasetURLInput = document.getElementById('remote-dataset-url');
+const loadRemoteDatasetButton = document.getElementById('load-remote-dataset');
+
 const evalModelOnDatasetButton = document.getElementById('eval-model-on-dataset');
 const evalResultsSpan = document.getElementById('eval-results');
 
@@ -449,6 +452,7 @@ uploadFilesButton.addEventListener('click', async () => {
     try {
       await loadDatasetInTransferRecognizer(event.target.result);
     } catch (err) {
+      console.error(err.message);
       const originalTextContent = uploadFilesButton.textContent;
       uploadFilesButton.textContent = err.message;
       setTimeout(() => {
@@ -462,6 +466,24 @@ uploadFilesButton.addEventListener('click', async () => {
   datasetFileReader.onerror = () =>
       console.error(`Failed to binary data from file '${dataFile.name}'.`);
   datasetFileReader.readAsArrayBuffer(files[0]);
+});
+
+loadRemoteDatasetButton.addEventListener('click', async () => {
+  const url = remoteDatasetURLInput.value;
+  console.log(`Loading dataset from ${url} ...`);
+  const originalTextContent = loadRemoteDatasetButton.textContent;
+  try {
+    loadRemoteDatasetButton.textContent = 'Loading dataset...';
+    const serialized = await (await fetch(url)).arrayBuffer();
+    await loadDatasetInTransferRecognizer(serialized);
+    loadRemoteDatasetButton.textContent = originalTextContent;
+  } catch (err) {
+    console.error(err);
+    loadRemoteDatasetButton.textContent = err.message;
+    setTimeout(() => {
+      loadRemoteDatasetButton.textContent = originalTextContent;
+    }, 2000);
+  }
 });
 
 async function loadDatasetInTransferRecognizer(serialized) {
