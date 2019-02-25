@@ -237,11 +237,6 @@ enterLearnWordsButton.addEventListener('click', () => {
     return;
   }
 
-  // We disable the option to upload an existing dataset from files
-  // once the "Enter transfer words" button has been clicked.
-  // However, the user can still load an existing dataset from
-  // files first and keep appending examples to it.
-  disableFileUploadControls();
   enterLearnWordsButton.disabled = true;
 
   transferDurationMultiplier = durationMultiplierSelect.value;
@@ -482,11 +477,12 @@ async function loadDatasetInTransferRecognizer(serialized) {
   }
   transferRecognizer.loadExamples(serialized);
   const exampleCounts = transferRecognizer.countExamples();
-  transferWords = [];
   const modelNumFrames = transferRecognizer.modelInputShape()[1];
   const durationMultipliers = [];
   for (const word in exampleCounts) {
-    transferWords.push(word);
+    if (transferWords.indexOf(word) === -1) {
+      transferWords.push(word);
+    }
     const examples = transferRecognizer.getExamples(word);
     for (const example of examples) {
       const spectrogram = example.example.spectrogram;

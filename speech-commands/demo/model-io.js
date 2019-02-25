@@ -21,8 +21,6 @@ const modelIOButton = document.getElementById('model-io');
 const transferModelSaveLoadInnerDiv = document.getElementById('transfer-model-save-load-inner');
 
 const loadTransferModelButton = document.getElementById('load-transfer-model');
-console.log(`loadTransferModelButton:`, loadTransferModelButton,
-            loadTransferModelButton.disabled);  // DEBUG
 const saveTransferModelButton = document.getElementById('save-transfer-model');
 const savedTransferModelsSelect = document.getElementById('saved-transfer-models');
 const deleteTransferModelButton = document.getElementById('delete-transfer-model');
