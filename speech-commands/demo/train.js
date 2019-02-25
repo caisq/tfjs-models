@@ -501,6 +501,9 @@ async function loadDatasetInTransferRecognizer(serialized) {
   const exampleCounts = transferRecognizer.countExamples();
   const modelNumFrames = transferRecognizer.modelInputShape()[1];
   const durationMultipliers = [];
+  if (transferWords == null) {
+    transferWords = [];
+  }
   for (const word in exampleCounts) {
     if (transferWords.indexOf(word) === -1) {
       transferWords.push(word);
