@@ -44,7 +44,7 @@ activateGMailAPIButton.addEventListener('click', () => handleAPIAuth());
 function initClient() {
   console.log('In initClient()');  // DEBUG
   gapi.client.init({
-    apiKey: document.getElementById('gmail-api-key').value.trim(),
+    apiKey: '',
     clientId: CLIENT_ID,
     discoveryDocs: DISCOVERY_DOCS,
     scope: SCOPES
