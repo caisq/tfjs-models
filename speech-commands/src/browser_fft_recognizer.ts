@@ -947,6 +947,7 @@ class TransferBrowserFftSpeechCommandRecognizer extends
     });
     console.log(`fitDataset() took ${(tf.util.now() - t0).toFixed(2)} ms`);
 
+    let output: tf.History|[tf.History, tf.History];
     if (config.fineTuningEpochs != null && config.fineTuningEpochs > 0) {
       // Perform fine-tuning.
       const t0 = tf.util.now();
@@ -955,10 +956,45 @@ class TransferBrowserFftSpeechCommandRecognizer extends
       console.log(
           `fitDataset() (fine-tuning) took ` +
           `${(tf.util.now() - t0).toFixed(2)} ms`);
-      return [history, fineTuningHistory];
+      output = [history, fineTuningHistory];
     } else {
-      return history;
+      output = history;
     }
+
+    // Get AUC and ROC curve from validation dataset.
+    console.log('Calculating ROC and AUC on validation set...');
+    const iterator = await valDataset.iterator();
+    const xsTensors: tf.Tensor[] = [];
+    const ysTensors: tf.Tensor[] = [];
+    while (true) {
+      const data = await iterator.next();
+      if (data.done) {
+        break;
+      }
+      const values = data.value as tf.Tensor[];
+      xsTensors.push(values[0]);
+      ysTensors.push(values[1]);
+    }
+    const evalXs = tf.concat(xsTensors, 0);
+    const evalYs = tf.concat(ysTensors, 0);
+
+    const {rocCurve, auc} = this.evaluateOnTensors(evalXs, evalYs, {
+      windowHopRatio: DEFAULT_WINDOW_HOP_RATIO,
+      wordProbThresholds: [
+          0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45,
+          0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0]
+    });
+
+    console.log('---------- ROC on validation set ----------');
+    for (const rocItem of rocCurve) {
+      console.log(
+          `thresh=${rocItem.probThreshold}: fpr=${rocItem.fpr}; ` +
+          `tpr=${rocItem.tpr}`);
+    }
+    console.log('---------- ~ROC on validation set ----------');
+    console.log(`AUC on validation set: ${auc}`);
+
+    return output;
   }
 
   /** Helper function for training on tf.Tensor objects. */
@@ -1064,31 +1100,19 @@ class TransferBrowserFftSpeechCommandRecognizer extends
     return fineTuningHistory;
   }
 
-  /**
-   * Perform evaluation of the model using the examples that the model
-   * has loaded.
-   *
-   * @param config Configuration object for the evaluation.
-   * @returns A Promise of the result of evaluation.
-   */
-  async evaluate(config: EvaluateConfig): Promise<EvaluateResult> {
-    tf.util.assert(
-        config.wordProbThresholds != null &&
-            config.wordProbThresholds.length > 0,
-        `Received null or empty wordProbThresholds`);
-
-    // TODO(cais): Maybe relax this requirement.
-    const NOISE_CLASS_INDEX = 0;
-    tf.util.assert(
-        this.words[NOISE_CLASS_INDEX] === BACKGROUND_NOISE_TAG,
-        `Cannot perform evaluation when the first tag is not ` +
-            `${BACKGROUND_NOISE_TAG}`);
-
+  private evaluateOnTensors(
+      xs: tf.Tensor, ys: tf.Tensor, config: EvaluateConfig): EvaluateResult {
     return tf.tidy(() => {
       const rocCurve: ROCCurve = [];
       let auc = 0;
-      const {xs, ys} =
-          this.collectTransferDataAsTensors(config.windowHopRatio);
+
+      // TODO(cais): Maybe relax this requirement.
+      const NOISE_CLASS_INDEX = 0;
+      tf.util.assert(
+          this.words[NOISE_CLASS_INDEX] === BACKGROUND_NOISE_TAG,
+          `Cannot perform evaluation when the first tag is not ` +
+              `${BACKGROUND_NOISE_TAG}`);
+
       const indices = ys.argMax(-1).dataSync();
       const probs = this.model.predict(xs) as tf.Tensor;
 
@@ -1140,6 +1164,25 @@ class TransferBrowserFftSpeechCommandRecognizer extends
       }
       return {rocCurve, auc};
     });
+  }
+
+  /**
+   * Perform evaluation of the model using the examples that the model
+   * has loaded.
+   *
+   * @param config Configuration object for the evaluation.
+   * @returns A Promise of the result of evaluation.
+   */
+  async evaluate(config: EvaluateConfig): Promise<EvaluateResult> {
+    tf.util.assert(
+        config.wordProbThresholds != null &&
+            config.wordProbThresholds.length > 0,
+        `Received null or empty wordProbThresholds`);
+    const {xs, ys} =
+        this.collectTransferDataAsTensors(config.windowHopRatio);
+    const output = this.evaluateOnTensors(xs, ys, config);
+    tf.dispose([xs, ys]);
+    return output;
   }
 
   /**

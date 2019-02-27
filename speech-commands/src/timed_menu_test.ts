@@ -46,7 +46,7 @@ describe('TimedMenu', () => {
     ]
   };
 
-  fit('One-level menu: correct state and actions', async () => {
+  it('One-level menu: correct state and actions', async () => {
     const tickMillis = 10;
     const menu = new TimedMenu(ONE_LEVEL_MENU_SPEC, null, {tickMillis});
     expect(menu.registerEvent('foo')).toEqual('fooAction');
@@ -58,7 +58,7 @@ describe('TimedMenu', () => {
     expect(menu.registerEvent('qux')).toEqual(null);
   });
 
-  fit('Two-level menu: correct state and actions', async () => {
+  it('Two-level menu: correct state and actions', async () => {
     const tickMillis = 10;
     const menu = new TimedMenu(TWO_LEVEL_MENU_SPEC, null, {tickMillis});
 
@@ -89,7 +89,7 @@ describe('TimedMenu', () => {
     expect(menu.registerEvent('qux')).toEqual('quxAction');
   });
 
-  fit('Two-level menu: timeout', done => {
+  it('Two-level menu: timeout', done => {
     const tickMillis = 10;
     const menu = new TimedMenu(TWO_LEVEL_MENU_SPEC, null, {tickMillis});
 
@@ -106,7 +106,7 @@ describe('TimedMenu', () => {
     }, 150);
   });
 
-  fit('Two-level menu: callback is invoked', async () => {
+  it('Two-level menu: callback is invoked', async () => {
     const callbackInvokeRecords: string[][] = [];
     const callback = async (stateSequence: string[]) => {
       callbackInvokeRecords.push(stateSequence);
@@ -122,7 +122,7 @@ describe('TimedMenu', () => {
         .toEqual(['foo']);
   });
 
-  fit('Two-level menu: callback is invoked: before any events', async () => {
+  it('Two-level menu: callback is invoked: before any events', async () => {
     const callbackInvokeRecords: string[][] = [];
     const callback =
         async (stateSequence: string[]) => {
