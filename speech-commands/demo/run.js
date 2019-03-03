@@ -23,14 +23,17 @@ import * as SpeechCommands from '../src';
 
 const startButton = document.getElementById('start');
 const stopButton = document.getElementById('stop');
+
+const runConfigButton = document.getElementById('run-config');
+const runConfigGroupDiv = document.getElementById('run-config-group');
+const pThreshSlider = document.getElementById('p-thresh');
+const pThreshDisplay = document.getElementById('p-thresh-display');
+
 const startActionTreeButton = document.getElementById('start-action-tree');
 const actionTreeGroupDiv = document.getElementById('action-tree-group');
 const ttlMultiplierSlider = document.getElementById('ttl-multiplier');
 const ttlMultiplierDisplay = document.getElementById('ttl-multiplier-display');
 const messageSpan = document.getElementById('message');
-
-const pThreshSlider = document.getElementById('p-thresh');
-const pThreshDisplay = document.getElementById('p-thresh-display');
 
 let recognizer;
 let transferRecognizer;
@@ -60,6 +63,18 @@ const toTrainingButton = document.getElementById('to-training');
 
 toTrainingButton.addEventListener('click', () => {
   window.location.href = './train.html';
+});
+
+runConfigButton.addEventListener('click', () => {
+  if (runConfigButton.textContent.endsWith(' >>')) {
+    runConfigGroupDiv.style.display = 'inline-block';
+    runConfigButton.textContent =
+        runConfigButton.textContent.replace(' >>', ' <<');
+  } else {
+    runConfigGroupDiv.style.display = 'none';
+    runConfigButton.textContent =
+        runConfigButton.textContent.replace(' <<', ' >>');
+  }
 });
 
 const actionTreeConfigButton = document.getElementById('action-tree-config');
@@ -223,4 +238,3 @@ pThreshSlider.addEventListener('change', () => {
 
   populateSavedTransferModelsSelect();
 })();
-
