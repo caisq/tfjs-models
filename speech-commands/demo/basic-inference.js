@@ -20,7 +20,7 @@ import {hideCandidateWords, logToStatusDisplay, plotPredictions, populateCandida
 const startButton = document.getElementById('start');
 const stopButton = document.getElementById('stop');
 const predictionCanvas = document.getElementById('prediction-canvas');
-const probaThresholdInput = document.getElementById('proba-threshold');
+const pThreshSlider = document.getElementById('p-thresh');
 
 let recognizer;
 export function setRecognizer(r) {
@@ -32,6 +32,8 @@ if (startButton != null) {
     populateCandidateWords(recognizer.wordLabels());
 
     const suppressionTimeMillis = 1000;
+    const probabilityThreshold = Number.parseFloat(pThreshSlider.value);
+    console.log(`Starting listen() with p-threshold = ${probabilityThreshold}`);
     recognizer
         .listen(
             result => {
@@ -42,11 +44,12 @@ if (startButton != null) {
             {
               includeSpectrogram: true,
               suppressionTimeMillis,
-              probabilityThreshold: Number.parseFloat(probaThresholdInput.value)
+              probabilityThreshold
             })
         .then(() => {
           startButton.disabled = true;
           stopButton.disabled = false;
+          pThreshSlider.disabled = true;
           showCandidateWords();
           logToStatusDisplay('Streaming recognition started.');
         })
@@ -61,6 +64,7 @@ if (startButton != null) {
         .then(() => {
           startButton.disabled = false;
           stopButton.disabled = true;
+          pThreshSlider.disabled = false;
           hideCandidateWords();
           logToStatusDisplay('Streaming recognition stopped.');
         })

@@ -24,11 +24,13 @@ import * as SpeechCommands from '../src';
 const startButton = document.getElementById('start');
 const stopButton = document.getElementById('stop');
 const startActionTreeButton = document.getElementById('start-action-tree');
-const probaThresholdInput = document.getElementById('proba-threshold');
 const actionTreeGroupDiv = document.getElementById('action-tree-group');
 const ttlMultiplierSlider = document.getElementById('ttl-multiplier');
 const ttlMultiplierDisplay = document.getElementById('ttl-multiplier-display');
 const messageSpan = document.getElementById('message');
+
+const pThreshSlider = document.getElementById('p-thresh');
+const pThreshDisplay = document.getElementById('p-thresh-display');
 
 let recognizer;
 let transferRecognizer;
@@ -120,6 +122,8 @@ startActionTreeButton.addEventListener('click',  async () =>  {
         }, {tickMillis, timeToLiveMultiplier});
 
     const suppressionTimeMillis = 1000;
+    const probabilityThreshold = Number.parseFloat(pThreshSlider.value);
+    console.log(`Starting listen() with p-threshold = ${probabilityThreshold}`);
     await activeRecognizer.listen(result => {
         const wordLabels = activeRecognizer.wordLabels();
         let maxScore = -Infinity;
@@ -143,8 +147,9 @@ startActionTreeButton.addEventListener('click',  async () =>  {
       }, {
         includeSpectrogram: true,
         suppressionTimeMillis,
-        probabilityThreshold: Number.parseFloat(probaThresholdInput.value)
+        probabilityThreshold
       });
+    pThreshSlider.disabled = true;
     startButton.disabled = true;
     stopButton.disabled = false;
     refreshStartActionTreeButtonStatus();
@@ -166,6 +171,7 @@ stopButton.addEventListener('click', () => {
     timedMenu = null;
     actionTreeGroupDiv.style.display = 'none';
   }
+  pThreshSlider.disabled = false;
   refreshStartActionTreeButtonStatus();
 });
 
@@ -199,6 +205,11 @@ export function showMessage(message, type) {
   }, MESSAGE_DURATION_MILLIS);
 }
 
+pThreshDisplay.textContent = `threshold: ${pThreshSlider.value}`;
+pThreshSlider.addEventListener('change', () => {
+  pThreshDisplay.textContent = `threshold: ${pThreshSlider.value}`;
+});
+
 (async function() {
   recognizer = SpeechCommands.create('BROWSER_FFT');
 
@@ -212,3 +223,4 @@ export function showMessage(message, type) {
 
   populateSavedTransferModelsSelect();
 })();
+

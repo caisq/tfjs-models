@@ -27,7 +27,6 @@ import * as basicInference from './basic-inference';
 
 const toInferenceButton = document.getElementById('to-inference');
 
-const startButton = document.getElementById('start');
 
 const epochsInput = document.getElementById('epochs');
 const fineTuningEpochsInput = document.getElementById('fine-tuning-epochs');
@@ -84,7 +83,6 @@ registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
       .then(() => {
         registerRecognizer(recognizer);
         basicInference.setRecognizer(recognizer);
-        startButton.disabled = false;
         enterLearnWordsButton.disabled = false;
         enableLoadAndDeleteModelButtons();
 
@@ -282,7 +280,6 @@ function disableFileUploadControls() {
 
 startTransferLearnButton.addEventListener('click', async () => {
   startTransferLearnButton.disabled = true;
-  startButton.disabled = true;
   startTransferLearnButton.textContent = 'Transfer learning starting...';
   await tf.nextFrame();
 
@@ -399,7 +396,6 @@ startTransferLearnButton.addEventListener('click', async () => {
   transferModelNameInput.disabled = true;
   startTransferLearnButton.textContent = 'Transfer learning complete.';
   transferModelNameInput.disabled = false;
-  startButton.disabled = false;
   evalModelOnDatasetButton.disabled = false;
 });
 
