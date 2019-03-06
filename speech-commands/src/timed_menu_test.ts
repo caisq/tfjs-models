@@ -130,7 +130,8 @@ describe('TimedMenu', () => {
     };
 
     const tickMillis = 10;
-    new TimedMenu(TWO_LEVEL_MENU_SPEC, callback, {tickMillis});
+    const menu = new TimedMenu(TWO_LEVEL_MENU_SPEC, callback, {tickMillis});
+    expect(menu == null).toEqual(false);
     await sleep(tickMillis);
 
     expect(callbackInvokeRecords.length).toBeGreaterThan(0);

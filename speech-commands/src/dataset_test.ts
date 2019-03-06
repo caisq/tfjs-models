@@ -445,30 +445,26 @@ describe('Dataset', () => {
       datasetValidationSplit: 1 / 3
     }) as [SpectrogramAndTargetsTfDataset, SpectrogramAndTargetsTfDataset];
     let numTrain = 0;
-    await trainDataset.forEach((xAndY: TensorContainer) => {
-      numTrain++;
-      xAndY = xAndY as tf.Tensor[];
-      expect(xAndY.length).toEqual(2);
-      const x = xAndY[0] as tf.Tensor;
-      const y = xAndY[1] as tf.Tensor;
-      expect(x.shape).toEqual([1, FAKE_NUM_FRAMES, FAKE_FRAME_SIZE, 1]);
-      expect(x.isDisposed).toEqual(false);
-      expect(y.shape).toEqual([1, 2]);
-      expect(y.isDisposed).toEqual(false);
-    });
+    await trainDataset.forEachAsync(
+        (xAndY: {xs: tf.Tensor2D, ys: tf.Tensor2D}) => {
+          const {xs, ys} = xAndY;
+          numTrain++;
+          expect(xs.shape).toEqual([1, FAKE_NUM_FRAMES, FAKE_FRAME_SIZE, 1]);
+          expect(xs.isDisposed).toEqual(false);
+          expect(ys.shape).toEqual([1, 2]);
+          expect(ys.isDisposed).toEqual(false);
+        });
     expect(numTrain).toEqual(2);
     let numVal = 0;
-    await valDataset.forEach((xAndY: TensorContainer) => {
-      numVal++;
-      xAndY = xAndY as tf.Tensor[];
-      expect(xAndY.length).toEqual(2);
-      const x = xAndY[0] as tf.Tensor;
-      const y = xAndY[1] as tf.Tensor;
-      expect(x.shape).toEqual([1, FAKE_NUM_FRAMES, FAKE_FRAME_SIZE, 1]);
-      expect(x.isDisposed).toEqual(false);
-      expect(y.shape).toEqual([1, 2]);
-      expect(y.isDisposed).toEqual(false);
-    });
+    await valDataset.forEachAsync(
+        (xAndY: {xs: tf.Tensor2D, ys: tf.Tensor2D}) => {
+          const {xs, ys} = xAndY;
+          numVal++;
+          expect(xs.shape).toEqual([1, FAKE_NUM_FRAMES, FAKE_FRAME_SIZE, 1]);
+          expect(xs.isDisposed).toEqual(false);
+          expect(ys.shape).toEqual([1, 2]);
+          expect(ys.isDisposed).toEqual(false);
+        });
     expect(numVal).toEqual(1);
   });
 

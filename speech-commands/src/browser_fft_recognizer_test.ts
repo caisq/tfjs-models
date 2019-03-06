@@ -59,23 +59,27 @@ describeWithFlags('Browser FFT recognizer', tf.test_util.NODE_ENVS, () => {
     const words =
         backgroundAndNoiseOnly ? fakeWordsNoiseAndUnknownOnly : fakeWords;
     const numWords = words.length;
-    tfLoadModelSpy = spyOn(tf, 'loadModel').and.callFake((url: string) => {
-      if (model == null) {
-        model = tf.sequential();
-        model.add(tf.layers.flatten(
-            {inputShape: [fakeNumFrames, fakeColumnTruncateLength, 1]}));
-        secondLastBaseDenseLayer = tf.layers.dense(
-            {units: 4, activation: 'relu', kernelInitializer: 'leCunNormal'});
-        model.add(secondLastBaseDenseLayer);
-        model.add(tf.layers.dense({
-          units: numWords,
-          useBias: false,
-          kernelInitializer: 'leCunNormal',
-          activation: 'softmax'
-        }));
-      }
-      return model;
-    });
+    tfLoadModelSpy =
+        spyOn(tf, 'loadLayersModel').and.callFake((url: string) => {
+          if (model == null) {
+            model = tf.sequential();
+            model.add(tf.layers.flatten(
+                {inputShape: [fakeNumFrames, fakeColumnTruncateLength, 1]}));
+            secondLastBaseDenseLayer = tf.layers.dense({
+              units: 4,
+              activation: 'relu',
+              kernelInitializer: 'leCunNormal'
+            });
+            model.add(secondLastBaseDenseLayer);
+            model.add(tf.layers.dense({
+              units: numWords,
+              useBias: false,
+              kernelInitializer: 'leCunNormal',
+              activation: 'softmax'
+            }));
+          }
+          return model;
+        });
     spyOn(BrowserFftUtils, 'loadMetadataJson')
         .and.callFake(async (url: string) => {
           return {words};
@@ -100,7 +104,7 @@ describeWithFlags('Browser FFT recognizer', tf.test_util.NODE_ENVS, () => {
     const recognizer = new BrowserFftSpeechCommandRecognizer();
     await recognizer.ensureModelLoaded();
     expect(recognizer.wordLabels()).toEqual(fakeWords);
-    expect(recognizer.model instanceof tf.Model).toEqual(true);
+    expect(recognizer.model instanceof tf.LayersModel).toEqual(true);
     expect(recognizer.modelInputShape()).toEqual([
       null, fakeNumFrames, fakeColumnTruncateLength, 1
     ]);
@@ -1397,8 +1401,8 @@ describeWithFlags('Browser FFT recognizer', tf.test_util.NODE_ENVS, () => {
     // Load the transfer model back.
     const base2 = new BrowserFftSpeechCommandRecognizer();
     await base2.ensureModelLoaded();
-    // Disable the spy on tf.loadModel() first, so the subsequent
-    // tf.loadModel() call during the load() call can use the fake
+    // Disable the spy on tf.loadLayersModel() first, so the subsequent
+    // tf.loadLayersModel() call during the load() call can use the fake
     // IndexedDB handler created above.
     tfLoadModelSpy.and.callThrough();
     const transfer2 = base2.createTransfer('xfer1');
@@ -1423,11 +1427,12 @@ describeWithFlags('Browser FFT recognizer', tf.test_util.NODE_ENVS, () => {
     const tempSavePath = tempfile();
     await transfer.save(`file://${tempSavePath}`);
 
-    // Disable the spy on tf.loadModel() first, so the subsequent
-    // tf.loadModel() call during the load() call can use the fake
+    // Disable the spy on tf.loadLayersModel() first, so the subsequent
+    // tf.loadLayersModel() call during the load() call can use the fake
     // IndexedDB handler created above.
     tfLoadModelSpy.and.callThrough();
-    const modelPrime = await tf.loadModel(`file://${tempSavePath}/model.json`);
+    const modelPrime =
+        await tf.loadLayersModel(`file://${tempSavePath}/model.json`);
     expect(modelPrime.outputs.length).toEqual(1);
     expect(modelPrime.outputs[0].shape).toEqual([null, 2]);
 
