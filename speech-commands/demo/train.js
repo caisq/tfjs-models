@@ -152,6 +152,8 @@ function createWordDivs(transferWords) {
                               transferDurationMultiplier);
 
   const wordDivs = {};
+  const firstWordIsNoise = transferWords[0] === BACKGROUND_NOISE_TAG;
+  let nonNoiseDurationInput;
   for (const word of transferWords) {
     const wordDiv = document.createElement('div');
     wordDiv.classList.add('word-div');
@@ -172,36 +174,66 @@ function createWordDivs(transferWords) {
     collectWordButtons[word] = button;
 
     let durationInput;
+
+    // Create noise duration input.
     if (word === BACKGROUND_NOISE_TAG) {
-      // Create noise duration input.
       durationInput = document.createElement('input');
       durationInput.setAttribute('isFixed', 'true');
       durationInput.value = '10';
-      durationInput.style['width'] = '70px';
+      durationInput.style['width'] = '40px';
       wordDiv.appendChild(durationInput);
       // Create time-unit span for noise duration.
       const timeUnitSpan = document.createElement('span');
       timeUnitSpan.setAttribute('isFixed', 'true');
       timeUnitSpan.classList.add('settings');
       timeUnitSpan.style['vertical-align'] = 'middle';
-      timeUnitSpan.textContent = 'seconds';
+      timeUnitSpan.textContent = 'sec';
       wordDiv.appendChild(timeUnitSpan);
+
+      if (transferWords.length > 1) {
+        const nonNoiseControlDiv = document.createElement('div');
+
+        const nonNoiseDurationLabel = document.createElement('span');
+        nonNoiseDurationLabel.setAttribute('isFixed', 'true');
+        nonNoiseDurationLabel.classList.add('settings');
+        nonNoiseDurationLabel.style['vertical-align'] = 'middle';
+        nonNoiseDurationLabel.textContent = 'Word duration:';
+        nonNoiseControlDiv.append(nonNoiseDurationLabel);
+
+        nonNoiseDurationInput = document.createElement('input');
+        nonNoiseDurationInput.setAttribute('isFixed', 'true');
+        nonNoiseDurationInput.value = '2';
+        nonNoiseDurationInput.style['width'] = '40px';
+        nonNoiseControlDiv.append(nonNoiseDurationInput);
+
+        const timeUnitSpan = document.createElement('span');
+        timeUnitSpan.setAttribute('isFixed', 'true');
+        timeUnitSpan.classList.add('settings');
+        timeUnitSpan.style['vertical-align'] = 'middle';
+        timeUnitSpan.textContent = 'sec';
+        nonNoiseControlDiv.append(timeUnitSpan);
+
+        collectButtonsDiv.append(nonNoiseControlDiv);
+      }
     }
 
     button.addEventListener('click', async () => {
       disableAllCollectWordButtons();
       const collectExampleOptions = {};
       let durationSec;
-      // _background_noise_ examples are special, in that user can specify
-      // the length of the recording (in seconds).
       if (word === BACKGROUND_NOISE_TAG) {
+        // _background_noise_ examples are special, in that user can specify
+        // the length of the recording (in seconds).
+        // if (word === BACKGROUND_NOISE_TAG) {
         collectExampleOptions.durationSec =
             Number.parseFloat(durationInput.value);
-        durationSec = collectExampleOptions.durationSec;
+      } else if (nonNoiseDurationInput != null) {
+        collectExampleOptions.durationSec =
+            Number.parseFloat(nonNoiseDurationInput.value);
       } else {
-        collectExampleOptions.durationMultiplier = transferDurationMultiplier;
-        durationSec = 2;
+        collectExampleOptions.durationSec = 2;
       }
+      durationSec = collectExampleOptions.durationSec;
 
       // Show collection progress bar.
       removeNonFixedChildrenFromWordDiv(wordDiv);
