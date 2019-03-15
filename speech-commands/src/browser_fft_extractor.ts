@@ -183,7 +183,6 @@ export class BrowserFftFeatureExtractor implements FeatureExtractor {
     this.freqData = new Float32Array(this.fftSize);
     const period =
         Math.max(1, Math.round(this.numFrames * (1 - this.overlapFactor)));
-    console.log(`overlapFactor = ${this.overlapFactor}`);  // DEBUG
     this.tracker = new Tracker(
         period,
         Math.round(this.suppressionTimeMillis / this.frameDurationMillis));

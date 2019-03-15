@@ -201,18 +201,24 @@ function createWordDivs(transferWords) {
         nonNoiseDurationLabel.textContent = 'Word duration:';
         nonNoiseControlDiv.append(nonNoiseDurationLabel);
 
+        const nonWordDurationSpan = document.createElement('span');
+        nonWordDurationSpan.setAttribute('isFixed', 'true');
+        nonWordDurationSpan.classList.add('settings');
+        nonWordDurationSpan.style['vertical-align'] = 'middle';
+
         nonNoiseDurationInput = document.createElement('input');
-        nonNoiseDurationInput.setAttribute('isFixed', 'true');
-        nonNoiseDurationInput.value = '2';
-        nonNoiseDurationInput.style['width'] = '40px';
+        nonNoiseDurationInput.type = 'range';
+        nonNoiseDurationInput.min = 2;
+        nonNoiseDurationInput.max = 8;
+        nonNoiseDurationInput.step = 2;
+        nonNoiseDurationInput.value = 2;
+        nonNoiseDurationInput.addEventListener('change', () => {
+          nonWordDurationSpan.textContent = `${nonNoiseDurationInput.value} sec`;
+        });
         nonNoiseControlDiv.append(nonNoiseDurationInput);
 
-        const timeUnitSpan = document.createElement('span');
-        timeUnitSpan.setAttribute('isFixed', 'true');
-        timeUnitSpan.classList.add('settings');
-        timeUnitSpan.style['vertical-align'] = 'middle';
-        timeUnitSpan.textContent = 'sec';
-        nonNoiseControlDiv.append(timeUnitSpan);
+        nonWordDurationSpan.textContent = `${nonNoiseDurationInput.value} sec`;
+        nonNoiseControlDiv.append(nonWordDurationSpan);
 
         collectButtonsDiv.append(nonNoiseControlDiv);
       }
@@ -250,6 +256,7 @@ function createWordDivs(transferWords) {
         wordDiv.appendChild(tempCanvas);
 
         let tempSpectrogramData;
+        collectExampleOptions.snippetDurationSec = 0.1;
         collectExampleOptions.snippetCallback = async (spectrogram) => {
           if (tempSpectrogramData == null) {
             tempSpectrogramData = spectrogram.data;
