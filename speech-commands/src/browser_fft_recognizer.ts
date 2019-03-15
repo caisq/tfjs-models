@@ -19,7 +19,7 @@ import * as tf from '@tensorflow/tfjs';
 import {TensorContainer} from '@tensorflow/tfjs-core/dist/tensor_types';
 
 import {BrowserFftFeatureExtractor, SpectrogramCallback} from './browser_fft_extractor';
-import {loadMetadataJson, normalize} from './browser_fft_utils';
+import {loadMetadataJson, normalize, normalizeFloat32Array} from './browser_fft_utils';
 import {BACKGROUND_NOISE_TAG, Dataset} from './dataset';
 import {concatenateFloat32Arrays} from './generic_utils';
 import {balancedTrainValSplit} from './training_utils';
@@ -690,7 +690,6 @@ class TransferBrowserFftSpeechCommandRecognizer extends
     return new Promise<SpectrogramData>(resolve => {
       const stepFactor = options.snippetDurationSec == null ? 
           1 : options.snippetDurationSec / totalDurationSec;
-      console.log(`stepFactor = ${stepFactor}`);  // DEBUG
       const overlapFactor = 1 - stepFactor;
       const callbackCountTarget = Math.round(1 / stepFactor);
       let callbackCount = 0;
@@ -735,25 +734,23 @@ class TransferBrowserFftSpeechCommandRecognizer extends
               frameSize: this.nonBatchInputShape[1]
             });
           }
-         
+
           if (++callbackCount === callbackCountTarget) {
             await this.audioDataExtractor.stop();
             streaming = false;
             this.collateTransferWords();
 
-            const concatenated = concatenateFloat32Arrays(spectrogramSnippets);
-            const tempTensor = tf.tensor1d(concatenated);
-            const normalizedTensor = normalize(tempTensor);
-            tempTensor.dispose();
+            const normalized = normalizeFloat32Array(
+                concatenateFloat32Arrays(spectrogramSnippets));
             const finalSpectrogram: SpectrogramData = {
-              data: await normalizedTensor.data() as Float32Array,
+              data: normalized,
               frameSize: this.nonBatchInputShape[1]
             };
-            normalizedTensor.dispose();
             this.dataset.addExample({
               label: word,
               spectrogram: finalSpectrogram
             });
+            // TODO(cais): Fix 1-tensor memory leak.
             resolve(finalSpectrogram);
           }
         }

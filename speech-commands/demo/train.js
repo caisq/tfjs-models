@@ -87,7 +87,6 @@ registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
         enterLearnWordsButton.disabled = false;
         enableLoadAndDeleteModelButtons();
 
-        console.log('Setting name of input words');  // DEBUG
         transferModelNameInput.value = `model-${getDateString()}`;
 
         logToStatusDisplay('Model loaded.');

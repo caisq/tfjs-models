@@ -64,6 +64,20 @@ export function normalize(x: tf.Tensor): tf.Tensor {
   });
 }
 
+export function normalizeFloat32Array(x: Float32Array) {
+  if (EPSILON == null) {
+    EPSILON = tf.ENV.get('EPSILON');
+  }
+  return tf.tidy(() => {
+    const {mean, variance} = tf.moments(tf.tensor1d(x));
+    const meanVal = mean.arraySync() as number;
+    const stdVal = Math.sqrt(variance.arraySync() as number);
+    const yArray = Array.from(x).map(
+        y => (y - meanVal) / (stdVal + EPSILON));
+    return new Float32Array(yArray);
+  });
+}
+
 export function getAudioContextConstructor(): AudioContext {
   // tslint:disable-next-line:no-any
   return (window as any).AudioContext || (window as any).webkitAudioContext;

@@ -207,10 +207,10 @@ export class BrowserFftFeatureExtractor implements FeatureExtractor {
       const inputTensor = getInputTensorFromFrequencyData(
           freqData, [1, this.numFrames, this.columnTruncateLength, 1]);
       const shouldRest = await this.spectrogramCallback(inputTensor);
+      inputTensor.dispose();
       if (shouldRest) {
         this.tracker.suppress();
       }
-      inputTensor.dispose();
     }
   }
 
@@ -250,10 +250,12 @@ export function flattenQueue(queue: Float32Array[]): Float32Array {
 
 export function getInputTensorFromFrequencyData(
     freqData: Float32Array, shape: number[]): tf.Tensor {
-  const vals = new Float32Array(tf.util.sizeFromShape(shape));
-  // If the data is less than the output shape, the rest is padded with zeros.
-  vals.set(freqData, vals.length - freqData.length);
-  return tf.tensor(vals, shape);
+  return tf.tidy(() => {
+    const vals = new Float32Array(tf.util.sizeFromShape(shape));
+    // If the data is less than the output shape, the rest is padded with zeros.
+    vals.set(freqData, vals.length - freqData.length);
+    return tf.tensor(vals, shape);
+  });
 }
 
 /**
