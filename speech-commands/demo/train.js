@@ -22,8 +22,9 @@ import * as SpeechCommands from '../src';
 
 import {DatasetViz, removeNonFixedChildrenFromWordDiv} from './dataset-vis';
 import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferRecognizer, registerTransferRecognizerCreationCallback, enableLoadAndDeleteModelButtons, enableSaveModelButton} from './model-io';
-import {logToStatusDisplay} from './ui';
+import {logToStatusDisplay, plotSpectrogram} from './ui';
 import * as basicInference from './basic-inference';
+import { concatenateFloat32Arrays } from '../src/generic_utils';
 
 const toInferenceButton = document.getElementById('to-inference');
 
@@ -237,20 +238,48 @@ function createWordDivs(transferWords) {
 
       // Show collection progress bar.
       removeNonFixedChildrenFromWordDiv(wordDiv);
-      const progressBar = document.createElement('progress');
-      progressBar.value = 0;
-      progressBar.style['width'] = `${Math.round(window.innerWidth * 0.25)}px`;
-      // Update progress bar in increments.
-      const intervalJob = setInterval(() => {
-        progressBar.value += 0.05;
-      }, durationSec * 1e3 / 20);
-      wordDiv.appendChild(progressBar);
+
+      let intervalJob;
+      let progressBar;
+      if (word !== BACKGROUND_NOISE_TAG) {
+        // If this is not a background-noise word type, show incremental
+        // spectrogram in real time.
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.style['margin-left'] = '132px';
+        tempCanvas.height = 50;
+        wordDiv.appendChild(tempCanvas);
+
+        let tempSpectrogramData;
+        collectExampleOptions.snippetCallback = async (spectrogram) => {
+          if (tempSpectrogramData == null) {
+            tempSpectrogramData = spectrogram.data;
+          } else {
+            tempSpectrogramData = concatenateFloat32Arrays(
+                [tempSpectrogramData, spectrogram.data]);
+          }
+          plotSpectrogram(tempCanvas, tempSpectrogramData, spectrogram.frameSize,
+              spectrogram.frameSize, {pixelsPerFrame: 2});
+        }
+      } else {
+        progressBar = document.createElement('progress');
+        progressBar.value = 0;
+        progressBar.style['width'] = `${Math.round(window.innerWidth * 0.25)}px`;
+        // Update progress bar in increments.
+        intervalJob = setInterval(() => {
+          progressBar.value += 0.05;
+        }, durationSec * 1e3 / 20);
+        wordDiv.appendChild(progressBar);        
+      }
 
       const spectrogram = await transferRecognizer.collectExample(
           word, collectExampleOptions);
 
-      clearInterval(intervalJob);
-      wordDiv.removeChild(progressBar);
+      if (intervalJob != null) {
+        clearInterval(intervalJob);
+      }
+      if (progressBar != null) {
+        wordDiv.removeChild(progressBar);
+      }
       const examples = transferRecognizer.getExamples(word)
       const exampleUID = examples[examples.length - 1].uid;
       await datasetViz.drawExample(wordDiv, word, spectrogram, exampleUID);

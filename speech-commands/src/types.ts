@@ -135,6 +135,11 @@ export interface ExampleCollectionOptions {
    * If specified, must be >0.
    */
   durationSec?: number;
+
+  /**
+   * Optional snippet callback.
+   */
+  snippetCallback?: (spectrogram: SpectrogramData) => Promise<void>
 }
 
 /**

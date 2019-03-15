@@ -21,6 +21,7 @@ import {TensorContainer} from '@tensorflow/tfjs-core/dist/tensor_types';
 import {BrowserFftFeatureExtractor, SpectrogramCallback} from './browser_fft_extractor';
 import {loadMetadataJson, normalize} from './browser_fft_utils';
 import {BACKGROUND_NOISE_TAG, Dataset} from './dataset';
+import {concatenateFloat32Arrays} from './generic_utils';
 import {balancedTrainValSplit} from './training_utils';
 import {EvaluateConfig, EvaluateResult, Example, ExampleCollectionOptions, RecognizeConfig, RecognizerCallback, RecognizerParams, ROCCurve, SpectrogramData, SpeechCommandRecognizer, SpeechCommandRecognizerResult, StreamingRecognitionConfig, TransferLearnConfig, TransferSpeechCommandRecognizer} from './types';
 import {version} from './version';
@@ -672,15 +673,14 @@ class TransferBrowserFftSpeechCommandRecognizer extends
 
     streaming = true;
     return new Promise<SpectrogramData>(resolve => {
-      const stepFactor = 0.2;
+      const stepFactor = 0.05;
       const overlapFactor = 1 - stepFactor;
       const callbackCountTarget = Math.round(1 / stepFactor);
       let callbackCount = 0;
       let lastIndex = -1;
-      const spectrogramData: Float32Array[] = [];
+      const spectrogramSnippets: Float32Array[] = [];
       const spectrogramCallback: SpectrogramCallback = async (x: tf.Tensor) => {
         const data = await x.data() as Float32Array;
-        console.log(`callbackCount = ${callbackCount}`);  // DEBUG
         if (lastIndex === -1) {
           lastIndex = data.length;
         }
@@ -688,42 +688,37 @@ class TransferBrowserFftSpeechCommandRecognizer extends
         while (data[i] !== 0 && i >= 0) {
           i--;
         }
-        const numSamples = data.length - i - 1;
-        console.log(`${i + 1} --> ${lastIndex}`);  // DEBUG
-        spectrogramData.push(data.slice(i + 1, lastIndex));
+        const increment = lastIndex - i - 1;
         lastIndex = i + 1;
-        console.log(`numSamples = ${numSamples}`);  // DEBUG
+        const snippetData = data.slice(data.length - increment, data.length);
+        spectrogramSnippets.push(snippetData);
+
+        if (options.snippetCallback != null) {
+          options.snippetCallback({
+            data: snippetData,
+            frameSize: this.nonBatchInputShape[1]
+          });
+        }
+
         if (++callbackCount === callbackCountTarget) {
           await this.audioDataExtractor.stop();
           streaming = false;
           this.collateTransferWords();
 
-          // Concatenate the snippets
-          let totalLength = 0;
-          spectrogramData.forEach(x => totalLength += x.length);
-          const concatenated = new Float32Array(totalLength);
-          let index = 0;
-          spectrogramData.forEach(x => {
-            concatenated.set(x, index);
-            index += x.length;
-          });
-          // TODO(cais): Normalize concatenated.
+          const concatenated = concatenateFloat32Arrays(spectrogramSnippets);
+          const normalized =
+              await normalize(tf.tensor1d(concatenated)).data() as Float32Array;
+          const finalSpectrogram: SpectrogramData = {
+            data: normalized,
+            frameSize: this.nonBatchInputShape[1]
+          };
           this.dataset.addExample({
             label: word,
-            spectrogram: {
-              data: concatenated,
-              frameSize: this.nonBatchInputShape[1]
-            }
+            spectrogram: finalSpectrogram
           });
-          console.log(`totalLength = ${totalLength}`);  // DEBUG
-          console.log(spectrogramData);  //  DEBUG
-          console.log('Resolving');  // DEBUG
-          resolve({
-            data: await x.data() as Float32Array,
-            frameSize: this.nonBatchInputShape[1],
-          });
-          return false;
+          resolve(finalSpectrogram);
         }
+        return false;
       };
 
       this.audioDataExtractor = new BrowserFftFeatureExtractor({
