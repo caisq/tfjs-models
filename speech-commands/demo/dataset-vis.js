@@ -98,7 +98,9 @@ export class DatasetViz {
   words_() {
     const words = [];
     for (const element of this.container.children) {
-      words.push(element.getAttribute('word'));
+      if (element.getAttribute('word') != null) {
+        words.push(element.getAttribute('word'));
+      }
     }
     return words;
   }
@@ -280,6 +282,9 @@ export class DatasetViz {
     for (const element of this.container.children) {
       const word = element.getAttribute('word');
       const button = element.children[0];
+      if (!(button instanceof HTMLButtonElement)) {
+        continue;
+      }
       const displayWord = word ===
         speechCommands.BACKGROUND_NOISE_TAG ? 'noise' : word;
       const exampleCount = exampleCounts[word] || 0;

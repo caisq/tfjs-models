@@ -967,7 +967,7 @@ class TransferBrowserFftSpeechCommandRecognizer extends
       output = history;
     }
 
-    // Get AUC and ROC curve from validation dataset.
+    // Get AUC from validation dataset.
     console.log('Calculating ROC and AUC on validation set...');
     const iterator = await valDataset.iterator();
     const xsTensors: tf.Tensor[] = [];
@@ -984,21 +984,12 @@ class TransferBrowserFftSpeechCommandRecognizer extends
     const evalXs = tf.concat(xsTensors, 0);
     const evalYs = tf.concat(ysTensors, 0);
 
-    const {rocCurve, auc} = this.evaluateOnTensors(evalXs, evalYs, {
+    this.evaluateOnTensors(evalXs, evalYs, {
       windowHopRatio: DEFAULT_WINDOW_HOP_RATIO,
       wordProbThresholds: [
           0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45,
           0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0]
     });
-
-    console.log('---------- ROC on validation set ----------');
-    for (const rocItem of rocCurve) {
-      console.log(
-          `thresh=${rocItem.probThreshold}: fpr=${rocItem.fpr}; ` +
-          `tpr=${rocItem.tpr}`);
-    }
-    console.log('---------- ~ROC on validation set ----------');
-    console.log(`AUC on validation set: ${auc}`);
 
     return output;
   }
@@ -1181,6 +1172,8 @@ class TransferBrowserFftSpeechCommandRecognizer extends
               (rocCurve[i - 1].tpr + rocCurve[i].tpr) / 2;
         }
       }
+      console.log('------------------------------------');
+      console.log(`AUC = ${auc.toFixed(4)}`);
       return {rocCurve, auc};
     });
   }
@@ -1237,7 +1230,8 @@ class TransferBrowserFftSpeechCommandRecognizer extends
     this.transferHead.add(tf.layers.dense({
       units: this.words.length,
       activation: 'softmax',
-      inputShape: truncatedBaseOutput.shape.slice(1)
+      inputShape: truncatedBaseOutput.shape.slice(1),
+      name: 'newHeadDense'
     }));
     const transferOutput =
         this.transferHead.apply(truncatedBaseOutput) as tf.SymbolicTensor;
