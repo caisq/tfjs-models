@@ -672,32 +672,67 @@ class TransferBrowserFftSpeechCommandRecognizer extends
 
     streaming = true;
     return new Promise<SpectrogramData>(resolve => {
+      const stepFactor = 0.2;
+      const overlapFactor = 1 - stepFactor;
+      const callbackCountTarget = Math.round(1 / stepFactor);
+      let callbackCount = 0;
+      let lastIndex = -1;
+      const spectrogramData: Float32Array[] = [];
       const spectrogramCallback: SpectrogramCallback = async (x: tf.Tensor) => {
-        const normalizedX = normalize(x);
-        this.dataset.addExample({
-          label: word,
-          spectrogram: {
-            data: await normalizedX.data() as Float32Array,
+        const data = await x.data() as Float32Array;
+        console.log(`callbackCount = ${callbackCount}`);  // DEBUG
+        if (lastIndex === -1) {
+          lastIndex = data.length;
+        }
+        let i = lastIndex - 1;
+        while (data[i] !== 0 && i >= 0) {
+          i--;
+        }
+        const numSamples = data.length - i - 1;
+        console.log(`${i + 1} --> ${lastIndex}`);  // DEBUG
+        spectrogramData.push(data.slice(i + 1, lastIndex));
+        lastIndex = i + 1;
+        console.log(`numSamples = ${numSamples}`);  // DEBUG
+        if (++callbackCount === callbackCountTarget) {
+          await this.audioDataExtractor.stop();
+          streaming = false;
+          this.collateTransferWords();
+
+          // Concatenate the snippets
+          let totalLength = 0;
+          spectrogramData.forEach(x => totalLength += x.length);
+          const concatenated = new Float32Array(totalLength);
+          let index = 0;
+          spectrogramData.forEach(x => {
+            concatenated.set(x, index);
+            index += x.length;
+          });
+          // TODO(cais): Normalize concatenated.
+          this.dataset.addExample({
+            label: word,
+            spectrogram: {
+              data: concatenated,
+              frameSize: this.nonBatchInputShape[1]
+            }
+          });
+          console.log(`totalLength = ${totalLength}`);  // DEBUG
+          console.log(spectrogramData);  //  DEBUG
+          console.log('Resolving');  // DEBUG
+          resolve({
+            data: await x.data() as Float32Array,
             frameSize: this.nonBatchInputShape[1],
-          }
-        });
-        normalizedX.dispose();
-        await this.audioDataExtractor.stop();
-        streaming = false;
-        this.collateTransferWords();
-        resolve({
-          data: await x.data() as Float32Array,
-          frameSize: this.nonBatchInputShape[1],
-        });
-        return false;
+          });
+          return false;
+        }
       };
+
       this.audioDataExtractor = new BrowserFftFeatureExtractor({
         sampleRateHz: this.parameters.sampleRateHz,
         numFramesPerSpectrogram,
         columnTruncateLength: this.nonBatchInputShape[1],
         suppressionTimeMillis: 0,
         spectrogramCallback,
-        overlapFactor: 0
+        overlapFactor
       });
       this.audioDataExtractor.start();
     });
