@@ -105,7 +105,9 @@ startActionTreeButton.addEventListener('click',  async () =>  {
 
     // Construct TimedMenu.
     const configAndUniqueNames = parseActionTreeConfig();
+    
     const timedMenuConfig = configAndUniqueNames.config;
+    console.log(`action tree config = ${JSON.stringify(timedMenuConfig)}`);  // DEBUG
     const uniqueNames = configAndUniqueNames.uniqueNames;
 
     const wordLabelsNoNoise = activeRecognizer.wordLabels().slice();

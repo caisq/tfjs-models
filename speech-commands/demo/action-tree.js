@@ -28,6 +28,8 @@ const saveTreeButton = document.getElementById('save-tree');
 const deleteTreeButton = document.getElementById('delete-tree');
 const newTreeButton = document.getElementById('new-tree');
 
+let actionTreeNeedsRedraw = false;
+
 const initialActionTreeConfig = {
   nodes: [
     {
@@ -208,6 +210,7 @@ function populateSavedTreeSelect(treeSet) {
 
 if (loadTreeButton != null) {
   loadTreeButton.addEventListener('click', () => {
+    actionTreeNeedsRedraw = true;
     const actionTree = treeSet.get(savedTreesSelect.value);
     savedTreesSelect.disabled = true;
     loadTreeButton.disabled = true;
@@ -220,6 +223,7 @@ if (loadTreeButton != null) {
 if (saveTreeButton != null) {
   saveTreeButton.addEventListener('click', () => {
     try {
+      actionTreeNeedsRedraw = true;
       const tree = actionTreeJSONEditor.get();
       treeSet.set(savedTreesSelect.value, tree);
       treeSet.save();
@@ -330,7 +334,8 @@ function getTreantConfigInner(timedMenuNodes, treantConfig, level, levelName) {
 
 let tree;
 export function drawActionTree(containerId, timedMenuConfig, stateSequence) {
-  if (tree == null) {
+  if (tree == null || actionTreeNeedsRedraw) {
+    actionTreeNeedsRedraw = false;  
     const element = document.getElementById(containerId);
     while (element.firstChild) {
       element.removeChild(element.firstChild);
