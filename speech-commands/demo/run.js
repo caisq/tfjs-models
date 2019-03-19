@@ -107,7 +107,6 @@ startActionTreeButton.addEventListener('click',  async () =>  {
     const configAndUniqueNames = parseActionTreeConfig();
     
     const timedMenuConfig = configAndUniqueNames.config;
-    console.log(`action tree config = ${JSON.stringify(timedMenuConfig)}`);  // DEBUG
     const uniqueNames = configAndUniqueNames.uniqueNames;
 
     const wordLabelsNoNoise = activeRecognizer.wordLabels().slice();
@@ -140,6 +139,10 @@ startActionTreeButton.addEventListener('click',  async () =>  {
           }
           drawActionTree('action-tree', timedMenuConfig, stateSequence);
         }, {tickMillis, timeToLiveMultiplier});
+
+    if (timedMenuConfig.resetWord != null) {
+      console.log(`Reset word: ${timedMenuConfig.resetWord}`);
+    }
 
     const suppressionTimeMillis =
         Number.parseFloat(suppressionTimeSlider.value);

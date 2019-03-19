@@ -17,6 +17,8 @@
 
 import * as tf from '@tensorflow/tfjs';
 
+const RESET_ACTION = 'reset';
+
 export type TimedMenuAction = string;
 
 export type TimedMenuNodeSpec = {
@@ -53,6 +55,9 @@ export type StateChangeType = 'advance'|'init'|'leaf'|'regress'|'regressSteps'|'
 
 export type TimedMenuSpec = {
   nodes: TimedMenuNodeSpec[];
+
+  /** The word that cause the state to reset to root node. */
+  resetWord?: string;
 
   metadata?: {};
 };
@@ -108,6 +113,18 @@ export class TimedMenu {
         this.stateSequence[this.stateSequence.length - 1].children;
     if (candidates == null) {
       throw new Error('Cannot handle more events');
+    }
+
+    // Special logical path for resetting the state back to root.
+    if (this.config.resetWord != null && name === this.config.resetWord &&
+        this.stateSequence.length > 0) {
+      console.log(`reset ordered by reset word "${name}".`);
+      this.stateSequence = [];
+      if (this.callback != null) {
+        this.callback(
+            this.stateSequence.map(node => node.name), 'reset');
+      }
+      return null;
     }
 
     for (const candidate of candidates) {

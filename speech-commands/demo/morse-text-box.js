@@ -79,7 +79,6 @@ export class MorseTextBox {
   }
 
   clear() {
-    console.log('In clear()');  // DEBUG
     this.update('');
   }
 

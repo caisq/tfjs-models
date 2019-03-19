@@ -124,7 +124,8 @@ const defaultNewTreeConfig = {
         }
       ]
     }
-  ]
+  ],
+  resetWord: null
 }
 
 class ActionTreeSet {
@@ -340,6 +341,10 @@ export function drawActionTree(containerId, timedMenuConfig, stateSequence) {
     while (element.firstChild) {
       element.removeChild(element.firstChild);
     }
+    if (timedMenuConfig.resetWord != null) {
+      document.getElementById('action-tree-aux-info').textContent =
+          `Reset word: "${timedMenuConfig.resetWord}"`;
+    }
     tree = new Treant(
         getTreantConfig(containerId, timedMenuConfig, stateSequence));
   }
@@ -421,6 +426,8 @@ const MORSE_CONVERT_TEXT_COMMAND = 'morseconverttext';
 const UNDO_TEXT_COMMAND = 'undotext';
 const EMAIL_TEXT_COMMAND = 'emailtext ';
 const CLEAR_TEXT_COMMAND = 'cleartext';
+
+const RESET_COMMAND = 'reset';
 
 export function executeTimedMenuAction(action) {
   if (action == null || action.length === 0) {
