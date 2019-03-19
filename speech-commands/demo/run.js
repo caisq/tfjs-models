@@ -29,6 +29,9 @@ const runConfigGroupDiv = document.getElementById('run-config-group');
 const pThreshSlider = document.getElementById('p-thresh');
 const pThreshDisplay = document.getElementById('p-thresh-display');
 
+const suppressionTimeSlider = document.getElementById('suppression-time');
+const suppressionTimeDisplay = document.getElementById('suppression-time-display');
+
 const startActionTreeButton = document.getElementById('start-action-tree');
 const actionTreeGroupDiv = document.getElementById('action-tree-group');
 const ttlMultiplierSlider = document.getElementById('ttl-multiplier');
@@ -118,7 +121,7 @@ startActionTreeButton.addEventListener('click',  async () =>  {
       }
     });
 
-    const tickMillis = 500;
+    const tickMillis = 250;
     const timeToLiveMultiplier =
         ttlMultiplierSlider == null ? 1 : ttlMultiplierSlider.value;
     console.log(`Using time-to-live multiplier: ${timeToLiveMultiplier}`);
@@ -136,9 +139,12 @@ startActionTreeButton.addEventListener('click',  async () =>  {
           drawActionTree('action-tree', timedMenuConfig, stateSequence);
         }, {tickMillis, timeToLiveMultiplier});
 
-    const suppressionTimeMillis = 1000;
+    const suppressionTimeMillis =
+        Number.parseFloat(suppressionTimeSlider.value);
     const probabilityThreshold = Number.parseFloat(pThreshSlider.value);
-    console.log(`Starting listen() with p-threshold = ${probabilityThreshold}`);
+    console.log(
+        `Starting listen() with p-threshold = ${probabilityThreshold}; ` +
+        `suppression time = ${suppressionTimeMillis} ms`);
     await activeRecognizer.listen(result => {
         const wordLabels = activeRecognizer.wordLabels();
         let maxScore = -Infinity;
@@ -165,13 +171,16 @@ startActionTreeButton.addEventListener('click',  async () =>  {
         probabilityThreshold
       });
     pThreshSlider.disabled = true;
+    suppressionTimeSlider.disabled = true;
     startButton.disabled = true;
     stopButton.disabled = false;
     refreshStartActionTreeButtonStatus();
 
     showMessage(
-        `Action tree started, recognizing words: ` +
-        `${wordLabelsNoNoise.join(', ')}`);
+        `Action tree started, words: ` +
+        `${wordLabelsNoNoise.join(', ')} ` +
+        `(p-thresh: ${probabilityThreshold}; ` +
+        `supression: ${suppressionTimeMillis} ms)`);
   } catch (err) {
     console.error(err);
     actionTreeGroupDiv.style.display = 'none';
@@ -187,6 +196,7 @@ stopButton.addEventListener('click', () => {
     actionTreeGroupDiv.style.display = 'none';
   }
   pThreshSlider.disabled = false;
+  suppressionTimeSlider.disabled = false;
   refreshStartActionTreeButtonStatus();
 });
 
@@ -223,6 +233,11 @@ export function showMessage(message, type) {
 pThreshDisplay.textContent = `threshold: ${pThreshSlider.value}`;
 pThreshSlider.addEventListener('change', () => {
   pThreshDisplay.textContent = `threshold: ${pThreshSlider.value}`;
+});
+
+suppressionTimeDisplay.textContent = `${suppressionTimeSlider.value} ms`;
+suppressionTimeSlider.addEventListener('change', () => {
+  suppressionTimeDisplay.textContent = `${suppressionTimeSlider.value} ms`;
 });
 
 (async function() {

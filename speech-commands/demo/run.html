@@ -19,6 +19,7 @@
     <button id="start" disabled="true">Start</button>
     <button id="start-action-tree" disabled="true">Start Action Tree</button>
     <button id="stop" disabled="true">Stop</button>
+    <span id="message"></span>
     <button class="inference-switch" id="to-training">Train models ⇗</button>
 
     <div class="collapsible-region">
@@ -28,10 +29,11 @@
           <span>Probability threshold:</span>
           <input id="p-thresh" type="range" min="0.5" max="1.0" value="0.75" step="0.025">
           <span id="p-thresh-display"></span>
-          <span id="message"></span>
         </div>
         <div>
           <span>Suppression time (ms):</span>
+          <input id="suppression-time" type="range" min="250" max="1000" value="1000" step="250">
+          <span id="suppression-time-display"></span>
         </div>
       </div>
     </div>
