@@ -462,7 +462,8 @@ startTransferLearnButton.addEventListener('click', async () => {
   clickSaveModelButton();
   transferModelNameInput.value = transferRecognizer.name;
   transferModelNameInput.disabled = true;
-  startTransferLearnButton.textContent = 'Transfer learning complete. Model saved.';
+  startTransferLearnButton.textContent =
+      `Transfer learning complete. Model ${transferRecognizer.name} is saved.`;
   transferModelNameInput.disabled = false;
   evalModelOnDatasetButton.disabled = false;
 });
