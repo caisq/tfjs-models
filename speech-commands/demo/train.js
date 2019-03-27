@@ -21,7 +21,7 @@ import * as tf from '@tensorflow/tfjs';
 import * as SpeechCommands from '../src';
 
 import {DatasetViz, removeNonFixedChildrenFromWordDiv} from './dataset-vis';
-import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferRecognizer, registerTransferRecognizerCreationCallback, enableLoadAndDeleteModelButtons, enableSaveModelButton} from './model-io';
+import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferRecognizer, registerTransferRecognizerCreationCallback, enableLoadAndDeleteModelButtons, enableSaveModelButton, clickSaveModelButton} from './model-io';
 import {logToStatusDisplay, plotSpectrogram} from './ui';
 import * as basicInference from './basic-inference';
 import { concatenateFloat32Arrays } from '../src/generic_utils';
@@ -274,7 +274,7 @@ function createWordDivs(transferWords) {
         intervalJob = setInterval(() => {
           progressBar.value += 0.05;
         }, durationSec * 1e3 / 20);
-        wordDiv.appendChild(progressBar);        
+        wordDiv.appendChild(progressBar);
       }
 
       const spectrogram = await transferRecognizer.collectExample(
@@ -459,9 +459,10 @@ startTransferLearnButton.addEventListener('click', async () => {
     }
   });
   enableSaveModelButton();
+  clickSaveModelButton();
   transferModelNameInput.value = transferRecognizer.name;
   transferModelNameInput.disabled = true;
-  startTransferLearnButton.textContent = 'Transfer learning complete.';
+  startTransferLearnButton.textContent = 'Transfer learning complete. Model saved.';
   transferModelNameInput.disabled = false;
   evalModelOnDatasetButton.disabled = false;
 });

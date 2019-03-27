@@ -136,3 +136,7 @@ export function enableLoadAndDeleteModelButtons() {
 export function enableSaveModelButton() {
   saveTransferModelButton.disabled = false;
 }
+
+export function clickSaveModelButton() {
+  saveTransferModelButton.click();
+}
