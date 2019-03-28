@@ -22,22 +22,6 @@
     <span id="message"></span>
     <button class="inference-switch" id="to-training">Train models ⇗</button>
 
-    <div class="collapsible-region">
-      <button id="run-config">Run Options >></button>
-      <div id="run-config-group" style="display:none">
-        <div>
-          <span>Probability threshold:</span>
-          <input id="p-thresh" type="range" min="0.5" max="1.0" value="0.75" step="0.025">
-          <span id="p-thresh-display"></span>
-        </div>
-        <div>
-          <span>Suppression time (ms):</span>
-          <input id="suppression-time" type="range" min="250" max="1000" value="1000" step="250">
-          <span id="suppression-time-display"></span>
-        </div>
-      </div>
-    </div>
-
     <div id="action-tree-group" style="display:none">
       <div>
         <span id="action-tree-aux-info"></span>
@@ -67,6 +51,18 @@
   </div>
 
   <div class="collapsible-region">
+    <button id="model-io">Model IO >></button>
+    <div class="collapsible-region-inner" id="transfer-model-save-load-inner">
+      <div>
+        <button id="load-transfer-model" disabled="true">Load:</button>
+        <select id="saved-transfer-models">
+          <option value="1"></option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="collapsible-region">
     <div>
       <button id="action-tree-config">Action Tree Settings >></button>
     </div>
@@ -92,35 +88,24 @@
     </div>
   </div>
 
+  <div class="collapsible-region">
+    <button id="run-config">Run Options >></button>
+    <div id="run-config-group" style="display:none">
+      <div>
+        <span>Probability threshold:</span>
+        <input id="p-thresh" type="range" min="0.5" max="1.0" value="0.6" step="0.025">
+        <span id="p-thresh-display"></span>
+      </div>
+      <div>
+        <span>Suppression time (ms):</span>
+        <input id="suppression-time" type="range" min="250" max="1000" value="1000" step="250">
+        <span id="suppression-time-display"></span>
+      </div>
+    </div>
+  </div>
+
   <div class="footer" style="display: none;">
     <textarea id="status-display" style="display: none" cols="80" readonly="true"></textarea>
-  </div>
-  <div class="transfer-learn-section">
-    <div id="transfer-learn-history"></div>
-    <div id="collect-words"></div>
-
-    <div id="plots">
-      <div id="loss-plot" class="plots"></div>
-      <div id="accuracy-plot" class="plots"></div>
-      <div>
-        <div>
-          <span id="eval-results" class="eval-results"></span>
-        </div>
-        <div id="roc-plot" class="plots"></div>
-      </div>
-    </div>
-
-    <div class="collapsible-region">
-      <button id="model-io">Model IO >></button>
-      <div class="collapsible-region-inner" id="transfer-model-save-load-inner">
-        <div>
-          <button id="load-transfer-model" disabled="true">Load:</button>
-          <select id="saved-transfer-models">
-            <option value="1"></option>
-          </select>
-        </div>
-      </div>
-    </div>
   </div>
 
   <button id="authorize_button" style="display: none;">Authorize</button>
