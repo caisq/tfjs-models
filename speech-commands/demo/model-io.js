@@ -15,7 +15,7 @@
  * =============================================================================
  */
 
-import * as SpeechCommands from '@tensorflow-models/speech-commands';
+import * as SpeechCommands from '../src';
 
 const modelIOButton = document.getElementById('model-io');
 const transferModelSaveLoadInnerDiv = document.getElementById('transfer-model-save-load-inner');

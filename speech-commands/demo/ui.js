@@ -15,9 +15,8 @@
  * =============================================================================
  */
 
-import * as SpeechCommands from '@tensorflow-models/speech-commands';
-
-import {BACKGROUND_NOISE_TAG, UNKNOWN_TAG} from '@tensorflow-models/speech-commands';
+import * as SpeechCommands from '../src';
+import {BACKGROUND_NOISE_TAG, UNKNOWN_TAG} from '../src';
 
 const statusDisplay = document.getElementById('status-display');
 const candidateWordsContainer = document.getElementById('candidate-words');

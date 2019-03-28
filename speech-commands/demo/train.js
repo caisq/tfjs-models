@@ -18,12 +18,13 @@
 import Plotly from 'plotly.js-dist';
 import * as tf from '@tensorflow/tfjs';
 
-import * as SpeechCommands from '@tensorflow-models/speech-commands';
+import * as SpeechCommands from '../src';
 
 import {DatasetViz, removeNonFixedChildrenFromWordDiv} from './dataset-vis';
 import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferRecognizer, registerTransferRecognizerCreationCallback, enableLoadAndDeleteModelButtons, enableSaveModelButton, clickSaveModelButton} from './model-io';
 import {logToStatusDisplay, plotSpectrogram} from './ui';
 import * as basicInference from './basic-inference';
+import {concatenateFloat32Arrays} from '../src/generic_utils';
 
 const toInferenceButton = document.getElementById('to-inference');
 
@@ -255,11 +256,11 @@ function createWordDivs(transferWords) {
 
         let tempSpectrogramData;
         collectExampleOptions.snippetDurationSec = 0.1;
-        collectExampleOptions.onSnippet = async (spectrogram) => {
+        collectExampleOptions.snippetCallback = async (spectrogram) => {
           if (tempSpectrogramData == null) {
             tempSpectrogramData = spectrogram.data;
           } else {
-            tempSpectrogramData = SpeechCommands.utils.concatenateFloat32Arrays(
+            tempSpectrogramData = concatenateFloat32Arrays(
                 [tempSpectrogramData, spectrogram.data]);
           }
           plotSpectrogram(tempCanvas, tempSpectrogramData, spectrogram.frameSize,

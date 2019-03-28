@@ -17,10 +17,10 @@
 
 import {drawActionTree, executeTimedMenuAction, parseActionTreeConfig} from './action-tree';
 import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferRecognizerCreationCallback} from './model-io';
-import {TimedMenu} from '../src/';
 import * as basicInference from './basic-inference';
 
-import * as SpeechCommands from '@tensorflow-models/speech-commands';
+import * as SpeechCommands from '../src';
+import {TimedMenu} from '../src/';
 
 const startButton = document.getElementById('start');
 const stopButton = document.getElementById('stop');
