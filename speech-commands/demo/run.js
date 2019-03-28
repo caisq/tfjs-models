@@ -19,7 +19,7 @@ import {drawActionTree, executeTimedMenuAction, parseActionTreeConfig} from './a
 import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferRecognizerCreationCallback} from './model-io';
 import * as basicInference from './basic-inference';
 
-import * as SpeechCommands from '../src';
+import * as SpeechCommands from '@tensorflow-models/speech-commands';
 
 const startButton = document.getElementById('start');
 const stopButton = document.getElementById('stop');
