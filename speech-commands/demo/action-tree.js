@@ -20,6 +20,7 @@ import {util} from '@tensorflow/tfjs';
 import {handleEmailAuthClick} from './emailing';
 import {MorseTextBox} from './morse-text-box';
 import {showMessage, refreshStartActionTreeButtonStatus} from './run';
+import {sendTextMessage} from './sms.js';
 import {ttsSpeak} from './tts';
 
 const savedTreesSelect = document.getElementById('saved-trees');
@@ -419,6 +420,7 @@ const morseTextBox = new MorseTextBox(
 
 const SAY_COMMAND = 'say ';
 const EMAIL_COMMAND = 'email ';
+const SMS_COMMAND = 'sms ';
 const TYPE_COMMAND = 'type ';
 const TYPE_SPACE_COMMAND = 'typespace';
 const SAY_TEXT_COMMAND = 'saytext';
@@ -429,7 +431,7 @@ const CLEAR_TEXT_COMMAND = 'cleartext';
 
 const RESET_COMMAND = 'reset';
 
-export function executeTimedMenuAction(action) {
+export async function executeTimedMenuAction(action) {
   if (action == null || action.length === 0) {
     return;
   }
@@ -449,6 +451,23 @@ export function executeTimedMenuAction(action) {
       handleEmailAuthClick();  // Experiment: email sending.
     } catch (err) {
       ttsSpeak('Failed to send email. Sorry.');
+    }
+  } else if (action.toLowerCase().indexOf(SMS_COMMAND) === 0) {
+    console.log('Processing sms');  // DEBUG
+    let smsMessage = action.slice(SMS_COMMAND.length);
+    const smsRecipient = smsMessage.slice(0, smsMessage.indexOf(' '));
+    smsMessage = smsMessage.slice(smsMessage.indexOf(' '));
+    try {
+      console.log(`Sending text message to ${smsRecipient}`);
+      ttsSpeak(`Sending text message to ${smsRecipient}`);
+      const success = await sendTextMessage(smsRecipient, smsMessage);
+      if (success) {
+        ttsSpeak(`Text message sent successfully.`);
+      }
+    } catch (error) {
+      console.error(`SMS Error:`, error);
+      ttsSpeak(`Failed to send text message.`);
+      throw error;
     }
   } else if (action.toLowerCase().indexOf(TYPE_COMMAND) === 0) {
     const typedMessage = action.slice(TYPE_COMMAND.length).trim();

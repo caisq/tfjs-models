@@ -17,6 +17,7 @@
 
 import {drawActionTree, executeTimedMenuAction, parseActionTreeConfig} from './action-tree';
 import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferRecognizerCreationCallback} from './model-io';
+import {TimedMenu} from '../src/';
 import * as basicInference from './basic-inference';
 
 import * as SpeechCommands from '@tensorflow-models/speech-commands';
@@ -126,7 +127,7 @@ startActionTreeButton.addEventListener('click',  async () =>  {
     const timeToLiveMultiplier =
         ttlMultiplierSlider == null ? 1 : ttlMultiplierSlider.value;
     console.log(`Using time-to-live multiplier: ${timeToLiveMultiplier}`);
-    timedMenu = new SpeechCommands.TimedMenu(
+    timedMenu = new TimedMenu(
         timedMenuConfig,
         async (stateSequence, stateChangeType, timeOutAction) => {
           if (stateChangeType === 'advance') {
