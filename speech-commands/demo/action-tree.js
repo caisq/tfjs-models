@@ -337,7 +337,7 @@ function getTreantConfigInner(timedMenuNodes, treantConfig, level, levelName) {
 let tree;
 export function drawActionTree(containerId, timedMenuConfig, stateSequence) {
   if (tree == null || actionTreeNeedsRedraw) {
-    actionTreeNeedsRedraw = false;  
+    actionTreeNeedsRedraw = false;
     const element = document.getElementById(containerId);
     while (element.firstChild) {
       element.removeChild(element.firstChild);
@@ -429,7 +429,31 @@ const UNDO_TEXT_COMMAND = 'undotext';
 const EMAIL_TEXT_COMMAND = 'emailtext ';
 const CLEAR_TEXT_COMMAND = 'cleartext';
 
+const PEAC_CONTROL_COMMAND = 'peac-control ';
+
 const RESET_COMMAND = 'reset';
+
+async function peacControl(serverURL, deviceID, numVal) {
+  console.log(
+      `In peacControl(): serverURL=${serverURL}, deviceID=${deviceID}; ` +
+      `numVal=${numVal}`);
+
+  const username = 'google';
+  const password = 'k3fvgjds4';
+
+  const data = {id: deviceID, numVal};
+  const headers = new Headers();
+  headers.append('Content-Type', 'application/json');
+  headers.append('Accept', 'application/json');
+  headers.append('Authorization',
+      'Basic ' + Buffer.from(username + ":" + password).toString('base64'));
+  const resp = await fetch(serverURL, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(data)
+  });
+  console.log('response from peac server:', resp);
+}
 
 export async function executeTimedMenuAction(action) {
   if (action == null || action.length === 0) {
@@ -493,6 +517,20 @@ export async function executeTimedMenuAction(action) {
     } catch (err) {
       ttsSpeak('Failed to send email. Sorry.');
     }
+  } else if (action.toLowerCase().indexOf(PEAC_CONTROL_COMMAND) === 0) {
+    // PEAC device control.
+    const items = action.split(' ');
+    if (items.length !== 4) {
+      throw new Error(
+          `Expected peak-control command to have 4 elements, ` +
+          `but got ${items.length}.`);
+    }
+    const serverURL = items[1];
+    const deviceID = items[2];
+    const numVal = items[3];
+    peacControl(serverURL, deviceID, numVal);
+  } else {
+    throw new Error(`Unrecognized action: "${action}"`);
   }
 }
 
