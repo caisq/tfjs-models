@@ -219,8 +219,22 @@ export function showErrorOnButton(button, errorMsg, timeoutMs) {
   const originalColor = button.style['color'];
   button.textContent = errorMsg;
   button.style['color'] = 'red';
+  button.disabled = true;
   setTimeout(() => {
     button.textContent = originalText;
     button.style['color'] = originalColor;
+    button.disabled = false;
+  }, timeoutMs);
+}
+
+export function showInfoOnButton(button, infoMsg, timeoutMs) {
+  const originalText = button.textContent;
+  const originalColor = button.style['color'];
+  button.textContent = infoMsg;
+  button.disabled = true;
+  setTimeout(() => {
+    button.textContent = originalText;
+    button.style['color'] = originalColor;
+    button.disabled = false;
   }, timeoutMs);
 }

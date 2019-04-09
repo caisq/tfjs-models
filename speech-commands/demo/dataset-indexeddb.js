@@ -83,6 +83,32 @@ export async function getSavedDatasetsInfo() {
   });
 }
 
+export async function loadSerializedDatasetFromIndexedDB(datasetName) {
+  return new Promise((resolve, reject) => {
+    const indexedDB = getIndexedDBFactory();
+    const openRequest =
+        indexedDB.open(DATASET_DATABASE_NAME, DATASET_DATABASE_VERSION);
+    openRequest.onupgradeneeded = () => setUpDatasetDatabase(openRequest);
+
+    openRequest.onsuccess = () => {
+      const db = openRequest.result;
+      const datasetTX = db.transaction(DATASET_STORE_NAME, 'readwrite');
+      const datasetStore = datasetTX.objectStore(DATASET_STORE_NAME);
+      const getRequest = datasetStore.get(datasetName);
+      getRequest.onsuccess = () => {
+        db.close();
+        resolve(getRequest.result.artifacts);
+      };
+      getRequest.onerror = () => {
+        db.close();
+        reject('Failed to get from dataset info store');
+      }
+    };
+
+    openRequest.onerror = () => reject('Failed to open database');
+  });
+}
+
 export async function saveDatasetToIndexedDB(datasetName, transferRecognizer) {
   return new Promise((resolve, reject) => {
     const datasetInfo = getDatasetInfo(transferRecognizer);
@@ -102,14 +128,13 @@ export async function saveDatasetToIndexedDB(datasetName, transferRecognizer) {
       const putDatasetRequest =
           datasetStore.put({datasetPath: datasetName, artifacts});
       putDatasetRequest.onsuccess = () => {
-        console.log('putDatasetRequest success!');
         infoTx = db.transaction(DATASET_INFO_STORE_NAME, 'readwrite');
         const infoStore = infoTx.objectStore(DATASET_INFO_STORE_NAME);
         const putInfoRequest =
             infoStore.put({datasetPath: datasetName, datasetInfo});
-        putInfoRequest.onsuccess = () => {
-          console.log('putInfoRequest success!');
-        };
+        // putInfoRequest.onsuccess = () => {
+        //   console.log('putInfoRequest success!');
+        // };
         putInfoRequest.onerror = () => {
           db.close();
           return reject('Failed to put dataset info');
@@ -120,63 +145,11 @@ export async function saveDatasetToIndexedDB(datasetName, transferRecognizer) {
           return reject('Failed to put dataset');
       }
       datasetTx.oncomplete = () => {
-        console.log(`datasetTx complete`);
         infoTx.oncomplete = () => {
-        console.log(`infoTx complete`);
           db.close();
           return resolve();
         }
       };
-    };
-
-    openRequest.onerror = () => reject('Failed to open database');
-  });
-}
-
-export function loadDatasetFromIndexedDB(datasetName) {
-  return new Promise((resolve, reject) => {
-    const datasetInfo = getDatasetInfo(transferRecognizer);
-    const artifacts = transferRecognizer.serializeExamples();
-
-    const indexedDB = getIndexedDBFactory();
-    const openRequest =
-        indexedDB.open(DATASET_DATABASE_NAME, DATASET_DATABASE_VERSION);
-    openRequest.onupgradeneeded = () => setUpDatasetDatabase(openRequest);
-
-    openRequest.onsuccess = () => {
-        const db = openRequest.result;
-
-        let infoTx;
-        const datasetTx = db.transaction(DATASET_STORE_NAME, 'readwrite');
-        const datasetStore = datasetTx.objectStore(DATASET_STORE_NAME);
-        const putDatasetRequest =
-            datasetStore.put({datasetPath: datasetName, artifacts});
-        putDatasetRequest.onsuccess = () => {
-        console.log('putDatasetRequest success!');
-        infoTx = db.transaction(DATASET_INFO_STORE_NAME, 'readwrite');
-        const infoStore = infoTx.objectStore(DATASET_INFO_STORE_NAME);
-        const putInfoRequest =
-            infoStore.put({datasetPath: datasetName, datasetInfo});
-        putInfoRequest.onsuccess = () => {
-            console.log('putInfoRequest success!');
-        };
-        putInfoRequest.onerror = () => {
-            db.close();
-            return reject('Failed to put dataset info');
-        };
-        };
-        putDatasetRequest.onerror = () => {
-            db.close();
-            return reject('Failed to put dataset');
-        }
-        datasetTx.oncomplete = () => {
-        console.log(`datasetTx complete`);
-        infoTx.oncomplete = () => {
-        console.log(`infoTx complete`);
-            db.close();
-            return resolve();
-        }
-        };
     };
 
     openRequest.onerror = () => reject('Failed to open database');

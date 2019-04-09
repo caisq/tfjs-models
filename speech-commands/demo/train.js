@@ -20,10 +20,10 @@ import * as tf from '@tensorflow/tfjs';
 
 import * as SpeechCommands from '../src';
 
-import {saveDatasetToIndexedDB, getSavedDatasetsInfo} from './dataset-indexeddb';
+import {saveDatasetToIndexedDB, getSavedDatasetsInfo, loadDatasetFromIndexedDB, loadSerializedDatasetFromIndexedDB} from './dataset-indexeddb';
 import {DatasetViz, removeNonFixedChildrenFromWordDiv} from './dataset-vis';
 import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferRecognizer, registerTransferRecognizerCreationCallback, enableLoadAndDeleteModelButtons, enableSaveModelButton, clickSaveModelButton} from './model-io';
-import {logToStatusDisplay, plotSpectrogram, showErrorOnButton} from './ui';
+import {logToStatusDisplay, plotSpectrogram, showErrorOnButton, showInfoOnButton} from './ui';
 import * as basicInference from './basic-inference';
 import {concatenateFloat32Arrays} from '../src/generic_utils';
 
@@ -43,10 +43,6 @@ const saveDatasetToIndexedDBButton =
 const indexedDBDatasetsSelect = document.getElementById('indexeddb-datasets');
 const loadDatasetFromIndexedDBButton =
     document.getElementById('load-dataset-from-indexeddb');
-
-console.log(saveDatasetToIndexedDBButton);  // DEBUG
-console.log(indexedDBDatasetsSelect);  // DEBUG
-console.log(loadDatasetFromIndexedDBButton);  // DEBUG
 
 const remoteDatasetURLInput = document.getElementById('remote-dataset-url');
 const loadRemoteDatasetButton = document.getElementById('load-remote-dataset');
@@ -503,14 +499,11 @@ function refreshIndexedDBDatasetsSelect() {
       indexedDBDatasetsSelect.appendChild(dummyOption);
     } else {
       info.forEach(entry => {
-        console.log('entry.datasetInfo:', entry.datasetInfo);  // DEBUG
         const option = document.createElement('option');
         let textContent = `${entry.datasetPath} (`;
         entry.datasetInfo.wordLabels.forEach((wordLabel, i) => {
-          console.log(`wordLabel = ${wordLabel}`);  // DEBUG
           const displayLabel =
               wordLabel === BACKGROUND_NOISE_TAG ? 'noise' : wordLabel;
-          console.log(`displayLabel = ${displayLabel}`);  // DEBUG
           textContent +=
               `${displayLabel}*${entry.datasetInfo.exampleCounts[wordLabel]}`;
           console.log()
@@ -519,8 +512,8 @@ function refreshIndexedDBDatasetsSelect() {
           }
         });
         textContent += ')';
-        console.log(`textContent = ${textContent}`);  // DEBUG
         option.textContent = textContent;
+        option.value = entry.datasetPath;
         indexedDBDatasetsSelect.appendChild(option);
       });
     }
@@ -557,6 +550,21 @@ saveDatasetToIndexedDBButton.addEventListener('click', async () => {
       return;
     }
   });
+});
+
+loadDatasetFromIndexedDBButton.addEventListener('click', async () => {
+  if (indexedDBDatasetsSelect.value == null) {
+    showErrorOnButton(
+        loadDatasetFromIndexedDBButton,
+        'ERROR: No dataset is selected', 4000);
+    return;
+  }
+  const datasetName = indexedDBDatasetsSelect.value;
+  const serialized = await loadSerializedDatasetFromIndexedDB(datasetName);
+  await loadDatasetInTransferRecognizer(serialized, datasetName);
+  showInfoOnButton(
+      loadDatasetFromIndexedDBButton,
+      `Loaded dataset "${datasetName}"`, 3000);
 });
 
 /** Get the base name of the downloaded files based on current dataset. */
@@ -630,7 +638,11 @@ loadRemoteDatasetButton.addEventListener('click', async () => {
   }
 });
 
-async function loadDatasetInTransferRecognizer(serialized) {
+async function loadDatasetInTransferRecognizer(serialized, datasetName) {
+  if (transferWords == null && datasetName != null) {
+    transferModelNameInput.value = datasetName;
+  }
+
   const modelName = transferModelNameInput.value;
   if (modelName == null || modelName.length === 0) {
     throw new Error('Need model name!');
