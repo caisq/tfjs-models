@@ -73,16 +73,6 @@
       <div class="collapsible-region-inner" id="dataset-io-inner">
         <div>
           <div class="boxed-region">
-            <div class="boxed-region-header">To/From File:</div>
-            <button id="download-dataset" disabled="true">↓ Download dataset as file</button>
-            <div>
-              <input type="file" id="dataset-file-input">
-              <button id="upload-dataset">↑ Upload dataset</button>
-              <button id="eval-model-on-dataset">Evaluate model on dataset</button>
-            </div>
-          </div>
-
-          <div class="boxed-region">
             <div class="boxed-region-header">To/From Browser:</div>
             <div>
               <button id="save-dataset-to-indexeddb">Save dataset to browser</button>
@@ -91,6 +81,16 @@
               <select id="indexeddb-datasets"></select>
               <button id="load-dataset-from-indexeddb">Load dataset from browser</button>
               <button id="delete-dataset-from-indexeddb">Delete dataset</button>
+            </div>
+          </div>
+
+          <div class="boxed-region">
+            <div class="boxed-region-header">To/From File:</div>
+            <button id="download-dataset" disabled="true">↓ Download dataset as file</button>
+            <div>
+              <input type="file" id="dataset-file-input">
+              <button id="upload-dataset">↑ Upload dataset</button>
+              <button id="eval-model-on-dataset">Evaluate model on dataset</button>
             </div>
           </div>
 

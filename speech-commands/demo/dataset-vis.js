@@ -117,8 +117,11 @@ export class DatasetViz {
    *   to collect an example.
    * @param {string} uid UID of the example being drawn. Must match the UID
    *   of the example from `this.transferRecognizer`.
+   * @param {object} callbacks An object with the following optional fields:
+   *   - delete: the deletion callback, of type `() => Promise<void>`.
+   *   - setKeyFrameIndex: the callback for setting the keyFrameIndex.
    */
-  async drawExample(wordDiv, word, spectrogram, uid) {
+  async drawExample(wordDiv, word, spectrogram, uid, callbacks) {
     if (uid == null) {
       throw new Error('Error: UID is not provided for pre-existing example.');
     }
@@ -142,7 +145,7 @@ export class DatasetViz {
 
     if (position > 0) {
       leftButton.addEventListener('click', () => {
-        this.redraw(word, exampleUIDs[position - 1]);
+        this.redraw(word, exampleUIDs[position - 1], callbacks);
       });
     } else {
       leftButton.disabled = true;
@@ -150,7 +153,7 @@ export class DatasetViz {
 
     if (position < exampleUIDs.length - 1) {
       rightButton.addEventListener('click', () => {
-        this.redraw(word, exampleUIDs[position + 1]);
+        this.redraw(word, exampleUIDs[position + 1], callbacks);
       });
     } else {
       rightButton.disabled = true;
@@ -176,7 +179,10 @@ export class DatasetViz {
             `relativeX=${relativeX}; ` +
             `changed keyFrameIndex to ${keyFrameIndex}`);
         this.transferRecognizer.setExampleKeyFrameIndex(uid, keyFrameIndex);
-        this.redraw(word, uid);
+        this.redraw(word, uid, callbacks);
+        if (callbacks != null && callbacks.setKeyFrameIndex) {
+          callbacks.setKeyFrameIndex();
+        }
       });
     }
 
@@ -204,7 +210,10 @@ export class DatasetViz {
       this.transferRecognizer.removeExample(uid);
       // TODO(cais): Smarter logic for which example to draw after deletion.
       // Right now it always redraws the last available one.
-      this.redraw(word);
+      this.redraw(word, null, callbacks);
+      if (callbacks != null && callbacks.delete) {
+        callbacks.delete();
+      }
     });
 
     this.updateButtons_();
@@ -217,8 +226,11 @@ export class DatasetViz {
    *   vocabulary currently held by the transferRecognizer.
    * @param {string} uid Optional UID for the example to render. If not
    *   specified, the last available example of the dataset will be drawn.
+   * @param {object} callbacks An object with the following optional fields:
+   *   - delete: the deletion callback, of type `() => Promise<void>`.
+   *   - setKeyFrameIndex: the callback for setting the keyFrameIndex.
    */
-  async redraw(word, uid) {
+  async redraw(word, uid, callbacks) {
     if (word == null) {
       throw new Error('word is not specified');
     }
@@ -252,7 +264,8 @@ export class DatasetViz {
       }
 
       const spectrogram = example.example.spectrogram;
-      await this.drawExample(wordDiv, word, spectrogram, example.uid);
+      await this.drawExample(
+          wordDiv, word, spectrogram, example.uid, callbacks);
     } else {
       removeNonFixedChildrenFromWordDiv(wordDiv);
     }
@@ -264,10 +277,14 @@ export class DatasetViz {
    * Redraw the spectrograms and buttons for all words.
    *
    * For each word, the last available example is rendered.
+   *
+   * @param {object} callbacks An object with the following optional fields:
+   *   - delete: the deletion callback, of type `() => Promise<void>`.
+   *   - setKeyFrameIndex: the callback for setting the keyFrameIndex.
    **/
-  redrawAll() {
+  redrawAll(callbacks) {
     for (const word of this.words_()) {
-      this.redraw(word);
+      this.redraw(word, null, callbacks);
     }
   }
 

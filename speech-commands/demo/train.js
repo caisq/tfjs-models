@@ -296,7 +296,11 @@ function createWordDivs(transferWords) {
       }
       const examples = transferRecognizer.getExamples(word)
       const exampleUID = examples[examples.length - 1].uid;
-      await datasetViz.drawExample(wordDiv, word, spectrogram, exampleUID);
+      await datasetViz.drawExample(wordDiv, word, spectrogram, exampleUID, {
+        delete: autoSaveDatasetToIndexedDB,
+        setKeyFrameIndex: autoSaveDatasetToIndexedDB
+      });
+      await autoSaveDatasetToIndexedDB();
       enableAllCollectWordButtons();
     });
   }
@@ -525,7 +529,7 @@ function refreshIndexedDBDatasetsSelect() {
 
 refreshIndexedDBDatasetsSelect();
 
-saveDatasetToIndexedDBButton.addEventListener('click', async () => {
+async function autoSaveDatasetToIndexedDB() {
   const datasetName = transferModelNameInput.value;
   if (datasetName == null) {
     showErrorOnButton(
@@ -542,15 +546,25 @@ saveDatasetToIndexedDBButton.addEventListener('click', async () => {
 
   navigator.storage.persist().then(async persistent => {
     if (persistent) {
+      if (transferRecognizer == null) {
+        return;
+      }
       await saveDatasetToIndexedDB(datasetName, transferRecognizer);
       refreshIndexedDBDatasetsSelect();
+      console.log('Auto-saved dataset');
     } else {
-      showErrorOnButton(
-          saveDatasetToIndexedDBButton,
-          'ERROR: persistence permission not granted', 4000);
-      return;
+      throw new Error('ERROR: data persistence permission not granted');
     }
   });
+}
+
+saveDatasetToIndexedDBButton.addEventListener('click', async () => {
+  try {
+    await autoSaveDatasetToIndexedDB();
+    showInfoOnButton(saveDatasetToIndexedDBButton, 'Dataset saved.', 2000);
+  } catch (err) {
+    showErrorOnButton(saveDatasetToIndexedDBButton, err.message, 4000);
+  }
 });
 
 loadDatasetFromIndexedDBButton.addEventListener('click', async () => {
@@ -707,7 +721,11 @@ async function loadDatasetInTransferRecognizer(serialized, datasetName) {
       `dataset: ${transferDurationMultiplier}`);
 
   createWordDivs(transferWords);
-  datasetViz.redrawAll();
+  await autoSaveDatasetToIndexedDB();
+  datasetViz.redrawAll({
+    delete: autoSaveDatasetToIndexedDB,
+    setKeyFrameIndex: autoSaveDatasetToIndexedDB
+  });
 }
 
 evalModelOnDatasetButton.addEventListener('click', async () => {
