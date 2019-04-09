@@ -20,14 +20,14 @@ import * as tf from '@tensorflow/tfjs';
 
 import * as SpeechCommands from '../src';
 
+import {saveDatasetToIndexedDB, getSavedDatasetsInfo} from './dataset-indexeddb';
 import {DatasetViz, removeNonFixedChildrenFromWordDiv} from './dataset-vis';
 import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferRecognizer, registerTransferRecognizerCreationCallback, enableLoadAndDeleteModelButtons, enableSaveModelButton, clickSaveModelButton} from './model-io';
-import {logToStatusDisplay, plotSpectrogram} from './ui';
+import {logToStatusDisplay, plotSpectrogram, showErrorOnButton} from './ui';
 import * as basicInference from './basic-inference';
 import {concatenateFloat32Arrays} from '../src/generic_utils';
 
 const toInferenceButton = document.getElementById('to-inference');
-
 
 const epochsInput = document.getElementById('epochs');
 const fineTuningEpochsInput = document.getElementById('fine-tuning-epochs');
@@ -37,6 +37,16 @@ const datasetIOInnerDiv = document.getElementById('dataset-io-inner');
 const downloadAsFileButton = document.getElementById('download-dataset');
 const datasetFileInput = document.getElementById('dataset-file-input');
 const uploadFilesButton = document.getElementById('upload-dataset');
+
+const saveDatasetToIndexedDBButton =
+    document.getElementById('save-dataset-to-indexeddb');
+const indexedDBDatasetsSelect = document.getElementById('indexeddb-datasets');
+const loadDatasetFromIndexedDBButton =
+    document.getElementById('load-dataset-from-indexeddb');
+
+console.log(saveDatasetToIndexedDBButton);  // DEBUG
+console.log(indexedDBDatasetsSelect);  // DEBUG
+console.log(loadDatasetFromIndexedDBButton);  // DEBUG
 
 const remoteDatasetURLInput = document.getElementById('remote-dataset-url');
 const loadRemoteDatasetButton = document.getElementById('load-remote-dataset');
@@ -478,6 +488,75 @@ downloadAsFileButton.addEventListener('click', () => {
   anchor.href = window.URL.createObjectURL(
       new Blob([artifacts], {type: 'application/octet-stream'}));
   anchor.click();
+});
+
+function refreshIndexedDBDatasetsSelect() {
+  while (indexedDBDatasetsSelect.firstChild) {
+    indexedDBDatasetsSelect.removeChild(
+        indexedDBDatasetsSelect.firstChild);
+  }
+  getSavedDatasetsInfo().then(info => {
+    console.log('info:', info);
+    if (info == null || info.length === 0) {
+      const dummyOption = document.createElement('option');
+      dummyOption.textContent = '(No saved dataset in browser)';
+      indexedDBDatasetsSelect.appendChild(dummyOption);
+    } else {
+      info.forEach(entry => {
+        console.log('entry.datasetInfo:', entry.datasetInfo);  // DEBUG
+        const option = document.createElement('option');
+        let textContent = `${entry.datasetPath} (`;
+        entry.datasetInfo.wordLabels.forEach((wordLabel, i) => {
+          console.log(`wordLabel = ${wordLabel}`);  // DEBUG
+          const displayLabel =
+              wordLabel === BACKGROUND_NOISE_TAG ? 'noise' : wordLabel;
+          console.log(`displayLabel = ${displayLabel}`);  // DEBUG
+          textContent +=
+              `${displayLabel}*${entry.datasetInfo.exampleCounts[wordLabel]}`;
+          console.log()
+          if (i < entry.datasetInfo.wordLabels.length - 1) {
+            textContent += ', '
+          }
+        });
+        textContent += ')';
+        console.log(`textContent = ${textContent}`);  // DEBUG
+        option.textContent = textContent;
+        indexedDBDatasetsSelect.appendChild(option);
+      });
+    }
+  }).catch(error => {
+    // TODO(cais):
+  });
+}
+
+refreshIndexedDBDatasetsSelect();
+
+saveDatasetToIndexedDBButton.addEventListener('click', async () => {
+  const datasetName = transferModelNameInput.value;
+  if (datasetName == null) {
+    showErrorOnButton(
+      saveDatasetToIndexedDBButton,
+      'ERROR: Cannot determine dataset name.', 4000);
+    return;
+  }
+  if (transferRecognizer == null) {
+    showErrorOnButton(
+        saveDatasetToIndexedDBButton,
+        'ERROR: No transfer recognizer has been created.', 4000);
+    return;
+  }
+
+  navigator.storage.persist().then(async persistent => {
+    if (persistent) {
+      await saveDatasetToIndexedDB(datasetName, transferRecognizer);
+      refreshIndexedDBDatasetsSelect();
+    } else {
+      showErrorOnButton(
+          saveDatasetToIndexedDBButton,
+          'ERROR: persistence permission not granted', 4000);
+      return;
+    }
+  });
 });
 
 /** Get the base name of the downloaded files based on current dataset. */

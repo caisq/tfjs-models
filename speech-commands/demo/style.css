@@ -161,6 +161,21 @@ textarea {
   display: none;
 }
 
+.boxed-region {
+  font-size: 17px;
+  border-style: solid;
+  border-width: 2px;
+  border-color: #888;
+  border-radius: 10px;
+  margin: 10px;
+}
+
+.boxed-region-header {
+  padding: 5px;
+  font-weight: bold;
+  color: #888;
+}
+
 #model-io {
   vertical-align: top;
 }

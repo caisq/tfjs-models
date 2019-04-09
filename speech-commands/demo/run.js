@@ -106,7 +106,7 @@ startActionTreeButton.addEventListener('click',  async () =>  {
 
     // Construct TimedMenu.
     const configAndUniqueNames = parseActionTreeConfig();
-    
+
     const timedMenuConfig = configAndUniqueNames.config;
     const uniqueNames = configAndUniqueNames.uniqueNames;
 

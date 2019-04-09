@@ -213,3 +213,14 @@ export function plotPredictions(
     }
   }
 }
+
+export function showErrorOnButton(button, errorMsg, timeoutMs) {
+  const originalText = button.textContent;
+  const originalColor = button.style['color'];
+  button.textContent = errorMsg;
+  button.style['color'] = 'red';
+  setTimeout(() => {
+    button.textContent = originalText;
+    button.style['color'] = originalColor;
+  }, timeoutMs);
+}

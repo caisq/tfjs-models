@@ -439,7 +439,7 @@ async function peacControl(serverURL, deviceID, numVal) {
       `numVal=${numVal}`);
 
   const username = 'google';
-  const password = 'k3fvgjds4';
+  const password = '';
 
   const data = {id: deviceID, numVal};
   const headers = new Headers();
