@@ -155,3 +155,45 @@ export async function saveDatasetToIndexedDB(datasetName, transferRecognizer) {
     openRequest.onerror = () => reject('Failed to open database');
   });
 }
+
+export async function deleteDatasetFromIndexedDB(datasetName) {
+  return new Promise((resolve, reject) => {
+    const indexedDB = getIndexedDBFactory();
+    const openRequest =
+        indexedDB.open(DATASET_DATABASE_NAME, DATASET_DATABASE_VERSION);
+    openRequest.onupgradeneeded = () => setUpDatasetDatabase(openRequest);
+
+    openRequest.onsuccess = () => {
+      const db = openRequest.result;
+      const infoTx = db.transaction(DATASET_INFO_STORE_NAME, 'readwrite');
+      const infoStore = infoTx.objectStore(DATASET_INFO_STORE_NAME);
+      const getRequest = infoStore.get(datasetName);
+      getRequest.onsuccess = () => {
+        if (getRequest.result == null) {
+          return reject(`Failed to find dataset with name "${datasetName}"`);
+        }
+        const deleteInfoRequest = infoStore.delete(datasetName);
+        deleteInfoRequest.onsuccess = () => {
+          const datasetTx = db.transaction(DATASET_STORE_NAME, 'readwrite');
+          const datasetStore = datasetTx.objectStore(DATASET_STORE_NAME);
+          const deleteDatasetRequest = datasetStore.delete(datasetName);
+          deleteDatasetRequest.onsucces = () => {
+            db.close();
+            resolve();
+          }
+          deleteDatasetRequest.onsucces = () => reject(
+            `Failed to delete dataset "${datasetName}"`);
+        }
+        deleteInfoRequest.onerror = () => reject(
+            `Failed to delete info for dataset "${datasetName}"`)
+        resolve(getRequest.result);
+      };
+      getRequest.onerror = () => {
+        db.close();
+        reject('Failed to get from dataset info store');
+      }
+    };
+
+    openRequest.onerror = () => reject('Failed to open database');
+  });
+}

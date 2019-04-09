@@ -20,7 +20,7 @@ import * as tf from '@tensorflow/tfjs';
 
 import * as SpeechCommands from '../src';
 
-import {saveDatasetToIndexedDB, getSavedDatasetsInfo, loadDatasetFromIndexedDB, loadSerializedDatasetFromIndexedDB} from './dataset-indexeddb';
+import {saveDatasetToIndexedDB, getSavedDatasetsInfo, loadDatasetFromIndexedDB, loadSerializedDatasetFromIndexedDB, deleteDatasetFromIndexedDB} from './dataset-indexeddb';
 import {DatasetViz, removeNonFixedChildrenFromWordDiv} from './dataset-vis';
 import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferRecognizer, registerTransferRecognizerCreationCallback, enableLoadAndDeleteModelButtons, enableSaveModelButton, clickSaveModelButton} from './model-io';
 import {logToStatusDisplay, plotSpectrogram, showErrorOnButton, showInfoOnButton} from './ui';
@@ -43,6 +43,8 @@ const saveDatasetToIndexedDBButton =
 const indexedDBDatasetsSelect = document.getElementById('indexeddb-datasets');
 const loadDatasetFromIndexedDBButton =
     document.getElementById('load-dataset-from-indexeddb');
+const deleteDatasetFromIndexedDBButton =
+    document.getElementById('delete-dataset-from-indexeddb');
 
 const remoteDatasetURLInput = document.getElementById('remote-dataset-url');
 const loadRemoteDatasetButton = document.getElementById('load-remote-dataset');
@@ -492,7 +494,6 @@ function refreshIndexedDBDatasetsSelect() {
         indexedDBDatasetsSelect.firstChild);
   }
   getSavedDatasetsInfo().then(info => {
-    console.log('info:', info);
     if (info == null || info.length === 0) {
       const dummyOption = document.createElement('option');
       dummyOption.textContent = '(No saved dataset in browser)';
@@ -565,6 +566,26 @@ loadDatasetFromIndexedDBButton.addEventListener('click', async () => {
   showInfoOnButton(
       loadDatasetFromIndexedDBButton,
       `Loaded dataset "${datasetName}"`, 3000);
+});
+
+deleteDatasetFromIndexedDBButton.addEventListener('click', async () => {
+  if (indexedDBDatasetsSelect.value == null) {
+    showErrorOnButton(
+        loadDatasetFromIndexedDBButton,
+        'ERROR: No dataset is selected', 4000);
+    return;
+  }
+  const datasetName = indexedDBDatasetsSelect.value;
+  if (confirm(`Are you sure you want to delete dataset "${datasetName}"?`)) {
+    await deleteDatasetFromIndexedDB(datasetName);
+    await refreshIndexedDBDatasetsSelect();
+    showInfoOnButton(
+        deleteDatasetFromIndexedDBButton, `Deleted dataset "${datasetName}"`,
+        2000);
+  } else {
+    showInfoOnButton(
+        deleteDatasetFromIndexedDBButton, 'Deletion cancelled.', 1000);
+  }
 });
 
 /** Get the base name of the downloaded files based on current dataset. */
