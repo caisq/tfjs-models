@@ -551,7 +551,7 @@ async function autoSaveDatasetToIndexedDB() {
       }
       await saveDatasetToIndexedDB(datasetName, transferRecognizer);
       refreshIndexedDBDatasetsSelect();
-      console.log('Auto-saved dataset');
+      console.log('Auto-saved dataset.');
     } else {
       throw new Error('ERROR: data persistence permission not granted');
     }

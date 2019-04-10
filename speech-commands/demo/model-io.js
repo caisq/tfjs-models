@@ -63,6 +63,12 @@ if (modelIOButton != null) {
   });
 }
 
+let postLoadTransferModelCallback;
+
+export function setPostLoadTransferModelCallback(callback) {
+  postLoadTransferModelCallback = callback;
+}
+
 loadTransferModelButton.addEventListener('click', async () => {
   const transferModelName = savedTransferModelsSelect.value;
   const transferRecognizer = recognizer.createTransfer(transferModelName);
@@ -90,6 +96,10 @@ loadTransferModelButton.addEventListener('click', async () => {
   }
   if (transferRecognizerCreationCallback != null) {
     transferRecognizerCreationCallback(transferRecognizer);
+  }
+
+  if (postLoadTransferModelCallback != null) {
+    postLoadTransferModelCallback();
   }
 });
 

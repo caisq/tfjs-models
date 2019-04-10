@@ -16,11 +16,16 @@
  */
 
 import {drawActionTree, executeTimedMenuAction, parseActionTreeConfig} from './action-tree';
-import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferRecognizerCreationCallback} from './model-io';
+import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferRecognizerCreationCallback, setPostLoadTransferModelCallback} from './model-io';
 import * as basicInference from './basic-inference';
 
 import * as SpeechCommands from '../src';
 import {TimedMenu} from '../src/';
+
+const modelIORegion = document.getElementById('model-io-region');
+const runRegion = document.getElementById('run-region');
+const runOptionsRegion = document.getElementById('run-options-region');
+const actionTreeConfigRegion = document.getElementById('action-tree-config-region');
 
 const startButton = document.getElementById('start');
 const stopButton = document.getElementById('stop');
@@ -41,6 +46,17 @@ const messageSpan = document.getElementById('message');
 
 let recognizer;
 let transferRecognizer;
+
+setPostLoadTransferModelCallback(() => {
+  setTimeout(() => {
+    modelIORegion.classList.add('invisible');
+    setTimeout(() => {
+      runRegion.classList.remove('invisible');
+      runOptionsRegion.classList.remove('invisible');
+      actionTreeConfigRegion.classList.remove('invisible');
+    }, 500);
+  }, 1000);
+});
 
 registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
   transferRecognizer = createdTransferRecognizer;

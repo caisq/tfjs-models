@@ -15,7 +15,7 @@
 </head>
 
 <body>
-  <div class="start-stop">
+  <div class="start-stop invisible" id="run-region">
     <button id="start" disabled="true">Start</button>
     <button id="start-action-tree" disabled="true">Start Action Tree</button>
     <button id="stop" disabled="true">Stop</button>
@@ -50,7 +50,10 @@
     <div id="candidate-words" class="candidate-words-hidden"></div>
   </div>
 
-  <div class="collapsible-region">
+  <div class="collapsible-region" id="model-io-region">
+    <div class="boxed-region-header">
+      Load a model first.
+    </div>
     <button id="model-io">Model IO >></button>
     <div class="collapsible-region-inner" id="transfer-model-save-load-inner">
       <div>
@@ -62,7 +65,7 @@
     </div>
   </div>
 
-  <div class="collapsible-region">
+  <div class="collapsible-region invisible" id="action-tree-config-region">
     <div>
       <button id="action-tree-config">Action Tree Settings >></button>
     </div>
@@ -88,7 +91,7 @@
     </div>
   </div>
 
-  <div class="collapsible-region">
+  <div class="collapsible-region invisible" id="run-options-region">
     <button id="run-config">Run Options >></button>
     <div id="run-config-group" style="display:none">
       <div>
@@ -111,25 +114,38 @@
   <button id="authorize_button" style="display: none;">Authorize</button>
   <button id="signout_button" style="display: none;">Sign Out</button>
 
-  <div style="display:none;">
-    <span>Email recipient</span>
-    <input id="email-recipient" size="100" value=""></input>
-  </div>
-  <div style="display:none;">
-    <span>Email message</span>
-    <input id="email-text" size="100"></input>
-  </div>
-  <div>
-    <button id="activate-gmail-api">Activate GMail API</button>
-  </div>
-  <div>
-    <div>
-      <span>Twilio SID:</span>
-      <input id="twilio-sid">
+  <div class="collapsible-region">
+    <div style="display:none;">
+      <span>Email recipient</span>
+      <input id="email-recipient" size="100" value=""></input>
     </div>
+    <div style="display:none;">
+      <span>Email message</span>
+      <input id="email-text" size="100"></input>
+    </div>
+
     <div>
-      <span>Twilio secret:</span>
-      <input id="twilio-secret" type="password">
+      <div>
+          <span class="action-config-header">GMail API Client ID:</span>
+          <input id="gmail-api-client-id" class="action-config-textbox">
+        </div>
+        <div>
+          <span class="action-config-header">GMail API key:</span>
+          <input id="gmail-api-key" class="action-config-textbox" type="password">
+        </div>
+        <div>
+          <button id="activate-gmail-api">Activate GMail API</button>
+        </div>
+      </div>
+
+      <div>
+        <span class="action-config-header">Twilio SID:</span>
+        <input id="twilio-sid" class="action-config-textbox">
+      </div>
+      <div>
+        <span class="action-config-header">Twilio secret:</span>
+        <input id="twilio-secret" class="action-config-textbox" type="password">
+      </div>
     </div>
   </div>
 

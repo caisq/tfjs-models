@@ -293,3 +293,18 @@ input {
 #message {
   margin-left: 30px;
 }
+
+.invisible {
+  display: none;
+}
+
+.action-config-header {
+  display: inline-block;
+  width: 160px;
+  max-width: 200px;
+}
+
+.action-config-textbox {
+  width: 24em;
+  font-family: monospace;
+}

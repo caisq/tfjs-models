@@ -17,6 +17,42 @@
 
 // ================ GMail related experiment. ======================
 
+const gmailAPIClientIDInput = document.getElementById('gmail-api-client-id');
+const gmailAPIKeyInput = document.getElementById('gmail-api-key');
+
+if (gmailAPIClientIDInput) {
+  const GMAIL_API_CLIENT_ID = 'euphonia-gmail-api-client-id';
+  const savedValue = localStorage.getItem(GMAIL_API_CLIENT_ID);
+  if (savedValue != null && savedValue.length > 0) {
+    gmailAPIClientIDInput.value = savedValue;
+  }
+
+  gmailAPIClientIDInput.addEventListener('change', () => {
+    const value = gmailAPIClientIDInput.value.trim();
+    if (value) {
+      localStorage.setItem(GMAIL_API_CLIENT_ID, gmailAPIClientIDInput.value);
+      console.log('Saved new GMail Client ID to local storage');
+    }
+  });
+}
+
+if (gmailAPIKeyInput) {
+  const GMAIL_API_KEY = 'euphonia-twilio-secret';
+  const savedValue = localStorage.getItem(GMAIL_API_KEY);
+  if (savedValue != null && savedValue.length > 0) {
+    gmailAPIKeyInput.value = savedValue;
+  }
+
+  gmailAPIKeyInput.addEventListener('change', () => {
+    const value = gmailAPIKeyInput.value.trim();
+    if (value) {
+      localStorage.setItem(GMAIL_API_KEY, gmailAPIKeyInput.value);
+      console.log('Saved new GMail API key to local storage');
+    }
+  });
+}
+
+
 // Client ID and API key from the Developer Console
 var CLIENT_ID = '';
 
@@ -44,8 +80,8 @@ activateGMailAPIButton.addEventListener('click', () => handleAPIAuth());
 function initClient() {
   console.log('In initClient()');  // DEBUG
   gapi.client.init({
-    apiKey: '',
-    clientId: CLIENT_ID,
+    apiKey: gmailAPIKeyInput.value.trim(),
+    clientId: gmailAPIClientIDInput.value.trim(),
     discoveryDocs: DISCOVERY_DOCS,
     scope: SCOPES
   }).then(function () {
@@ -160,4 +196,4 @@ function sendEmail(headers_obj, message, callback) {
   return sendRequest.execute(callback);
 }
 
-activateGMailAPIButton.click();
+// activateGMailAPIButton.click();
