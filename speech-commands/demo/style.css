@@ -308,3 +308,7 @@ input {
   width: 24em;
   font-family: monospace;
 }
+
+input[type=checkbox] {
+  transform: scale(2);
+}

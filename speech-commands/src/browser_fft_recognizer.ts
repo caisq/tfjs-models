@@ -23,7 +23,7 @@ import {loadMetadataJson, normalize, normalizeFloat32Array} from './browser_fft_
 import {BACKGROUND_NOISE_TAG, Dataset} from './dataset';
 import {concatenateFloat32Arrays} from './generic_utils';
 import {balancedTrainValSplit} from './training_utils';
-import {EvaluateConfig, EvaluateResult, Example, ExampleCollectionOptions, RecognizeConfig, RecognizerCallback, RecognizerParams, ROCCurve, SpectrogramData, SpeechCommandRecognizer, SpeechCommandRecognizerResult, StreamingRecognitionConfig, TransferLearnConfig, TransferSpeechCommandRecognizer} from './types';
+import {AudioDataAugmentationOptions, EvaluateConfig, EvaluateResult, Example, ExampleCollectionOptions, RecognizeConfig, RecognizerCallback, RecognizerParams, ROCCurve, SpectrogramData, SpeechCommandRecognizer, SpeechCommandRecognizerResult, StreamingRecognitionConfig, TransferLearnConfig, TransferSpeechCommandRecognizer} from './types';
 import {version} from './version';
 
 export const UNKNOWN_TAG = '_unknown_';
@@ -640,6 +640,7 @@ class TransferBrowserFftSpeechCommandRecognizer extends
         word != null && typeof word === 'string' && word.length > 0,
         () => `Must provide a non-empty string when collecting transfer-` +
             `learning example`);
+    options = options || {};
 
     if (options.snippetDurationSec != null) {
       tf.util.assert(options.snippetDurationSec > 0,
@@ -650,7 +651,7 @@ class TransferBrowserFftSpeechCommandRecognizer extends
               `is provided.`);
     }
     if (options.snippetCallback != null) {
-      tf.util.assert(options.snippetDurationSec != null, 
+      tf.util.assert(options.snippetDurationSec != null,
           () => `snippetDurationSec must be supplied if snippetCallback ` +
               `is provided.`);
     }
@@ -688,7 +689,7 @@ class TransferBrowserFftSpeechCommandRecognizer extends
 
     streaming = true;
     return new Promise<SpectrogramData>(resolve => {
-      const stepFactor = options.snippetDurationSec == null ? 
+      const stepFactor = options.snippetDurationSec == null ?
           1 : options.snippetDurationSec / totalDurationSec;
       const overlapFactor = 1 - stepFactor;
       const callbackCountTarget = Math.round(1 / stepFactor);
@@ -881,14 +882,17 @@ class TransferBrowserFftSpeechCommandRecognizer extends
    * @returns xs: The feature tensors (xs), a 4D tf.Tensor.
    *          ys: The target tensors (ys), one-hot encoding, a 2D tf.Tensor.
    */
-  private collectTransferDataAsTensors(windowHopRatio?: number):
+  private collectTransferDataAsTensors(
+      windowHopRatio?: number,
+      augmentationOptions?: AudioDataAugmentationOptions):
       {xs: tf.Tensor, ys: tf.Tensor} {
     const numFrames = this.nonBatchInputShape[0];
     windowHopRatio = windowHopRatio || DEFAULT_WINDOW_HOP_RATIO;
     const hopFrames = Math.round(windowHopRatio * numFrames);
     const out = this.dataset.getData(null, {
       numFrames,
-      hopFrames
+      hopFrames,
+      ...augmentationOptions
     }) as {xs: tf.Tensor4D, ys?: tf.Tensor2D};
     return {xs: out.xs, ys: out.ys as tf.Tensor};
   }
@@ -911,7 +915,8 @@ class TransferBrowserFftSpeechCommandRecognizer extends
    *   `this.model.fitDataset`.
    */
   private collectTransferDataAsTfDataset(
-      windowHopRatio?: number, validationSplit = 0.15, batchSize = 32):
+      windowHopRatio?: number, validationSplit = 0.15,
+      batchSize = 32, augmentationOptions?: AudioDataAugmentationOptions):
       [tf.data.Dataset<TensorContainer>, tf.data.Dataset<TensorContainer>] {
     const numFrames = this.nonBatchInputShape[0];
     windowHopRatio = windowHopRatio || DEFAULT_WINDOW_HOP_RATIO;
@@ -921,7 +926,8 @@ class TransferBrowserFftSpeechCommandRecognizer extends
       hopFrames,
       getDataset: true,
       datasetBatchSize: batchSize,
-      datasetValidationSplit: validationSplit
+      datasetValidationSplit: validationSplit,
+      ...augmentationOptions
     }) as [tf.data.Dataset<TensorContainer>, tf.data.Dataset<TensorContainer>];
     // TODO(cais): See if we can tighten the typing.
   }
@@ -955,6 +961,9 @@ class TransferBrowserFftSpeechCommandRecognizer extends
                   this.name}' because only ` +
             `1 word label ('${JSON.stringify(this.words)}') ` +
             `has been collected for transfer learning. Requires at least 2.`);
+    if (config == null) {
+      config = {};
+    }
     if (config.fineTuningEpochs != null) {
       tf.util.assert(
           config.fineTuningEpochs >= 0 &&
@@ -962,10 +971,6 @@ class TransferBrowserFftSpeechCommandRecognizer extends
           () =>
               `If specified, fineTuningEpochs must be a non-negative ` +
               `integer, but received ${config.fineTuningEpochs}`);
-    }
-
-    if (config == null) {
-      config = {};
     }
 
     if (this.model == null) {
@@ -1010,7 +1015,9 @@ class TransferBrowserFftSpeechCommandRecognizer extends
     const batchSize = config.batchSize == null ? 32 : config.batchSize;
     const windowHopRatio = config.windowHopRatio || DEFAULT_WINDOW_HOP_RATIO;
     const [trainDataset, valDataset] = this.collectTransferDataAsTfDataset(
-        windowHopRatio, config.validationSplit, batchSize);
+        windowHopRatio, config.validationSplit, batchSize, {
+          augmentByMixingNoiseRatio: config.augmentByMixingNoiseRatio
+        });
     const t0 = tf.util.now();
     const history = await this.model.fitDataset(trainDataset, {
       epochs: config.epochs,
@@ -1065,7 +1072,9 @@ class TransferBrowserFftSpeechCommandRecognizer extends
       Promise<tf.History|[tf.History, tf.History]> {
     // Prepare the data.
     const windowHopRatio = config.windowHopRatio || DEFAULT_WINDOW_HOP_RATIO;
-    const {xs, ys} = this.collectTransferDataAsTensors(windowHopRatio);
+    const {xs, ys} = this.collectTransferDataAsTensors(windowHopRatio, {
+      augmentByMixingNoiseRatio: config.augmentByMixingNoiseRatio
+    });
     console.log(
         `Training data: xs.shape = ${xs.shape}, ys.shape = ${ys.shape}`);
 

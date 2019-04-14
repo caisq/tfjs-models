@@ -78,7 +78,6 @@ activateGMailAPIButton.addEventListener('click', () => handleAPIAuth());
  *  listeners.
  */
 function initClient() {
-  console.log('In initClient()');  // DEBUG
   gapi.client.init({
     apiKey: gmailAPIKeyInput.value.trim(),
     clientId: gmailAPIClientIDInput.value.trim(),
@@ -115,7 +114,6 @@ function updateSigninStatus(isSignedIn) {
     // listLabels();
     const textValue = document.getElementById('email-text').value;
     const emailText = `Just a test: ${textValue}`;
-    console.log(`email text = ${emailText}`);  // DEBUG
     sendEmail({
       'To': document.getElementById('email-recipient').value.trim(),
       'Subject': 'This is a test'

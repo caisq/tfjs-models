@@ -138,17 +138,17 @@ export interface ExampleCollectionOptions {
 
   /**
    * Optional snipppet duration in seconds.
-   * 
+   *
    * Must be supplied if `snippetCallback` is specified.
    */
   snippetDurationSec?: number;
 
   /**
    * Optional snippet callback.
-   * 
+   *
    * Must be supplied if `snippetDurationSec` is specified.
    */
-  snippetCallback?: (spectrogram: SpectrogramData) => Promise<void>
+  snippetCallback?: (spectrogram: SpectrogramData) => Promise<void>;
 }
 
 /**
@@ -440,13 +440,35 @@ export interface RecognizeConfig {
   includeEmbedding?: boolean;
 }
 
+export interface AudioDataAugmentationOptions {
+  /**
+   * Additive ratio for augmenting the data by mixing the word spectrograms
+   * with background-noise ones.
+   *
+   * If not `null` or `undefined`, will cause extra word spectrograms to be
+   * created through the equation:
+   *   (normalizedWordSpectrogram +
+   *    augmentByMixingNoiseRatio * normalizedNoiseSpectrogram)
+   *
+   * The normalizedNoiseSpectrogram will be drawn randomly from all noise
+   * snippets available. If no noise snippet is available, an Error will
+   * be thrown.
+   *
+   * Default: `undefined`.
+   */
+  augmentByMixingNoiseRatio?: number;
+
+   // TODO(cais): Add other augmentation options, including augmentByReverb,
+  // augmentByTempoShift and augmentByFrequencyShift.
+}
+
 /**
  * Configurations for the training of a transfer-learning recognizer.
  *
  * It is used during calls to the `TransferSpeechCommandRecognizer.train()`
  * method.
  */
-export interface TransferLearnConfig {
+export interface TransferLearnConfig extends AudioDataAugmentationOptions {
   /**
    * Number of training epochs (default: 20).
    */
