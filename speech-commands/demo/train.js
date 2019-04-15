@@ -364,10 +364,16 @@ function disableFileUploadControls() {
   uploadFilesButton.disabled = true;
 }
 
+function sleep(durationMs) {
+  return new Promise((resolve, reject) => {
+    setTimeout(resolve, durationMs);
+  });
+}
+
 startTransferLearnButton.addEventListener('click', async () => {
-  startTransferLearnButton.disabled = true;
   startTransferLearnButton.textContent = 'Transfer learning starting...';
-  await tf.nextFrame();
+  startTransferLearnButton.disabled = true;
+  await sleep(50);
 
   const INITIAL_PHASE = 'initial';
   const FINE_TUNING_PHASE = 'fineTuningPhase';
