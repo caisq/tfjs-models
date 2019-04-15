@@ -84,6 +84,13 @@ registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
 
   await populateSavedTransferModelsSelect();
 
+  transferModelNameInput.disabled = true;
+  const loadingBaseModelMessage = `(Loading base model...)`;
+  const enterLearnWordsButtonOriginalText =
+      enterLearnWordsButton.textContent;
+  transferModelNameInput.value = loadingBaseModelMessage;
+  enterLearnWordsButton.textContent = loadingBaseModelMessage;
+
   // Make sure the tf.Model is loaded through HTTP. If this is not
   // called here, the tf.Model will be loaded the first time
   // `listen()` is called.
@@ -92,10 +99,12 @@ registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
       .then(() => {
         registerRecognizer(recognizer);
         basicInference.setRecognizer(recognizer);
+        enterLearnWordsButton.textContent = enterLearnWordsButtonOriginalText;
         enterLearnWordsButton.disabled = false;
         enableLoadAndDeleteModelButtons();
 
         transferModelNameInput.value = `model-${getDateString()}`;
+        transferModelNameInput.disabled = false;
 
         logToStatusDisplay('Model loaded.');
 

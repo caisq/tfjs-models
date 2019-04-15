@@ -30,10 +30,14 @@ const learnWordsInput = document.getElementById('learn-words');
 const durationMultiplierSelect = document.getElementById('duration-multiplier');
 const enterLearnWordsButton = document.getElementById('enter-learn-words');
 
+const loadTransferModelButtonOriginalText = loadTransferModelButton.textContent;
+loadTransferModelButton.textContent = 'Loading base model...';
+
 let recognizer;
 export function registerRecognizer(inputRecognizer) {
   recognizer = inputRecognizer;
   if (recognizer != null) {
+    loadTransferModelButton.textContent = loadTransferModelButtonOriginalText;
     loadTransferModelButton.disabled = false;
   }
 }
