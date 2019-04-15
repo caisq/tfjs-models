@@ -59,7 +59,6 @@ const BACKGROUND_NOISE_TAG = SpeechCommands.BACKGROUND_NOISE_TAG;
  */
 const transferModelNameInput = document.getElementById('transfer-model-name');
 const learnWordsInput = document.getElementById('learn-words');
-const durationMultiplierSelect = document.getElementById('duration-multiplier');
 const enterLearnWordsButton = document.getElementById('enter-learn-words');
 const collectButtonsDiv = document.getElementById('collect-words');
 const startTransferLearnButton =
@@ -169,7 +168,6 @@ function createWordDivs(transferWords) {
                               transferDurationMultiplier);
 
   const wordDivs = {};
-  const firstWordIsNoise = transferWords[0] === BACKGROUND_NOISE_TAG;
   let nonNoiseDurationInput;
   for (const word of transferWords) {
     const wordDiv = document.createElement('div');
@@ -197,7 +195,7 @@ function createWordDivs(transferWords) {
       durationInput = document.createElement('input');
       durationInput.setAttribute('isFixed', 'true');
       durationInput.value = '10';
-      durationInput.style['width'] = '40px';
+      durationInput.classList.add('duration-input');
       wordDiv.appendChild(durationInput);
       // Create time-unit span for noise duration.
       const timeUnitSpan = document.createElement('span');
@@ -213,6 +211,7 @@ function createWordDivs(transferWords) {
         const nonNoiseDurationLabel = document.createElement('span');
         nonNoiseDurationLabel.setAttribute('isFixed', 'true');
         nonNoiseDurationLabel.classList.add('settings');
+        nonNoiseDurationLabel.classList.add('non-noise-duration-label');
         nonNoiseDurationLabel.style['vertical-align'] = 'middle';
         nonNoiseDurationLabel.textContent = 'Word duration:';
         nonNoiseControlDiv.append(nonNoiseDurationLabel);
@@ -221,19 +220,18 @@ function createWordDivs(transferWords) {
         nonWordDurationSpan.setAttribute('isFixed', 'true');
         nonWordDurationSpan.classList.add('settings');
         nonWordDurationSpan.style['vertical-align'] = 'middle';
+        nonWordDurationSpan.textContent = 'sec';
 
-        nonNoiseDurationInput = document.createElement('input');
-        nonNoiseDurationInput.type = 'range';
-        nonNoiseDurationInput.min = 2;
-        nonNoiseDurationInput.max = 8;
-        nonNoiseDurationInput.step = 2;
-        nonNoiseDurationInput.value = 2;
-        nonNoiseDurationInput.addEventListener('change', () => {
-          nonWordDurationSpan.textContent = `${nonNoiseDurationInput.value} sec`;
+        nonNoiseDurationInput = document.createElement('select');
+        [2, 4, 6, 8].forEach(durationSec => {
+          const option = document.createElement('option');
+          option.text = `${durationSec}`;
+          option.value = `${durationSec}`;
+          nonNoiseDurationInput.appendChild(option);
         });
-        nonNoiseControlDiv.append(nonNoiseDurationInput);
+        nonNoiseControlDiv.value = '2';
 
-        nonWordDurationSpan.textContent = `${nonNoiseDurationInput.value} sec`;
+        nonNoiseControlDiv.append(nonNoiseDurationInput);
         nonNoiseControlDiv.append(nonWordDurationSpan);
 
         collectButtonsDiv.append(nonNoiseControlDiv);
@@ -328,7 +326,7 @@ enterLearnWordsButton.addEventListener('click', () => {
 
   enterLearnWordsButton.disabled = true;
 
-  transferDurationMultiplier = durationMultiplierSelect.value;
+  transferDurationMultiplier = 2;
 
   learnWordsInput.disabled = true;
   enterLearnWordsButton.disabled = true;
@@ -659,8 +657,6 @@ uploadFilesButton.addEventListener('click', async () => {
         uploadFilesButton.textContent = originalTextContent;
       }, 2000);
     }
-    durationMultiplierSelect.value = `${transferDurationMultiplier}`;
-    durationMultiplierSelect.disabled = true;
     enterLearnWordsButton.disabled = true;
   };
   datasetFileReader.onerror = () =>

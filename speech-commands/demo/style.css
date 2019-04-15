@@ -97,6 +97,17 @@ textarea {
   font-size: 95%;
 }
 
+.non-noise-duration-label {
+  display: inline-block;
+  width: 150px;
+  max-width: 150px;
+  font-size: 95%;
+}
+
+.duration-input {
+  width: 40px;
+}
+
 .candidate-word {
   border: 1px solid gray;
   background-color: lightyellow;
@@ -146,6 +157,7 @@ textarea {
 
 .settings {
   font-size: 17px;
+  padding: 6px;
 }
 
 .collapsible-region {
@@ -300,7 +312,7 @@ input {
 
 .action-config-header {
   display: inline-block;
-  width: 160px;
+  width: 180px;
   max-width: 200px;
 }
 
@@ -311,4 +323,11 @@ input {
 
 input[type=checkbox] {
   transform: scale(2);
+}
+
+.credential-sub-region {
+  padding: 8px;
+  vertical-align: top;
+  display: inline-block;
+  width: 45%;
 }
