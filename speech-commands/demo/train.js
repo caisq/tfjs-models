@@ -16,15 +16,15 @@
  */
 
 import Plotly from 'plotly.js-dist';
-import * as tf from '@tensorflow/tfjs';
 
 import * as SpeechCommands from '../src';
 
-import {saveDatasetToIndexedDB, getSavedDatasetsInfo, loadDatasetFromIndexedDB, loadSerializedDatasetFromIndexedDB, deleteDatasetFromIndexedDB} from './dataset-indexeddb';
+import * as basicInference from './basic-inference';
+import {saveDatasetToIndexedDB, getSavedDatasetsInfo, loadSerializedDatasetFromIndexedDB, deleteDatasetFromIndexedDB} from './dataset-indexeddb';
 import {DatasetViz, removeNonFixedChildrenFromWordDiv} from './dataset-vis';
 import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferRecognizer, registerTransferRecognizerCreationCallback, enableLoadAndDeleteModelButtons, enableSaveModelButton, clickSaveModelButton} from './model-io';
 import {logToStatusDisplay, plotSpectrogram, showErrorOnButton, showInfoOnButton} from './ui';
-import * as basicInference from './basic-inference';
+import {populateWebDatasetsSelect, registerWebDatasetLoaderFunc} from './web-datasets';
 import {concatenateFloat32Arrays} from '../src/generic_utils';
 
 const toInferenceButton = document.getElementById('to-inference');
@@ -45,9 +45,6 @@ const loadDatasetFromIndexedDBButton =
     document.getElementById('load-dataset-from-indexeddb');
 const deleteDatasetFromIndexedDBButton =
     document.getElementById('delete-dataset-from-indexeddb');
-
-const remoteDatasetURLInput = document.getElementById('remote-dataset-url');
-const loadRemoteDatasetButton = document.getElementById('load-remote-dataset');
 
 const evalModelOnDatasetButton = document.getElementById('eval-model-on-dataset');
 const evalResultsSpan = document.getElementById('eval-results');
@@ -116,6 +113,8 @@ registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
         logToStatusDisplay(
             `tf.Model input shape: ` +
             `${JSON.stringify(recognizer.modelInputShape())}`);
+
+        populateWebDatasetsSelect(params.sampleRateHz);
       })
       .catch(err => {
         console.error(err);
@@ -670,24 +669,6 @@ uploadFilesButton.addEventListener('click', async () => {
   datasetFileReader.readAsArrayBuffer(files[0]);
 });
 
-loadRemoteDatasetButton.addEventListener('click', async () => {
-  const url = remoteDatasetURLInput.value;
-  console.log(`Loading dataset from ${url} ...`);
-  const originalTextContent = loadRemoteDatasetButton.textContent;
-  try {
-    loadRemoteDatasetButton.textContent = 'Loading dataset...';
-    const serialized = await (await fetch(url)).arrayBuffer();
-    await loadDatasetInTransferRecognizer(serialized);
-    loadRemoteDatasetButton.textContent = originalTextContent;
-  } catch (err) {
-    console.error(err);
-    loadRemoteDatasetButton.textContent = err.message;
-    setTimeout(() => {
-      loadRemoteDatasetButton.textContent = originalTextContent;
-    }, 2000);
-  }
-});
-
 async function loadDatasetInTransferRecognizer(serialized, datasetName) {
   if (transferWords == null && datasetName != null) {
     transferModelNameInput.value = datasetName;
@@ -742,6 +723,8 @@ async function loadDatasetInTransferRecognizer(serialized, datasetName) {
     setKeyFrameIndex: autoSaveDatasetToIndexedDB
   });
 }
+
+registerWebDatasetLoaderFunc(loadDatasetInTransferRecognizer);
 
 evalModelOnDatasetButton.addEventListener('click', async () => {
   const files = datasetFileInput.files;
