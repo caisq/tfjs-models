@@ -17,6 +17,8 @@
 
 import Plotly from 'plotly.js-dist';
 
+// DO NOT REMOVE THIS: @tensorflow/tfjs is a peer dependency of speech-commands.
+import '@tensorflow/tfjs';
 import * as SpeechCommands from '../src';
 
 import * as basicInference from './basic-inference';
