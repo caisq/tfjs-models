@@ -37,7 +37,7 @@ if (gmailAPIClientIDInput) {
 }
 
 if (gmailAPIKeyInput) {
-  const GMAIL_API_KEY = 'euphonia-twilio-secret';
+  const GMAIL_API_KEY = 'euphonia-gmail-api-key';
   const savedValue = localStorage.getItem(GMAIL_API_KEY);
   if (savedValue != null && savedValue.length > 0) {
     gmailAPIKeyInput.value = savedValue;
