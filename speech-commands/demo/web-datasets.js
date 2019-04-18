@@ -24,7 +24,7 @@ const WEB_DATASETS_MANIFEST_URL =
     'https://storage.googleapis.com/tfjs-speech-commands-models/data/speech-commmands-datasets-manifest.json';
 
 export async function populateWebDatasetsSelect(sampleRateHz) {
-  if (!(sampleRateHz > 0)) {
+  if (sampleRateHz != null && !(sampleRateHz > 0)) {
     throw new Error(
         `Expected sampleRateHz to be a positive number, ` +
         `but got ${sampleRateHz}`);
@@ -35,7 +35,7 @@ export async function populateWebDatasetsSelect(sampleRateHz) {
   const manifest = await (await fetch(WEB_DATASETS_MANIFEST_URL)).json();
   let numAvailable = 0;
   for (const dataset of manifest.datasets) {
-    if (dataset.sampleRateHz === sampleRateHz) {
+    if (sampleRateHz == null || dataset.sampleRateHz === sampleRateHz) {
       const option = document.createElement('option');
       const urlItems = dataset.URL.split('/');
       const baseName = urlItems[urlItems.length - 1];

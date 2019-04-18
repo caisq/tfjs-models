@@ -116,7 +116,7 @@ registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
             `tf.Model input shape: ` +
             `${JSON.stringify(recognizer.modelInputShape())}`);
 
-        populateWebDatasetsSelect(params.sampleRateHz);
+        populateWebDatasetsSelect();
       })
       .catch(err => {
         console.error(err);
