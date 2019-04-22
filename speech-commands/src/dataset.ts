@@ -294,6 +294,36 @@ export class Dataset {
     return output;
   }
 
+  private limitBackgroundNoiseImbalance(
+      xs: tf.Tensor3D[]|Float32Array[], labelIndices: number[]) {
+    const maxNoiseRatio = 0.95;  // TODO(cais): Change to 0.95.
+    const noiseLabel = this.getVocabulary().indexOf(BACKGROUND_NOISE_TAG);
+    let noiseIndices: number[] = [];
+    labelIndices.forEach((label, index) => {
+      if (label === noiseLabel) {
+        noiseIndices.push(index);
+      }
+    });
+    if (noiseIndices.length < labelIndices.length * maxNoiseRatio) {
+      return;
+    }
+    const numDiscard = Math.ceil(
+        (noiseIndices.length - labelIndices.length * maxNoiseRatio) /
+        (1 - maxNoiseRatio));
+    console.log(`Too many background-noise examplse in the processed dataset ` +
+        `(ratio: ${(noiseIndices.length / labelIndices.length).toFixed(3)}). ` +
+        `Randomly discarding ` +
+        `${numDiscard} (${numDiscard / noiseIndices.length * 1e2}%) ` +
+        `noise examples.`);
+    tf.util.shuffle(noiseIndices);
+    const discardIndices = noiseIndices.slice(0, numDiscard);
+    discardIndices.sort((x, y) => y - x);  // Sort in descending order.
+    discardIndices.forEach(discardIndex => {
+      xs.splice(discardIndex, 1);
+      labelIndices.splice(discardIndex, 1);
+    });
+  }
+
   /**
    * Get all examples and labels as tensors.
    *
@@ -448,6 +478,9 @@ export class Dataset {
                 Array<Float32Array | tf.Tensor>,
             labelIndices, config.augmentByMixingNoiseRatio);
       }
+
+      this.limitBackgroundNoiseImbalance(
+          config.getDataset ? xArrays : xTensors, labelIndices);
 
       const shuffle = config.shuffle == null ? true : config.shuffle;
       if (config.getDataset) {
