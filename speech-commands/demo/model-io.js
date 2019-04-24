@@ -15,7 +15,10 @@
  * =============================================================================
  */
 
+import * as tf from '@tensorflow/tfjs';
 import * as SpeechCommands from '../src';
+
+import {showErrorOnButton, showInfoOnButton} from './ui';
 
 const modelIOButton = document.getElementById('model-io');
 const transferModelSaveLoadInnerDiv = document.getElementById('transfer-model-save-load-inner');
@@ -30,6 +33,13 @@ const learnWordsInput = document.getElementById('learn-words');
 const durationMultiplierSelect = document.getElementById('duration-multiplier');
 const enterLearnWordsButton = document.getElementById('enter-learn-words');
 
+const downloadTransferModelAsFilesButton =
+    document.getElementById('download-transfer-model-as-files');
+const loadRemoteTransferModelButton =
+    document.getElementById('load-remote-transfer-model');
+const remoteTransferModelURLInput =
+    document.getElementById('remote-transfer-model-url');
+
 const loadTransferModelButtonOriginalText = loadTransferModelButton.textContent;
 loadTransferModelButton.textContent = 'Loading base model...';
 
@@ -39,6 +49,7 @@ export function registerRecognizer(inputRecognizer) {
   if (recognizer != null) {
     loadTransferModelButton.textContent = loadTransferModelButtonOriginalText;
     loadTransferModelButton.disabled = false;
+    loadRemoteTransferModelButton.disabled = false;
   }
 }
 
@@ -54,7 +65,6 @@ export function registerTransferRecognizerCreationCallback(callback) {
 
 if (modelIOButton != null) {
   modelIOButton.addEventListener('click', () => {
-
     if (modelIOButton.textContent.endsWith(' >>')) {
       transferModelSaveLoadInnerDiv.style.display = 'inline-block';
       modelIOButton.textContent =
@@ -75,14 +85,14 @@ export function setPostLoadTransferModelCallback(callback) {
 
 loadTransferModelButton.addEventListener('click', async () => {
   const transferModelName = savedTransferModelsSelect.value;
-  const transferRecognizer = recognizer.createTransfer(transferModelName);
-  await transferRecognizer.load();
+  const loadedTransferRecognizer = recognizer.createTransfer(transferModelName);
+  await loadedTransferRecognizer.load();
   if (transferModelNameInput != null) {
     transferModelNameInput.value = transferModelName;
     transferModelNameInput.disabled = true;
   }
   if (learnWordsInput != null) {
-    learnWordsInput.value = transferRecognizer.wordLabels().join(',');
+    learnWordsInput.value = loadedTransferRecognizer.wordLabels().join(',');
     learnWordsInput.disabled = true;
   }
   if (durationMultiplierSelect != null) {
@@ -96,16 +106,83 @@ loadTransferModelButton.addEventListener('click', async () => {
   }
   if (loadTransferModelButton != null) {
     loadTransferModelButton.disabled = true;
+    if (downloadTransferModelAsFilesButton != null) {
+      downloadTransferModelAsFilesButton.disabled = false;
+    }
     loadTransferModelButton.textContent = 'Model loaded!';
   }
   if (transferRecognizerCreationCallback != null) {
-    transferRecognizerCreationCallback(transferRecognizer);
+    registerTransferRecognizer(loadedTransferRecognizer);
+    transferRecognizerCreationCallback(loadedTransferRecognizer);
   }
 
   if (postLoadTransferModelCallback != null) {
     postLoadTransferModelCallback();
   }
 });
+
+if (downloadTransferModelAsFilesButton != null) {
+  downloadTransferModelAsFilesButton.addEventListener('click', async () => {
+    if (transferRecognizer == null) {
+      showErrorOnButton(
+          downloadTransferModelAsFilesButton, 'Load model first', 3000);
+    }
+    console.log(`Downloading transfer model: ${transferRecognizer.name}`);
+    const anchor = document.createElement('a');
+    anchor.download = 'metadata.json';
+    anchor.href = window.URL.createObjectURL(
+        new Blob([JSON.stringify(transferRecognizer.getMetadata())],
+                 {type: 'application/json'}));
+    anchor.click();
+    await transferRecognizer.model.save('downloads://model');
+  });
+}
+
+if (loadRemoteTransferModelButton != null) {
+  loadRemoteTransferModelButton.addEventListener('click', async () => {
+    const originalButtonText = loadRemoteTransferModelButton.textContent;
+    loadRemoteTransferModelButton.disabled = true;
+    loadRemoteTransferModelButton.textContent = 'Loading...';
+    try {
+      const metadataURL = remoteTransferModelURLInput.value.trim();
+      if (metadataURL.length === 0) {
+        showErrorOnButton(
+            loadRemoteTransferModelButton, 'Enter URL first!', 2000);
+      }
+      const metadata = await (await fetch(metadataURL)).json();
+      console.log('Remote transfer model metadata:', metadata);
+      const modelJsonPath =
+          metadataURL.slice(0, metadataURL.lastIndexOf('/')) + '/model.json';
+      console.log(`Loading model from modelJsonPath: ${modelJsonPath}`);
+      let modelName = metadata.modelName;
+      const existingModelNames = await SpeechCommands.listSavedTransferModels();
+      let suffix = 1;
+      while (existingModelNames.indexOf(modelName) !== -1) {
+        modelName = `${metadata.modelName} (${suffix++})`;
+      }
+
+      console.log(`Loaded model will have name: ${modelName}`);
+      const loadedTransferRecognizer = recognizer.createTransfer(modelName);
+      loadedTransferRecognizer.model = await tf.loadLayersModel(modelJsonPath);
+      // Warning: protected access!
+      loadedTransferRecognizer.words = metadata.wordLabels;
+      await loadedTransferRecognizer.save();
+
+      await populateSavedTransferModelsSelect();
+      loadRemoteTransferModelButton.textContent = originalButtonText;
+      loadRemoteTransferModelButton.disabled = false;
+      registerTransferRecognizer(loadedTransferRecognizer);
+      showInfoOnButton(
+          loadRemoteTransferModelButton, `Loaded and saved ${modelName}`, 4000);
+    } catch (err) {
+      loadRemoteTransferModelButton.textContent = originalButtonText;
+      console.error(err);
+      showErrorOnButton(
+          loadRemoteTransferModelButton, 'ERROR: Loading failed', 4000);
+    }
+
+  });
+}
 
 if (saveTransferModelButton != null) {
   saveTransferModelButton.addEventListener('click', async () => {
@@ -119,6 +196,11 @@ if (saveTransferModelButton != null) {
 if (deleteTransferModelButton != null) {
   deleteTransferModelButton.addEventListener('click', async () => {
     const transferModelName = savedTransferModelsSelect.value;
+    if (!confirm(`Are you sure you want to delete model ` +
+        `${transferModelName}?`)) {
+      showInfoOnButton(deleteTransferModelButton, 'Deletion canceled', 2000);
+      return;
+    }
     await SpeechCommands.deleteSavedTransferModel(transferModelName);
     deleteTransferModelButton.disabled = true;
     deleteTransferModelButton.textContent = `Deleted "${transferModelName}"`;

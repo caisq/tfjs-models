@@ -296,7 +296,7 @@ export class Dataset {
 
   private limitBackgroundNoiseImbalance(
       xs: tf.Tensor3D[]|Float32Array[], labelIndices: number[]) {
-    const maxNoiseRatio = 0.95;  // TODO(cais): Change to 0.95.
+    const maxNoiseRatio = 0.9;
     const noiseLabel = this.getVocabulary().indexOf(BACKGROUND_NOISE_TAG);
     let noiseIndices: number[] = [];
     labelIndices.forEach((label, index) => {
