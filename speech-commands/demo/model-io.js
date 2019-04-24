@@ -173,7 +173,7 @@ if (loadRemoteTransferModelButton != null) {
       loadRemoteTransferModelButton.disabled = false;
       registerTransferRecognizer(loadedTransferRecognizer);
       showInfoOnButton(
-          loadRemoteTransferModelButton, `Loaded and saved ${modelName}`, 4000);
+          loadRemoteTransferModelButton, `Loaded and saved "${modelName}"`, 4000);
     } catch (err) {
       loadRemoteTransferModelButton.textContent = originalButtonText;
       console.error(err);
