@@ -49,7 +49,9 @@ export function registerRecognizer(inputRecognizer) {
   if (recognizer != null) {
     loadTransferModelButton.textContent = loadTransferModelButtonOriginalText;
     loadTransferModelButton.disabled = false;
-    loadRemoteTransferModelButton.disabled = false;
+    if (loadRemoteTransferModelButton != null) {
+      loadRemoteTransferModelButton.disabled = false;
+    }
   }
 }
 
@@ -180,7 +182,6 @@ if (loadRemoteTransferModelButton != null) {
       showErrorOnButton(
           loadRemoteTransferModelButton, 'ERROR: Loading failed', 4000);
     }
-
   });
 }
 
