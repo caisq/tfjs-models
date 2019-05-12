@@ -1323,7 +1323,7 @@ class TransferBrowserFftSpeechCommandRecognizer extends
     return this.baseModel.inputs[0].shape;
   }
 
-  private getMetadata(): {
+  getMetadata(): {
     tfjsSpeechCommandsVersion: string,
     modelName: string,
     timeStamp: string,

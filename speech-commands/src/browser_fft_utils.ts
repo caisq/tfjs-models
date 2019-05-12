@@ -16,6 +16,7 @@
  */
 
 import * as tf from '@tensorflow/tfjs';
+import {backend} from '@tensorflow/tfjs-core';
 
 export async function loadMetadataJson(url: string):
     Promise<{words: string[]}> {
@@ -55,7 +56,7 @@ let EPSILON: number = null;
  */
 export function normalize(x: tf.Tensor): tf.Tensor {
   if (EPSILON == null) {
-    EPSILON = tf.ENV.get('EPSILON');
+    EPSILON = backend().epsilon();
   }
   return tf.tidy(() => {
     const {mean, variance} = tf.moments(x);
@@ -66,7 +67,7 @@ export function normalize(x: tf.Tensor): tf.Tensor {
 
 export function normalizeFloat32Array(x: Float32Array) {
   if (EPSILON == null) {
-    EPSILON = tf.ENV.get('EPSILON');
+    EPSILON = backend().epsilon();
   }
   return tf.tidy(() => {
     const {mean, variance} = tf.moments(tf.tensor1d(x));

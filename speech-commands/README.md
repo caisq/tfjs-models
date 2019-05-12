@@ -262,6 +262,14 @@ await transferRecognizer.listen(result => {
 setTimeout(() => transferRecognizer.stopListening(), 10e3);
 ```
 
+## Offline training of transfer model using tfjs-node
+
+Use command:
+
+```sh
+yarn train-offline <DATASET_FILE> --save <MODEL_SAVE_PATH>
+```
+
 ## Live demo
 
 A developer-oriented live demo is available at
