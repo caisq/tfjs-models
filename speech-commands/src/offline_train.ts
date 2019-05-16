@@ -15,13 +15,14 @@
  * =============================================================================
  */
 
+import * as tf from '@tensorflow/tfjs-node';
+import * as argparse from 'argparse';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import * as argparse from 'argparse';
-
-import * as tf from '@tensorflow/tfjs-node';
+import {Dataset} from './dataset';
 import * as speechCommands from './index';
+import {TransferSpeechCommandRecognizer} from './types';
 
 global.fetch = require('node-fetch');
 
@@ -29,29 +30,28 @@ function parseArgs() {
   const parser = new argparse.ArgumentParser();
   parser.addArgument('datasetPath', {
     type: 'string',
-    help: 'Path to dataset file'
+    help: 'Path to dataset file(s). If there are multiple files, separate ' +
+        'paths with commas.'
   });
   parser.addArgument('--windowHopRatio', {
     type: 'float',
     defaultValue: 0.25,
     help: 'Hop ratio used to extract examples from long recordings'
   });
-  parser.addArgument('--augmentByMixingNoiseRatio',  {
+  parser.addArgument('--augmentByMixingNoiseRatio', {
     type: 'float',
     defaultValue: 0.5,
     help: 'Additive ratio for augmenting the data by mixing the word ' +
-    'spectrograms with background-noise ones.'
+        'spectrograms with background-noise ones.'
   });
   parser.addArgument('--epochs', {
     type: 'int',
     defaultValue: 50,
     help: 'Number of initial (non-fine-tuning) training epochs'
   });
-  parser.addArgument('--fineTuningEpochs', {
-    type: 'int',
-    defaultValue: 50,
-    help: 'Number of fine-tuning epochs'
-  });
+  parser.addArgument(
+      '--fineTuningEpochs',
+      {type: 'int', defaultValue: 50, help: 'Number of fine-tuning epochs'});
   parser.addArgument('--validationSplit', {
     type: 'float',
     defaultValue: 0.15,
@@ -74,6 +74,23 @@ function toArrayBuffer(myBuf: Buffer): ArrayBuffer {
   return myBuffer;
 }
 
+function loadDataset(
+    trasnferRecognizer: TransferSpeechCommandRecognizer,
+    datasetPath: string): void {
+  let paths: string[];
+  if (datasetPath.indexOf(',') === -1) {
+    paths = [datasetPath];
+  } else {
+    paths = datasetPath.split(',');
+  }
+  paths.forEach(filePath => {
+    console.log(`Loading data from path: ${filePath}`);
+    const serializedData = toArrayBuffer(fs.readFileSync(filePath));
+    trasnferRecognizer.loadExamples(serializedData);
+  });
+  console.log(trasnferRecognizer.countExamples());
+}
+
 async function main() {
   console.log('TensorFlow.js version:', tf.version);
   console.log('SpeechCommands version:', speechCommands.version);
@@ -82,13 +99,9 @@ async function main() {
 
   const baseRecognizer = speechCommands.create('BROWSER_FFT');
   await baseRecognizer.ensureModelLoaded();
-
   const trasnferRecognizer = baseRecognizer.createTransfer('transfer');
 
-  const serializedData = toArrayBuffer(fs.readFileSync(args.datasetPath));
-  trasnferRecognizer.loadExamples(serializedData);
-  console.log(`Loaded serialized examples from ${args.datasetPath}`);
-  console.log(trasnferRecognizer.countExamples());
+  loadDataset(trasnferRecognizer, args.datasetPath);
 
   console.log(`Starting training...`);
   const tBegin = tf.util.now();
