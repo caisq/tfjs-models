@@ -4,18 +4,34 @@
 
 <head>
   <title>TensorFlow.js Speech-Commands Demo</title>
-  <link rel="stylesheet" type="text/css" href="style.css">
+
+  <link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
 </head>
 
 <body>
-  <h1>TensorFlow.js Speech-Commands Demo</h1>
 
-  <div>
-    <a href="./train.html"><button>Train Model</button></a>
+  <header class="mdc-toolbar mdc-toolbar--fixed mdc-theme--black">
+    <div class="mdc-toolbar__row">
+      <section class="mdc-toolbar__section mdc-toolbar__section--align-start">
+        <span class="mdc-toolbar__title logo">TensorFlow.js Speech Commands</span>
+      </section>
+    </div>
+  </header>
+
+  <div class="mdc-toolbar-fixed-adjust mdc-layout-grid">
+    <div class="mdc-layout-grid">
+      <a href="./train.html">
+        <button class="mdc-button mdc-button--raised">Train Model</button>
+      </a>
+    </div>
+    <div class="mdc-layout-grid">
+      <a href="./run.html">
+        <button class="mdc-button mdc-button--raised">Run Model</button>
+      </a>
+    </div>
   </div>
-  <div>
-    <a href="./run.html"><button>Run Model</button></a>
-  </div>
+
 </body>
 
 </html>
