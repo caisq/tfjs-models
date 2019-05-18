@@ -90,7 +90,7 @@ registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
   const loadingBaseModelMessage = `(Loading base model...)`;
   const enterLearnWordsButtonOriginalText =
       enterLearnWordsButton.textContent;
-  transferModelNameInput.textContent = loadingBaseModelMessage;
+  transferModelNameInput.textContent = loadingBaseModelMessage;  transferModelNameInput.focus();
   enterLearnWordsButton.textContent = loadingBaseModelMessage;
 
   // Make sure the tf.Model is loaded through HTTP. If this is not
@@ -129,6 +129,7 @@ registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
       });
 })();
 
+// TODO(cais): Restore.
 // toInferenceButton.addEventListener('click', () => {
   // window.location.href = './run.html';
 // });
@@ -176,7 +177,6 @@ function createWordDivs(transferWords) {
   let nonNoiseDurationInput;
   for (const word of transferWords) {
     const wordDiv = document.createElement('div');
-    // wordDiv.classList.add('word-div');
     wordDiv.classList.add('transfer-word');
     wordDiv.classList.add('mdc-layout-grid');
     wordDivs[word] = wordDiv;
@@ -205,7 +205,8 @@ function createWordDivs(transferWords) {
           trainUI.createMdcTextField('duration-input', 'sec');
       durationInput = mdcDurationDiv.textInput;
       durationInput.setAttribute('isFixed', 'true');
-      durationInput.value = '10';
+      durationInput.value = '10'
+      setTimeout(() => durationInput.focus(), 100);
       mdcDurationDiv.rootDiv.classList.add('duration-input');
       wordDiv.appendChild(mdcDurationDiv.rootDiv);
       // Create time-unit span for noise duration.
@@ -232,7 +233,11 @@ function createWordDivs(transferWords) {
         nonWordDurationSpan.style['vertical-align'] = 'middle';
         nonWordDurationSpan.textContent = 'sec';
 
+        // nonNoiseDurationInputDiv = document.createElement('div');
+        // nonNoiseDurationInputDiv.classList.add('mdc-select');
         nonNoiseDurationInput = document.createElement('select');
+        nonNoiseDurationInput.classList.add('mdc-select__native-control');
+        // nonNoiseDurationInputDiv.appendChild(nonNoiseDurationInput);
         [2, 4, 6, 8].forEach(durationSec => {
           const option = document.createElement('option');
           option.text = `${durationSec}`;
@@ -274,10 +279,12 @@ function createWordDivs(transferWords) {
       if (word !== BACKGROUND_NOISE_TAG) {
         // If this is not a background-noise word type, show incremental
         // spectrogram in real time.
+        const tempCanvasDiv = document.createElement('div');
         const tempCanvas = document.createElement('canvas');
-        tempCanvas.style['margin-left'] = '132px';
-        tempCanvas.height = 50;
-        wordDiv.appendChild(tempCanvas);
+        tempCanvas.classList.add('spectrogram-canvas');
+        tempCanvas.classList.add('temp-spectrogram-canvas');
+        tempCanvasDiv.appendChild(tempCanvas);
+        wordDiv.appendChild(tempCanvasDiv);
 
         let tempSpectrogramData;
         collectExampleOptions.snippetDurationSec = 0.1;
@@ -289,7 +296,7 @@ function createWordDivs(transferWords) {
                 [tempSpectrogramData, spectrogram.data]);
           }
           plotSpectrogram(tempCanvas, tempSpectrogramData, spectrogram.frameSize,
-              spectrogram.frameSize, {pixelsPerFrame: 2});
+              spectrogram.frameSize, {pixelsPerFrame: 4});
         }
       } else {
         progressBar = document.createElement('progress');

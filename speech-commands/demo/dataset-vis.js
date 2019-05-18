@@ -129,12 +129,14 @@ export class DatasetViz {
 
     removeNonFixedChildrenFromWordDiv(wordDiv);
 
+    const wordSpectrogramDiv = document.createElement('div');
+
     // Create the left and right nav buttons.
     const leftButton = createMdcFloatingActionButton('chevron_left');
-    wordDiv.appendChild(leftButton);
+    wordSpectrogramDiv.appendChild(leftButton);
 
     const rightButton = createMdcFloatingActionButton('chevron_right');
-    wordDiv.appendChild(rightButton);
+    wordSpectrogramDiv.appendChild(rightButton);
 
     // Determine the position of the example in the word of the dataset.
     const exampleUIDs =
@@ -160,8 +162,9 @@ export class DatasetViz {
 
     // Spectrogram canvas.
     const exampleCanvas = document.createElement('canvas');
-    exampleCanvas.style['display'] = 'inline-block';
-    exampleCanvas.style['vertical-align'] = 'middle';
+    exampleCanvas.classList.add('spectrogram-canvas');
+    // exampleCanvas.style['display'] = 'inline-block';
+    // exampleCanvas.style['vertical-align'] = 'middle';
     exampleCanvas.height = 60;
     exampleCanvas.width = 80;
     exampleCanvas.style['padding'] = '3px';
@@ -185,7 +188,7 @@ export class DatasetViz {
       });
     }
 
-    wordDiv.appendChild(exampleCanvas);
+    wordSpectrogramDiv.appendChild(exampleCanvas);
 
     const modelNumFrames = this.transferRecognizer.modelInputShape()[1];
     await plotSpectrogram(
@@ -201,7 +204,7 @@ export class DatasetViz {
 
     // Create Delete button.
     const deleteButton = createMdcFloatingActionButton('delete');
-    wordDiv.appendChild(deleteButton);
+    wordSpectrogramDiv.appendChild(deleteButton);
 
     // Callback for delete button.
     deleteButton.addEventListener('click', () => {
@@ -213,6 +216,8 @@ export class DatasetViz {
         callbacks.delete();
       }
     });
+
+    wordDiv.appendChild(wordSpectrogramDiv);
 
     this.updateButtons_();
   }

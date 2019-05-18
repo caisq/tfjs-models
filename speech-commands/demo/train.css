@@ -30,4 +30,15 @@
 .mdc-fab {
   margin-left: 2px;
   margin-right: 2px;
+  vertical-align: middle;
+}
+
+.spectrogram-canvas {
+  display: inline-block;
+  height: 60px;
+  vertical-align: middle;
+}
+
+.temp-spectrogram-canvas {
+  margin-left: 82px;
 }
