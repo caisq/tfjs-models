@@ -15,6 +15,8 @@
  * =============================================================================
  */
 
+import {MDCTextField} from '@material/textfield';
+
 import Plotly from 'plotly.js-dist';
 
 // DO NOT REMOVE THIS: @tensorflow/tfjs is a peer dependency of speech-commands.
@@ -28,6 +30,8 @@ import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferR
 import {logToStatusDisplay, plotSpectrogram, showErrorOnButton, showInfoOnButton} from './ui';
 import {populateWebDatasetsSelect, registerWebDatasetLoaderFunc} from './web-datasets';
 import {concatenateFloat32Arrays} from '../src/generic_utils';
+
+import * as trainUI from './train-ui';
 
 const toInferenceButton = document.getElementById('to-inference');
 
@@ -86,7 +90,7 @@ registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
   const loadingBaseModelMessage = `(Loading base model...)`;
   const enterLearnWordsButtonOriginalText =
       enterLearnWordsButton.textContent;
-  transferModelNameInput.value = loadingBaseModelMessage;
+  transferModelNameInput.textContent = loadingBaseModelMessage;
   enterLearnWordsButton.textContent = loadingBaseModelMessage;
 
   // Make sure the tf.Model is loaded through HTTP. If this is not
@@ -125,9 +129,9 @@ registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
       });
 })();
 
-toInferenceButton.addEventListener('click', () => {
-  window.location.href = './run.html';
-});
+// toInferenceButton.addEventListener('click', () => {
+  // window.location.href = './run.html';
+// });
 
 const cachedAudioObjects = {};
 function playAudio(audioFile) {
@@ -172,11 +176,15 @@ function createWordDivs(transferWords) {
   let nonNoiseDurationInput;
   for (const word of transferWords) {
     const wordDiv = document.createElement('div');
-    wordDiv.classList.add('word-div');
+    // wordDiv.classList.add('word-div');
+    wordDiv.classList.add('transfer-word');
+    wordDiv.classList.add('mdc-layout-grid');
     wordDivs[word] = wordDiv;
     wordDiv.setAttribute('word', word);
     const button = document.createElement('button');
     button.classList.add('word-button');
+    button.classList.add('mdc-button');
+    button.classList.add('mdc-button--raised');
     button.setAttribute('isFixed', 'true');
     button.style['display'] = 'inline-block';
     button.style['vertical-align'] = 'middle';
@@ -185,7 +193,6 @@ function createWordDivs(transferWords) {
 
     button.textContent = `${displayWord} (0)`;
     wordDiv.appendChild(button);
-    wordDiv.className = 'transfer-word';
     collectButtonsDiv.appendChild(wordDiv);
     collectWordButtons[word] = button;
 
@@ -193,11 +200,13 @@ function createWordDivs(transferWords) {
 
     // Create noise duration input.
     if (word === BACKGROUND_NOISE_TAG) {
-      durationInput = document.createElement('input');
+      // durationInput = document.createElement('input');
+      const mdcDurationDiv = trainUI.createMdcTextField();
+      durationInput = mdcDurationDiv.textInput;
       durationInput.setAttribute('isFixed', 'true');
       durationInput.value = '10';
-      durationInput.classList.add('duration-input');
-      wordDiv.appendChild(durationInput);
+      mdcDurationDiv.rootDiv.classList.add('duration-input');
+      wordDiv.appendChild(mdcDurationDiv.rootDiv);
       // Create time-unit span for noise duration.
       const timeUnitSpan = document.createElement('span');
       timeUnitSpan.setAttribute('isFixed', 'true');

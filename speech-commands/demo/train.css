@@ -1,0 +1,21 @@
+#dataset-io-section {
+  display: none;
+}
+
+#model-io-section {
+  display: none;
+}
+
+.mdc-tab {
+  display: inline-block;
+}
+
+.word-div {
+  border-radius: 10px;
+  margin: 3px;
+}
+
+.duration-input {
+  width: 60px;
+  margin-left: 10px;
+}

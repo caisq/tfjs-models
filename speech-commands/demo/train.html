@@ -6,17 +6,45 @@
   <meta charset="UTF-8">
   <title>TensorFlow.js Speech Commands Model Demo</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/treant-js/1.0/Treant.css" rel="stylesheet" type="text/css">
-  <link href="style.css" rel="stylesheet" type="text/css">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- <link href="style.css" rel="stylesheet" type="text/css"> -->
+
+  <link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+
+  <link href="./train.css" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
 <body>
-  <div class="start-stop">
-    <button class="inference-switch" id="to-inference">Run models ⇗</button>
-
-    <div id="action-tree-group" style="display:none">
-      <div class="chart" id="action-tree" ></div>
-    </div>
+  <div id="top-tabs">
+    <button class="mdc-tab mdc-tab--active" role="tab" aria-selected="true" id="transfer-learn-tab">
+      <span class="mdc-tab__content">
+        <span class="mdc-tab__text-label">Training</span>
+      </span>
+      <span class="mdc-tab-indicator mdc-tab-indicator--active">
+        <span class="mdc-tab-indicator__content mdc-tab-indicator__content--underline"></span>
+      </span>
+      <span class="mdc-tab__ripple"></span>
+    </button>
+    <button class="mdc-tab" role="tab" id="dataset-io-tab" >
+      <span class="mdc-tab__content">
+        <span class="mdc-tab__text-label">Dataset IO</span>
+      </span>
+      <span class="mdc-tab-indicator mdc-tab-indicator--active">
+        <span class="mdc-tab-indicator__content mdc-tab-indicator__content--underline"></span>
+      </span>
+      <span class="mdc-tab__ripple"></span>
+    </button>
+    <button class="mdc-tab" role="tab" id="model-io-tab" >
+      <span class="mdc-tab__content">
+        <span class="mdc-tab__text-label">Model IO</span>
+      </span>
+      <span class="mdc-tab-indicator mdc-tab-indicator--active">
+        <span class="mdc-tab-indicator__content mdc-tab-indicator__content--underline"></span>
+      </span>
+      <span class="mdc-tab__ripple"></span>
+    </button>
   </div>
 
   <div class='main-model'>
@@ -29,16 +57,37 @@
   <div class="footer" style="display: none;">
     <textarea id="status-display" style="display: none" cols="80" readonly="true"></textarea>
   </div>
+
   <div class="transfer-learn-section">
-    <div class="collapsible-region" id="learning-region">
-      <div>
-        <span class="transfer-label-span">Model name:</span>
-        <input id="transfer-model-name" size="20" placeholder="model name">
+    <div class="collapsible-region" id="transfer-learn-section">
+
+      <div class="mdc-layout-grid">
+        <div class="mdc-text-field">
+          <input
+              type="text" id="transfer-model-name" class="mdc-text-field__input"
+              value="(Loading base model...)">
+          <label class="mdc-floating-label" for="transfer-model-name">
+            Model name
+          </label>
+          <div class="mdc-line-ripple"></div>
+        </div>
+
       </div>
-      <div>
-        <span class="transfer-label-span">Words:</span>
-        <input id="learn-words" size="36" value="red,green">
-        <button id="enter-learn-words" disabled="true">Enter transfer words</button>
+
+      <div class="mdc-layout-grid">
+        <div class="mdc-text-field">
+          <input
+              type="text" id="learn-words" class="mdc-text-field__input"
+              value="red,green">
+          <label class="mdc-floating-label" for="learn-words">
+            Words (separate with commas)
+          </label>
+          <div class="mdc-line-ripple"></div>
+        </div>
+
+        <button id="enter-learn-words" class="mdc-button mdc-button--raised" disabled="true">
+          Enter transfer words
+        </button>
       </div>
 
       <div id="transfer-learn-history"></div>
@@ -69,7 +118,7 @@
       </div>
     </div>
 
-    <div class="collapsible-region">
+    <div class="collapsible-region" id="dataset-io-section">
       <button id="dataset-io">Dataset IO >></button>
       <div class="collapsible-region-inner" id="dataset-io-inner">
         <div>
@@ -106,7 +155,7 @@
       </div>
     </div>
 
-    <div class="collapsible-region">
+    <div class="collapsible-region" id="model-io-section">
       <button id="model-io">Model IO >></button>
       <div class="collapsible-region-inner" id="transfer-model-save-load-inner">
         <div>
