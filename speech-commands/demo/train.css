@@ -17,5 +17,17 @@
 
 .duration-input {
   width: 60px;
-  margin-left: 10px;
+}
+
+.word-button {
+  font-size: 95%;
+  margin-right: 10px;
+  margin-bottom: 8px;
+  max-width: 150px;
+  width: 150px;
+}
+
+.mdc-fab {
+  margin-left: 2px;
+  margin-right: 2px;
 }

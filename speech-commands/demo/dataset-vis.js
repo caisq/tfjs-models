@@ -17,6 +17,7 @@
 
 import * as speechCommands from '../src';
 
+import {createMdcFloatingActionButton} from './train-ui';
 import {plotSpectrogram} from './ui';
 
 /** Remove the children of a div that do not have the isFixed attribute. */
@@ -129,12 +130,10 @@ export class DatasetViz {
     removeNonFixedChildrenFromWordDiv(wordDiv);
 
     // Create the left and right nav buttons.
-    const leftButton = document.createElement('button');
-    leftButton.textContent = '←';
+    const leftButton = createMdcFloatingActionButton('chevron_left');
     wordDiv.appendChild(leftButton);
 
-    const rightButton = document.createElement('button');
-    rightButton.textContent = '→';
+    const rightButton = createMdcFloatingActionButton('chevron_right');
     wordDiv.appendChild(rightButton);
 
     // Determine the position of the example in the word of the dataset.
@@ -201,8 +200,7 @@ export class DatasetViz {
         });
 
     // Create Delete button.
-    const deleteButton = document.createElement('button');
-    deleteButton.textContent = 'X';
+    const deleteButton = createMdcFloatingActionButton('delete');
     wordDiv.appendChild(deleteButton);
 
     // Callback for delete button.

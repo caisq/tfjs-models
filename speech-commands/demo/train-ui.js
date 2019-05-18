@@ -74,15 +74,36 @@ function updateTabStatus() {
 const mdcTextFields = document.querySelectorAll('.mdc-text-field');
 mdcTextFields.forEach(textField => new MDCTextField(textField));
 
-export function createMdcTextField() {
+export function createMdcTextField(id, labelText) {
   const rootDiv = document.createElement('div');
   rootDiv.classList.add('mdc-text-field');
   const textInput = document.createElement('input');
   textInput.classList.add('mdc-text-field__input');
+  textInput.id = id;
   rootDiv.appendChild(textInput);
+  if (labelText != null) {
+    const label = document.createElement('label');
+    label.classList.add('mdc-floating-label');
+    label.setAttribute('for', id);
+    label.textContent = labelText;
+    rootDiv.appendChild(label);
+  }
+  new MDCTextField(rootDiv);
   return {rootDiv, textInput};
 }
 
+export function createMdcFloatingActionButton(iconName) {
+  const button = document.createElement('button');
+  button.classList.add('mdc-fab');
+  button.classList.add('mdc-fab--mini');
+  const span = document.createElement('span');
+  span.classList.add('mdc-fab__icon');
+  span.classList.add('material-icons');
+  span.textContent = iconName;
+  button.appendChild(span);
+  return button;
+}
+
 // DEBUG
-const iconButtonRipple = new MDCRipple(document.querySelector('.mdc-icon-button'));
-iconButtonRipple.unbounded = true;
+// const iconButtonRipple = new MDCRipple(document.querySelector('.mdc-icon-button'));
+// iconButtonRipple.unbounded = true;

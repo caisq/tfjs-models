@@ -201,7 +201,8 @@ function createWordDivs(transferWords) {
     // Create noise duration input.
     if (word === BACKGROUND_NOISE_TAG) {
       // durationInput = document.createElement('input');
-      const mdcDurationDiv = trainUI.createMdcTextField();
+      const mdcDurationDiv =
+          trainUI.createMdcTextField('duration-input', 'sec');
       durationInput = mdcDurationDiv.textInput;
       durationInput.setAttribute('isFixed', 'true');
       durationInput.value = '10';
@@ -212,7 +213,6 @@ function createWordDivs(transferWords) {
       timeUnitSpan.setAttribute('isFixed', 'true');
       timeUnitSpan.classList.add('settings');
       timeUnitSpan.style['vertical-align'] = 'middle';
-      timeUnitSpan.textContent = 'sec';
       wordDiv.appendChild(timeUnitSpan);
 
       if (transferWords.length > 1) {
