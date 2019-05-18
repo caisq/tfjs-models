@@ -15,8 +15,6 @@
  * =============================================================================
  */
 
-import {MDCTextField} from '@material/textfield';
-
 import Plotly from 'plotly.js-dist';
 
 // DO NOT REMOVE THIS: @tensorflow/tfjs is a peer dependency of speech-commands.
@@ -33,13 +31,11 @@ import {concatenateFloat32Arrays} from '../src/generic_utils';
 
 import * as trainUI from './train-ui';
 
-const toInferenceButton = document.getElementById('to-inference');
+// const toInferenceButton = document.getElementById('to-inference');  // TODO(cais): Restore.
 
 const epochsInput = document.getElementById('epochs');
 const fineTuningEpochsInput = document.getElementById('fine-tuning-epochs');
 
-const datasetIOButton = document.getElementById('dataset-io');
-const datasetIOInnerDiv = document.getElementById('dataset-io-inner');
 const downloadAsFileButton = document.getElementById('download-dataset');
 const datasetFileInput = document.getElementById('dataset-file-input');
 const uploadFilesButton = document.getElementById('upload-dataset');
@@ -218,38 +214,21 @@ function createWordDivs(transferWords) {
 
       if (transferWords.length > 1) {
         const nonNoiseControlDiv = document.createElement('div');
+        nonNoiseControlDiv.classList.add('mdc-layout-grid');
 
-        const nonNoiseDurationLabel = document.createElement('span');
-        nonNoiseDurationLabel.setAttribute('isFixed', 'true');
-        nonNoiseDurationLabel.classList.add('settings');
-        nonNoiseDurationLabel.classList.add('non-noise-duration-label');
-        nonNoiseDurationLabel.style['vertical-align'] = 'middle';
-        nonNoiseDurationLabel.textContent = 'Word duration:';
-        nonNoiseControlDiv.append(nonNoiseDurationLabel);
-
-        const nonWordDurationSpan = document.createElement('span');
-        nonWordDurationSpan.setAttribute('isFixed', 'true');
-        nonWordDurationSpan.classList.add('settings');
-        nonWordDurationSpan.style['vertical-align'] = 'middle';
-        nonWordDurationSpan.textContent = 'sec';
-
-        // nonNoiseDurationInputDiv = document.createElement('div');
-        // nonNoiseDurationInputDiv.classList.add('mdc-select');
-        nonNoiseDurationInput = document.createElement('select');
-        nonNoiseDurationInput.classList.add('mdc-select__native-control');
-        // nonNoiseDurationInputDiv.appendChild(nonNoiseDurationInput);
+        const selectFields = trainUI.createMdcSelect('Word duration (sec)');
+        nonNoiseDurationInput = selectFields.input;
         [2, 4, 6, 8].forEach(durationSec => {
           const option = document.createElement('option');
           option.text = `${durationSec}`;
           option.value = `${durationSec}`;
           nonNoiseDurationInput.appendChild(option);
         });
-        nonNoiseControlDiv.value = '2';
 
-        nonNoiseControlDiv.append(nonNoiseDurationInput);
-        nonNoiseControlDiv.append(nonWordDurationSpan);
-
+        selectFields.div.classList.add('word-duration-select');
+        nonNoiseControlDiv.append(selectFields.div);
         collectButtonsDiv.append(nonNoiseControlDiv);
+        nonNoiseDurationInput.focus();
       }
     }
 
@@ -614,6 +593,10 @@ loadDatasetFromIndexedDBButton.addEventListener('click', async () => {
   showInfoOnButton(
       loadDatasetFromIndexedDBButton,
       `Loaded dataset "${datasetName}"`, 3000);
+
+  setTimeout(() => {
+    trainUI.updateTabStatus('transfer-learn-tab');
+  }, 200);
 });
 
 deleteDatasetFromIndexedDBButton.addEventListener('click', async () => {
@@ -803,16 +786,4 @@ evalModelOnDatasetButton.addEventListener('click', async () => {
   datasetFileReader.onerror = () =>
       console.error(`Failed to binary data from file '${dataFile.name}'.`);
   datasetFileReader.readAsArrayBuffer(files[0]);
-});
-
-datasetIOButton.addEventListener('click', () => {
-  if (datasetIOButton.textContent.endsWith(' >>')) {
-    datasetIOInnerDiv.style.display = 'inline-block';
-    datasetIOButton.textContent =
-        datasetIOButton.textContent.replace(' >>', ' <<');
-  } else {
-    datasetIOInnerDiv.style.display = 'none';
-    datasetIOButton.textContent =
-        datasetIOButton.textContent.replace(' <<', ' >>');
-  }
 });

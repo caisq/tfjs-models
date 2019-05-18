@@ -204,6 +204,7 @@ export class DatasetViz {
 
     // Create Delete button.
     const deleteButton = createMdcFloatingActionButton('delete');
+    deleteButton.classList.add('delete-button');
     wordSpectrogramDiv.appendChild(deleteButton);
 
     // Callback for delete button.

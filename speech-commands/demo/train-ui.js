@@ -16,7 +16,26 @@
  */
 
 import {MDCTextField} from '@material/textfield';
-import {MDCRipple} from '@material/ripple';
+import {MDCSelect} from '@material/select';
+
+/**
+ * Logic for the select inputs.
+ */
+const indexedDBDatasetSelectDiv =
+    document.getElementById('indexeddb-datasets-div');
+const indexedDBDatasetSelect = document.getElementById('indexeddb-datasets');
+new MDCSelect(indexedDBDatasetSelectDiv);
+
+const webDatasetSelectDiv =
+    document.getElementById('web-datasets-select-div');
+const webDatasetSelect = document.getElementById('web-datasets-select');
+new MDCSelect(webDatasetSelectDiv);
+
+const savedTransferModelsSelectDiv =
+    document.getElementById('saved-transfer-models-div');
+const savedTransferModelsSelect =
+    document.getElementById('saved-transfer-models');
+new MDCSelect(savedTransferModelsSelectDiv);
 
 /**
  * Logic for the top tabs.
@@ -38,36 +57,58 @@ modelIOTab.addEventListener('click', () => {
   updateTabStatus();
 });
 
-const mainModelSection = document.getElementById('transfer-learn-section');
+const transferLearnSection = document.getElementById('transfer-learn-section');
 const datasetIOSection = document.getElementById('dataset-io-section');
 const modelIOSection = document.getElementById('model-io-section');
 
-mainModelSection.style['display'] = 'block';
+const tarnsferLearnIndicator = document.getElementById('transfer-learn-tab-indicator');
+const datasetIOIndicator = document.getElementById('dataset-io-tab-indicator');
+const modelIOIndicator = document.getElementById('model-io-tab-indicator');
+
+transferLearnSection.style['display'] = 'block';
 datasetIOSection.style['display'] = 'none';
 modelIOSection.style['display'] = 'none';
 
-function updateTabStatus() {
+export function updateTabStatus(forceTab) {
+  if (forceTab != null) {
+    activeTab = forceTab;
+  }
+
   if (activeTab === 'transfer-learn-tab') {
     transferLearnTab.classList.add('mdc-tab--active');
     datasetIOTab.classList.remove('mdc-tab--active');
     modelIOTab.classList.remove('mdc-tab--active');
-    mainModelSection.style['display'] = 'block';
+    tarnsferLearnIndicator.classList.add('mdc-tab-indicator--active');
+    datasetIOIndicator.classList.remove('mdc-tab-indicator--active');
+    modelIOIndicator.classList.remove('mdc-tab-indicator--active');
+    transferLearnSection.style['display'] = 'block';
     datasetIOSection.style['display'] = 'none';
     modelIOSection.style['display'] = 'none';
   } else if (activeTab === 'dataset-io-tab') {
     transferLearnTab.classList.remove('mdc-tab--active');
     datasetIOTab.classList.add('mdc-tab--active');
     modelIOTab.classList.remove('mdc-tab--active');
-    mainModelSection.style['display'] = 'none';
+    tarnsferLearnIndicator.classList.remove('mdc-tab-indicator--active');
+    datasetIOIndicator.classList.add('mdc-tab-indicator--active');
+    modelIOIndicator.classList.remove('mdc-tab-indicator--active');
+    transferLearnSection.style['display'] = 'none';
     datasetIOSection.style['display'] = 'block';
     modelIOSection.style['display'] = 'none';
+
+    indexedDBDatasetSelect.focus();
+    webDatasetSelect.focus();
   } else if (activeTab === 'model-io-tab') {
     transferLearnTab.classList.remove('mdc-tab--active');
     datasetIOTab.classList.remove('mdc-tab--active');
     modelIOTab.classList.add('mdc-tab--active');
-    mainModelSection.style['display'] = 'none';
+    tarnsferLearnIndicator.classList.remove('mdc-tab-indicator--active');
+    datasetIOIndicator.classList.remove('mdc-tab-indicator--active');
+    modelIOIndicator.classList.add('mdc-tab-indicator--active');
+    transferLearnSection.style['display'] = 'none';
     datasetIOSection.style['display'] = 'none';
     modelIOSection.style['display'] = 'block';
+
+    savedTransferModelsSelect.focus();
   }
 }
 
@@ -104,6 +145,20 @@ export function createMdcFloatingActionButton(iconName) {
   return button;
 }
 
-// DEBUG
-// const iconButtonRipple = new MDCRipple(document.querySelector('.mdc-icon-button'));
-// iconButtonRipple.unbounded = true;
+export function createMdcSelect(labelText) {
+
+  const div = document.createElement('div');
+  div.classList.add('mdc-select');
+  const icon = document.createElement('i');
+  icon.classList.add('mdc-select__dropdown-icon');
+  div.appendChild(icon);
+  const input = document.createElement('select');
+  input.classList.add('mdc-select__native-control');
+  div.appendChild(input);
+  const label = document.createElement('label');
+  label.classList.add('mdc-floating-label');
+  label.textContent = labelText;
+  div.appendChild(label);
+  new MDCSelect(div);
+  return {div, input};
+}

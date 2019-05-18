@@ -1,36 +1,30 @@
-#dataset-io-section {
-  display: none;
-}
-
-#model-io-section {
-  display: none;
-}
-
-.mdc-tab {
-  display: inline-block;
-}
-
-.word-div {
-  border-radius: 10px;
-  margin: 3px;
+.delete-button {
+  background-color: rgb(255, 80, 60);
 }
 
 .duration-input {
   width: 60px;
 }
 
-.word-button {
-  font-size: 95%;
-  margin-right: 10px;
+.mdc-button {
+  margin: 5px;
+}
+
+.mdc-card {
+  border: 1px solid rgb(192, 192, 192);
   margin-bottom: 8px;
-  max-width: 150px;
-  width: 150px;
+  padding: 5px;
 }
 
 .mdc-fab {
   margin-left: 2px;
   margin-right: 2px;
   vertical-align: middle;
+}
+
+.mdc-tab {
+  display: inline-block;
+  font-size: 80%;
 }
 
 .spectrogram-canvas {
@@ -41,4 +35,41 @@
 
 .temp-spectrogram-canvas {
   margin-left: 82px;
+}
+
+.transfer-word {
+  border: 1px solid rgb(192, 192, 192);
+  border-radius: 4px;
+  box-shadow: 1px 1px 2px rgb(180, 180, 180);
+  margin-bottom: 4px;
+  width: 96%;
+}
+
+.word-button {
+  font-size: 95%;
+  margin-right: 10px;
+  margin-bottom: 8px;
+  max-width: 150px;
+  width: 150px;
+}
+
+.word-div {
+  border-radius: 10px;
+  margin: 3px;
+}
+
+.word-duration-select {
+  width: 160px;
+}
+
+#dataset-io-section {
+  display: none;
+}
+
+#indexeddb-datasets {
+  width: 95%;
+}
+
+#model-io-section {
+  display: none;
 }

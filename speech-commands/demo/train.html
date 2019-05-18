@@ -22,25 +22,25 @@
       <span class="mdc-tab__content">
         <span class="mdc-tab__text-label">Training</span>
       </span>
-      <span class="mdc-tab-indicator mdc-tab-indicator--active">
+      <span class="mdc-tab-indicator mdc-tab-indicator--active" id="transfer-learn-tab-indicator">
         <span class="mdc-tab-indicator__content mdc-tab-indicator__content--underline"></span>
       </span>
       <span class="mdc-tab__ripple"></span>
     </button>
     <button class="mdc-tab" role="tab" id="dataset-io-tab" >
       <span class="mdc-tab__content">
-        <span class="mdc-tab__text-label">Dataset IO</span>
+        <span class="mdc-tab__text-label">Datasets</span>
       </span>
-      <span class="mdc-tab-indicator mdc-tab-indicator--active">
+      <span class="mdc-tab-indicator" id="dataset-io-tab-indicator">
         <span class="mdc-tab-indicator__content mdc-tab-indicator__content--underline"></span>
       </span>
       <span class="mdc-tab__ripple"></span>
     </button>
-    <button class="mdc-tab" role="tab" id="model-io-tab" >
+    <button class="mdc-tab" role="tab" id="model-io-tab">
       <span class="mdc-tab__content">
-        <span class="mdc-tab__text-label">Model IO</span>
+        <span class="mdc-tab__text-label">Models</span>
       </span>
-      <span class="mdc-tab-indicator mdc-tab-indicator--active">
+      <span class="mdc-tab-indicator" id="model-io-tab-indicator">
         <span class="mdc-tab-indicator__content mdc-tab-indicator__content--underline"></span>
       </span>
       <span class="mdc-tab__ripple"></span>
@@ -118,62 +118,100 @@
     </div>
 
     <div class="collapsible-region" id="dataset-io-section">
-      <button id="dataset-io">Dataset IO >></button>
       <div class="collapsible-region-inner" id="dataset-io-inner">
-        <div>
-          <div class="boxed-region">
-            <div class="boxed-region-header">To/From Browser:</div>
-            <div>
-              <button id="save-dataset-to-indexeddb">Save dataset to browser</button>
-            </div>
-            <div>
-              <select id="indexeddb-datasets"></select>
-              <button id="load-dataset-from-indexeddb">Load dataset from browser</button>
-              <button id="delete-dataset-from-indexeddb">Delete dataset</button>
-            </div>
+        <div class="mdc-card">
+          <div class="mdc-typography--subtitle1">To/From Browser:</div>
+          <div class="mdc-layout-grid">
+            <button class="mdc-button mdc-button--raised" id="save-dataset-to-indexeddb">
+              Save dataset to browser
+            </button>
           </div>
-
-          <div class="boxed-region">
-            <div class="boxed-region-header">To/From File:</div>
-            <button id="download-dataset" disabled="true">↓ Download dataset as file</button>
-            <div>
-              <input type="file" id="dataset-file-input">
-              <button id="upload-dataset">↑ Upload dataset</button>
-              <button id="eval-model-on-dataset">Evaluate model on dataset</button>
+          <div class="mdc-layout-grid" id="indexeddb-datasets-div">
+            <div class="mdc-select">
+              <i class="mdc-select__dropdown-icon"></i>
+              <select class="mdc-select__native-control" id="indexeddb-datasets"></select>
+              <label class="mdc-floating-label">Datasets saved in browser</label>
+              <div class="mdc-line-ripple"></div>
             </div>
+            <button class="mdc-button mdc-button--raised" id="load-dataset-from-indexeddb">
+              Load dataset from browser
+            </button>
+            <button class="mdc-button mdc-button--raised delete-button" id="delete-dataset-from-indexeddb">
+              Delete dataset
+            </button>
           </div>
+        </div>
 
-          <div class="boxed-region">
-            <div class="boxed-region-header">From Web:</div>
-            <div>
-              <select id="web-datasets-select"></select>
-              <button id="load-remote-dataset">Load remote dataset</button>
+        <div class="mdc-card">
+          <div class="mdc-typography--subtitle1">To/From File:</div>
+          <button class="mdc-button mdc-button--raised" id="download-dataset" disabled="true">
+            <span class="material-icons">save</span>
+            Download dataset as file
+          </button>
+          <div>
+            <input class="mdc-button" type="file" id="dataset-file-input">
+            <button class="mdc-button mdc-button--raised" id="upload-dataset">
+              <span class="material-icons">arrow_upward</span>
+              Upload dataset
+            </button>
+            <button class="mdc-button mdc-button--raised" id="eval-model-on-dataset">
+              Evaluate model on dataset
+            </button>
+          </div>
+        </div>
+
+        <div class="mdc-card">
+          <div class="mdc-typography--subtitle1">From Web:</div>
+          <div>
+            <div class="mdc-select" id="web-datasets-select-div">
+              <i class="mdc-select__dropdown-icon"></i>
+              <select class="mdc-select__native-control" id="web-datasets-select"></select>
+              <label class="mdc-floating-label">Datasets from web</label>
+              <div class="mdc-line-ripple"></div>
             </div>
+            <button class="mdc-button mdc-button--raised" id="load-remote-dataset">
+              Download remote dataset
+            </button>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="collapsible-region" id="model-io-section">
-      <button id="model-io">Model IO >></button>
+    <div class="mdc-card" id="model-io-section">
       <div class="collapsible-region-inner" id="transfer-model-save-load-inner">
+        <div class="mdc-layout-grid">
+          <div class="mdc-select" id="saved-transfer-models-div">
+            <i class="mdc-select__dropdown-icon"></i>
+            <select class="mdc-select__native-control" id="saved-transfer-models"></select>
+            <label class="mdc-floating-label">Datasets from web</label>
+            <div class="mdc-line-ripple"></div>
+          </div>
+          <button class="mdc-button mdc-button--raised" id="delete-transfer-model" disabled="true">
+            Delete
+          </button>
+        </div>
+
         <div>
-          <button id="load-transfer-model" disabled="true">Load:</button>
-          <select id="saved-transfer-models">
-            <option value="1"></option>
-          </select>
-          <button id="delete-transfer-model" disabled="true">Delete</button>
+          <button class="mdc-button mdc-button--raised" id="save-transfer-model" disabled="true">
+            Save model
+          </button>
+          <button class="mdc-button mdc-button--raised" id="download-transfer-model-as-files" disabled="true">
+            Download model as files
+          </button>
         </div>
         <div>
-          <button id="save-transfer-model" disabled="true">Save model</button>
-          <button id="download-transfer-model-as-files" disabled="true">Download model as files</button>
-        </div>
-        <div>
-          <button id="load-remote-transfer-model" disabled="true">Load remote model</button>
-          <input
-              type="url" id="remote-transfer-model-url" size="80%"
-              value="https://storage.googleapis.com/tfjs-speech-model-test/models/uALS01-aa/metadata.json">
-          </input>
+          <button class="mdc-button mdc-button--raised" id="load-remote-transfer-model" disabled="true">
+            Load remote model
+          </button>
+
+          <div class="mdc-text-field">
+            <input
+                class="mdc-text-field__input"
+                type="url" id="remote-transfer-model-url" size="80%"
+                value="https://storage.googleapis.com/tfjs-speech-model-test/models/uALS01-aa/metadata.json">
+            </input>
+            <label class="mdc-floating-label">Remote-model URL</label>
+          </div>
         </div>
       </div>
     </div>

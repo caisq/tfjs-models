@@ -20,9 +20,6 @@ import * as SpeechCommands from '../src';
 
 import {showErrorOnButton, showInfoOnButton} from './ui';
 
-const modelIOButton = document.getElementById('model-io');
-const transferModelSaveLoadInnerDiv = document.getElementById('transfer-model-save-load-inner');
-
 const loadTransferModelButton = document.getElementById('load-transfer-model');
 const saveTransferModelButton = document.getElementById('save-transfer-model');
 const savedTransferModelsSelect = document.getElementById('saved-transfer-models');
@@ -40,17 +37,22 @@ const loadRemoteTransferModelButton =
 const remoteTransferModelURLInput =
     document.getElementById('remote-transfer-model-url');
 
-const loadTransferModelButtonOriginalText = loadTransferModelButton.textContent;
-loadTransferModelButton.textContent = 'Loading base model...';
+let loadTransferModelButtonOriginalText;
+if (loadTransferModelButton != null) {
+  loadTransferModelButtonOriginalText = loadTransferModelButton.textContent;
+  loadTransferModelButton.textContent = 'Loading base model...';
+}
 
 let recognizer;
 export function registerRecognizer(inputRecognizer) {
   recognizer = inputRecognizer;
   if (recognizer != null) {
-    loadTransferModelButton.textContent = loadTransferModelButtonOriginalText;
-    loadTransferModelButton.disabled = false;
-    if (loadRemoteTransferModelButton != null) {
-      loadRemoteTransferModelButton.disabled = false;
+    if (loadTransferModelButton !== null) {
+      loadTransferModelButton.textContent = loadTransferModelButtonOriginalText;
+      loadTransferModelButton.disabled = false;
+      if (loadRemoteTransferModelButton != null) {
+        loadRemoteTransferModelButton.disabled = false;
+      }
     }
   }
 }
@@ -65,63 +67,52 @@ export function registerTransferRecognizerCreationCallback(callback) {
   transferRecognizerCreationCallback = callback;
 }
 
-if (modelIOButton != null) {
-  modelIOButton.addEventListener('click', () => {
-    if (modelIOButton.textContent.endsWith(' >>')) {
-      transferModelSaveLoadInnerDiv.style.display = 'inline-block';
-      modelIOButton.textContent =
-          modelIOButton.textContent.replace(' >>', ' <<');
-    } else {
-      transferModelSaveLoadInnerDiv.style.display = 'none';
-      modelIOButton.textContent =
-          modelIOButton.textContent.replace(' <<', ' >>');
-    }
-  });
-}
-
 let postLoadTransferModelCallback;
 
 export function setPostLoadTransferModelCallback(callback) {
   postLoadTransferModelCallback = callback;
 }
 
-loadTransferModelButton.addEventListener('click', async () => {
-  const transferModelName = savedTransferModelsSelect.value;
-  const loadedTransferRecognizer = recognizer.createTransfer(transferModelName);
-  await loadedTransferRecognizer.load();
-  if (transferModelNameInput != null) {
-    transferModelNameInput.value = transferModelName;
-    transferModelNameInput.disabled = true;
-  }
-  if (learnWordsInput != null) {
-    learnWordsInput.value = loadedTransferRecognizer.wordLabels().join(',');
-    learnWordsInput.disabled = true;
-  }
-  if (durationMultiplierSelect != null) {
-    durationMultiplierSelect.disabled = true;
-  }
-  if (enterLearnWordsButton != null) {
-    enterLearnWordsButton.disabled = true;
-  }
-  if (saveTransferModelButton != null) {
-    saveTransferModelButton.disabled = true;
-  }
-  if (loadTransferModelButton != null) {
-    loadTransferModelButton.disabled = true;
-    if (downloadTransferModelAsFilesButton != null) {
-      downloadTransferModelAsFilesButton.disabled = false;
+if (loadTransferModelButton != null) {
+  loadTransferModelButton.addEventListener('click', async () => {
+    const transferModelName = savedTransferModelsSelect.value;
+    const loadedTransferRecognizer =
+        recognizer.createTransfer(transferModelName);
+    await loadedTransferRecognizer.load();
+    if (transferModelNameInput != null) {
+      transferModelNameInput.value = transferModelName;
+      transferModelNameInput.disabled = true;
     }
-    loadTransferModelButton.textContent = 'Model loaded!';
-  }
-  if (transferRecognizerCreationCallback != null) {
-    registerTransferRecognizer(loadedTransferRecognizer);
-    transferRecognizerCreationCallback(loadedTransferRecognizer);
-  }
+    if (learnWordsInput != null) {
+      learnWordsInput.value = loadedTransferRecognizer.wordLabels().join(',');
+      learnWordsInput.disabled = true;
+    }
+    if (durationMultiplierSelect != null) {
+      durationMultiplierSelect.disabled = true;
+    }
+    if (enterLearnWordsButton != null) {
+      enterLearnWordsButton.disabled = true;
+    }
+    if (saveTransferModelButton != null) {
+      saveTransferModelButton.disabled = true;
+    }
+    if (loadTransferModelButton != null) {
+      loadTransferModelButton.disabled = true;
+      if (downloadTransferModelAsFilesButton != null) {
+        downloadTransferModelAsFilesButton.disabled = false;
+      }
+      loadTransferModelButton.textContent = 'Model loaded!';
+    }
+    if (transferRecognizerCreationCallback != null) {
+      registerTransferRecognizer(loadedTransferRecognizer);
+      transferRecognizerCreationCallback(loadedTransferRecognizer);
+    }
 
-  if (postLoadTransferModelCallback != null) {
-    postLoadTransferModelCallback();
-  }
-});
+    if (postLoadTransferModelCallback != null) {
+      postLoadTransferModelCallback();
+    }
+  });
+}
 
 if (downloadTransferModelAsFilesButton != null) {
   downloadTransferModelAsFilesButton.addEventListener('click', async () => {
@@ -226,7 +217,9 @@ export async function populateSavedTransferModelsSelect() {
 }
 
 export function enableLoadAndDeleteModelButtons() {
-  loadTransferModelButton.disabled = false;
+  if (loadTransferModelButton != null) {
+    loadTransferModelButton.disabled = false;
+  }
   deleteTransferModelButton.disabled = false;
 }
 
