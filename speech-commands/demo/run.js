@@ -22,6 +22,8 @@ import * as basicInference from './basic-inference';
 import * as SpeechCommands from '../src';
 import {TimedMenu} from '../src/';
 
+import './run-ui.js'
+
 const modelIORegion = document.getElementById('model-io-region');
 const runRegion = document.getElementById('run-region');
 const runOptionsRegion = document.getElementById('run-options-region');
@@ -94,21 +96,6 @@ runConfigButton.addEventListener('click', () => {
     runConfigGroupDiv.style.display = 'none';
     runConfigButton.textContent =
         runConfigButton.textContent.replace(' <<', ' >>');
-  }
-});
-
-const actionTreeConfigButton = document.getElementById('action-tree-config');
-const actionTreeConfigInner = document.getElementById('action-tree-config-inner');
-
-actionTreeConfigButton.addEventListener('click', () => {
-  if (actionTreeConfigButton.textContent.endsWith(' >>')) {
-    actionTreeConfigInner.style.display = 'inline-block';
-    actionTreeConfigButton.textContent =
-        actionTreeConfigButton.textContent.replace(' >>', ' <<');
-  } else {
-    actionTreeConfigInner.style.display = 'none';
-    actionTreeConfigButton.textContent =
-        actionTreeConfigButton.textContent.replace(' <<', ' >>');
   }
 });
 

@@ -6,19 +6,69 @@
   <meta charset="UTF-8">
   <title>TensorFlow.js Speech Commands Model Demo</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/treant-js/1.0/Treant.css" rel="stylesheet" type="text/css">
-  <link href="style.css" rel="stylesheet" type="text/css">
+
+  <link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
 
   <link href="https://cdn.jsdelivr.net/npm/jsoneditor@5.28.2/dist/jsoneditor.css" rel="stylesheet" type="text/css">
   <script src="https://cdn.jsdelivr.net/npm/jsoneditor@5.28.2/dist/jsoneditor.min.js"></script>
 
+  <link href="./run.css" rel="stylesheet">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body>
-  <div class="start-stop invisible" id="run-region">
-    <button id="start" disabled="true">Start</button>
-    <button id="start-action-tree" disabled="true">Start Action Tree</button>
-    <button id="stop" disabled="true">Stop</button>
+  <div id="top-tabs">
+    <button class="mdc-tab mdc-tab--active" role="tab" aria-selected="true" id="run-tab">
+      <span class="mdc-tab__content">
+        <span class="material-icons">keyboard_voice</span>
+        <span class="mdc-tab__text-label">Run</span>
+      </span>
+      <span class="mdc-tab-indicator mdc-tab-indicator--active" id="run-tab-indicator">
+        <span class="mdc-tab-indicator__content mdc-tab-indicator__content--underline"></span>
+      </span>
+      <span class="mdc-tab__ripple"></span>
+    </button>
+    <button class="mdc-tab" role="tab" id="action-tree-tab" >
+      <span class="mdc-tab__content">
+        <span class="material-icons">device_hub</span>
+        <span class="mdc-tab__text-label">Tree</span>
+      </span>
+      <span class="mdc-tab-indicator" id="action-tree-tab-indicator">
+        <span class="mdc-tab-indicator__content mdc-tab-indicator__content--underline"></span>
+      </span>
+      <span class="mdc-tab__ripple"></span>
+    </button>
+    <button class="mdc-tab" role="tab" id="options-tab">
+      <span class="mdc-tab__content">
+        <span class="material-icons">settings</span>
+        <span class="mdc-tab__text-label">Options</span>
+      </span>
+      <span class="mdc-tab-indicator" id="options-tab-indicator">
+        <span class="mdc-tab-indicator__content mdc-tab-indicator__content--underline"></span>
+      </span>
+      <span class="mdc-tab__ripple"></span>
+    </button>
+  </div>
+
+  <div class="mdc-card start-stop invisible" id="run-region">
+    <div class="mdc-layout-grid">
+      <button class="mdc-button mdc-button--raised" id="start" disabled="true">
+        <span class="material-icons">keyboard_voice</span>
+        Start
+      </button>
+      <button class="mdc-button mdc-button--raised" id="start-action-tree" disabled="true">
+        <span class="material-icons">device_hub</span>
+        Start Action Tree
+      </button>
+      <button class="mdc-button mdc-button--raised" id="stop" disabled="true">
+        <span class="material-icons">stop</span>
+        Stop
+      </button>
+    </div>
+
+
     <span id="message"></span>
     <button class="inference-switch" id="to-training">Train models ⇗</button>
 
@@ -50,13 +100,15 @@
     <div id="candidate-words" class="candidate-words-hidden"></div>
   </div>
 
-  <div class="collapsible-region" id="model-io-region">
-    <div class="boxed-region-header">
+  <div class="mdc-card" id="model-io-region">
+    <div class="mdc-typography--subtitle1">
       Load a model first.
     </div>
     <div id="transfer-model-save-load-inner">
       <div>
-        <button id="load-transfer-model" disabled="true">Load transfer model</button>
+        <button class="mdc-button mdc-button--raised" id="load-transfer-model" disabled="true">
+          Load transfer model
+        </button>
         <select id="saved-transfer-models">
           <option value="1"></option>
         </select>
@@ -65,10 +117,6 @@
   </div>
 
   <div class="collapsible-region invisible" id="action-tree-config-region">
-    <div>
-      <button id="action-tree-config">Action Tree Settings >></button>
-    </div>
-
     <div class="collapsible-region-inner" id="action-tree-config-inner">
       <div>
         <span>Time-to-Live Multiplier:</span>
