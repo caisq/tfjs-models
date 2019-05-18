@@ -727,6 +727,38 @@
   dependencies:
     tslib "^1.9.3"
 
+"@material/checkbox@^2.1.1":
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/@material/checkbox/-/checkbox-2.1.1.tgz#f457d33be6a3309a768ed55e03e3a7e90cc3e63d"
+  integrity sha512-JjgxMJjLLCI5ph6ZaBonFUoJViN4khJw+TaeHAq9ZWAMFZ7cg9knfeq7w72HrU/9+Lp5xYOBaVeZQ/4K8eBX5Q==
+  dependencies:
+    "@material/animation" "^1.0.0"
+    "@material/base" "^1.0.0"
+    "@material/dom" "^1.1.0"
+    "@material/feature-targeting" "^0.44.1"
+    "@material/ripple" "^2.1.1"
+    "@material/rtl" "^0.42.0"
+    "@material/theme" "^1.1.0"
+    tslib "^1.9.3"
+
+"@material/dialog@^2.1.1":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@material/dialog/-/dialog-2.2.0.tgz#2bc5b6548df46493e52e78da676d319f74a1d2d7"
+  integrity sha512-p260m49CRItuHtTnkHBACKdUF6qKDdwHSVvxaHhbeZbGGY+9rOGDDPSNy/yvNuHkVP3F/3Oy815mrS7/kFV1pA==
+  dependencies:
+    "@material/animation" "^1.0.0"
+    "@material/base" "^1.0.0"
+    "@material/dom" "^1.1.0"
+    "@material/elevation" "^1.1.0"
+    "@material/feature-targeting" "^0.44.1"
+    "@material/ripple" "^2.1.1"
+    "@material/rtl" "^0.42.0"
+    "@material/shape" "^1.1.1"
+    "@material/theme" "^1.1.0"
+    "@material/typography" "^1.0.0"
+    focus-trap "^5.0.0"
+    tslib "^1.9.3"
+
 "@material/dom@^1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@material/dom/-/dom-1.1.0.tgz#3bd3d1a3415b4181118fecb182d93beda56a6f8c"
@@ -755,6 +787,19 @@
   dependencies:
     "@material/animation" "^1.0.0"
     "@material/base" "^1.0.0"
+    "@material/rtl" "^0.42.0"
+    "@material/theme" "^1.1.0"
+    "@material/typography" "^1.0.0"
+    tslib "^1.9.3"
+
+"@material/form-field@^2.1.1":
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/@material/form-field/-/form-field-2.1.1.tgz#c90b4f14cddc0d333e86e13b6f1b206b9b72ec64"
+  integrity sha512-5hbW+jQoC5svJlTgaQG5MH+4MVtL5mbMfCHhfbvOJQ/kVPZpGKEJfdWCWvJcyrh/1KLPYU3OTh6k69OC3qcDCg==
+  dependencies:
+    "@material/base" "^1.0.0"
+    "@material/feature-targeting" "^0.44.1"
+    "@material/ripple" "^2.1.1"
     "@material/rtl" "^0.42.0"
     "@material/theme" "^1.1.0"
     "@material/typography" "^1.0.0"
@@ -3262,6 +3307,14 @@ flatten@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/flatten/-/flatten-1.0.2.tgz#dae46a9d78fbe25292258cc1e780a41d95c03782"
   integrity sha1-2uRqnXj74lKSJYzB54CkHZXAN4I=
+
+focus-trap@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/focus-trap/-/focus-trap-5.0.0.tgz#b0d535b4669714e29880d294d13c8c7bbee6a085"
+  integrity sha512-ECigB+4yoFBIpzQ0uO+ReM1yU4I4pVxuRSe2W24ElcWo4nJLRCb6amo2wLYEaPXgZ/mt0sSAW0ZNYkgiMrz4fQ==
+  dependencies:
+    tabbable "^4.0.0"
+    xtend "^4.0.1"
 
 for-in@^1.0.2:
   version "1.0.2"
@@ -6383,6 +6436,11 @@ svgo@^1.0.0, svgo@^1.0.5:
     unquote "~1.1.1"
     util.promisify "~1.0.0"
 
+tabbable@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/tabbable/-/tabbable-4.0.0.tgz#5bff1d1135df1482cf0f0206434f15eadbeb9261"
+  integrity sha512-H1XoH1URcBOa/rZZWxLxHCtOdVUEev+9vo5YdYhC9tCY4wnybX+VQrCYuy9ubkg69fCBxCONJOSLGfw0DWMffQ==
+
 table@4.0.2:
   version "4.0.2"
   resolved "https://registry.yarnpkg.com/table/-/table-4.0.2.tgz#a33447375391e766ad34d3486e6e2aedc84d2e36"
@@ -6760,7 +6818,7 @@ ws@^5.1.1:
   dependencies:
     async-limiter "~1.0.0"
 
-xtend@^4.0.0, xtend@~4.0.1:
+xtend@^4.0.0, xtend@^4.0.1, xtend@~4.0.1:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/xtend/-/xtend-4.0.1.tgz#a5c6d532be656e23db820efb943a1f04998d63af"
   integrity sha1-pcbVMr5lbiPbgg77lDofBJmNY68=

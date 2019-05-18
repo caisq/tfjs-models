@@ -50,9 +50,9 @@ export function registerRecognizer(inputRecognizer) {
     if (loadTransferModelButton !== null) {
       loadTransferModelButton.textContent = loadTransferModelButtonOriginalText;
       loadTransferModelButton.disabled = false;
-      if (loadRemoteTransferModelButton != null) {
-        loadRemoteTransferModelButton.disabled = false;
-      }
+    }
+    if (loadRemoteTransferModelButton != null) {
+      loadRemoteTransferModelButton.disabled = false;
     }
   }
 }

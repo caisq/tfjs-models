@@ -62,6 +62,7 @@ const enterLearnWordsButton = document.getElementById('enter-learn-words');
 const collectButtonsDiv = document.getElementById('collect-words');
 const startTransferLearnButton =
     document.getElementById('start-transfer-learn');
+const trainingDialogTitle = document.getElementById('training-dialog-title');
 
 // Minimum required number of examples per class for transfer learning.
 const MIN_EXAMPLES_PER_CLASS = 16;
@@ -158,6 +159,7 @@ let datasetViz;
  * @returns {Object} An object mapping word to th div element created for it.
  */
 function createWordDivs(transferWords) {
+  console.log('In createWordDivs');  // DEBUG
   // Clear collectButtonsDiv first.
   while (collectButtonsDiv.firstChild) {
     collectButtonsDiv.removeChild(collectButtonsDiv.firstChild);
@@ -228,7 +230,7 @@ function createWordDivs(transferWords) {
         selectFields.div.classList.add('word-duration-select');
         nonNoiseControlDiv.append(selectFields.div);
         collectButtonsDiv.append(nonNoiseControlDiv);
-        nonNoiseDurationInput.focus();
+        setTimeout(() => nonNoiseDurationInput.focus(), 100);
       }
     }
 
@@ -367,7 +369,10 @@ function sleep(durationMs) {
 }
 
 startTransferLearnButton.addEventListener('click', async () => {
-  startTransferLearnButton.textContent = 'Transfer learning starting...';
+  trainUI.openTrainingDialog();
+  trainUI.disableTrainingDialogDismissButton();
+
+  updateTrainingStatus('Transfer learning starting... Please wait.');
   startTransferLearnButton.disabled = true;
   await sleep(50);
 
@@ -432,11 +437,9 @@ startTransferLearnButton.addEventListener('click', async () => {
           trainLossValues[FINE_TUNING_PHASE], valLossValues[FINE_TUNING_PHASE]
         ],
         {
-          width: 480,
-          height: 360,
+          height: 300,
           xaxis: {title: 'Epoch #'},
-          yaxis: {title: 'Loss'},
-          font: {size: 18}
+          yaxis: {title: 'Loss'}
         });
     Plotly.newPlot(
         'accuracy-plot',
@@ -445,17 +448,15 @@ startTransferLearnButton.addEventListener('click', async () => {
           trainAccValues[FINE_TUNING_PHASE], valAccValues[FINE_TUNING_PHASE]
         ],
         {
-          width: 480,
-          height: 360,
+          height: 300,
           xaxis: {title: 'Epoch #'},
-          yaxis: {title: 'Accuracy'},
-          font: {size: 18}
+          yaxis: {title: 'Accuracy'}
         });
-    startTransferLearnButton.textContent = phase === INITIAL_PHASE ?
-        `Transfer-learning... (${(epoch / epochs * 1e2).toFixed(0)}%)` :
-        `Transfer-learning (fine-tuning)... (${
-            (epoch / fineTuningEpochs * 1e2).toFixed(0)}%)`
 
+    updateTrainingStatus(INITIAL_PHASE ?
+        `Transfer learning... (${(epoch / epochs * 1e2).toFixed(0)}%)` :
+        `Transfer learning (fine-tuning)... (${
+            (epoch / fineTuningEpochs * 1e2).toFixed(0)}%)`);
     scrollToPageBottom();
   }
 
@@ -487,11 +488,17 @@ startTransferLearnButton.addEventListener('click', async () => {
   clickSaveModelButton();
   transferModelNameInput.value = transferRecognizer.name;
   transferModelNameInput.disabled = true;
-  startTransferLearnButton.textContent =
-      `Transfer learning complete. Model ${transferRecognizer.name} is saved.`;
+  updateTrainingStatus(
+      `Transfer learning complete. Model ${transferRecognizer.name} is saved.`);
+  trainUI.enableTrainingDialogDismissButton();
   transferModelNameInput.disabled = false;
   evalModelOnDatasetButton.disabled = false;
 });
+
+function updateTrainingStatus(message) {
+  startTransferLearnButton.textContent = message;
+  trainingDialogTitle.textContent = message;
+}
 
 downloadAsFileButton.addEventListener('click', () => {
   const basename = getDateString();
@@ -594,9 +601,8 @@ loadDatasetFromIndexedDBButton.addEventListener('click', async () => {
       loadDatasetFromIndexedDBButton,
       `Loaded dataset "${datasetName}"`, 3000);
 
-  setTimeout(() => {
-    trainUI.updateTabStatus('transfer-learn-tab');
-  }, 200);
+  enterLearnWordsButton.disabled = true;
+  trainUI.updateTabStatus('transfer-learn-tab');
 });
 
 deleteDatasetFromIndexedDBButton.addEventListener('click', async () => {

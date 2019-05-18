@@ -15,8 +15,11 @@
  * =============================================================================
  */
 
-import {MDCTextField} from '@material/textfield';
+import {MDCCheckbox} from '@material/checkbox';
+import {MDCDialog} from '@material/dialog';
+import {MDCFormField} from '@material/form-field';
 import {MDCSelect} from '@material/select';
+import {MDCTextField} from '@material/textfield';
 
 /**
  * Logic for the select inputs.
@@ -36,6 +39,31 @@ const savedTransferModelsSelectDiv =
 const savedTransferModelsSelect =
     document.getElementById('saved-transfer-models');
 new MDCSelect(savedTransferModelsSelectDiv);
+
+/**
+ * Logic for checkbox(es).
+ */
+const mdcCheckboxes = document.querySelectorAll('.mdc-checkbox');
+mdcCheckboxes.forEach(checkbox => new MDCCheckbox(checkbox));
+
+const mdcFormFields = document.querySelectorAll('.mdc-form-field');
+mdcFormFields.forEach(formField => new MDCFormField(formField));
+
+/**
+ * Logic for dialog(s).
+ */
+const trainingDialog = new MDCDialog(document.getElementById('training-dialog'));
+export function openTrainingDialog() {
+  trainingDialog.open();
+}
+
+const trainingDialogDismissButton = document.getElementById('training-dismiss');
+export function disableTrainingDialogDismissButton() {
+  trainingDialogDismissButton.disabled = true;
+}
+export function enableTrainingDialogDismissButton() {
+  trainingDialogDismissButton.disabled = false;
+}
 
 /**
  * Logic for the top tabs.

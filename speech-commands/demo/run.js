@@ -207,7 +207,6 @@ startActionTreeButton.addEventListener('click',  async () =>  {
     console.error(err);
     actionTreeGroupDiv.style.display = 'none';
     showMessage(err.message, 'error');
-        // 'Invalid action tree. Create or load a valid tree first.', 'error');
   }
 });
 
@@ -269,9 +268,6 @@ suppressionTimeSlider.addEventListener('change', () => {
     registerRecognizer(recognizer);
     basicInference.setRecognizer(recognizer);
   });
-
-  const modelIOButton = document.getElementById('model-io');
-  modelIOButton.click();
 
   populateSavedTransferModelsSelect();
 })();

@@ -90,30 +90,78 @@
       </div>
 
       <div id="transfer-learn-history"></div>
-      <div id="collect-words"></div>
+      <div class="mdc-card" id="collect-words"></div>
 
-      <div class="settings boxed-region">
-        <div>
-          <span class="boxed-region-header">Training</span>
-        </div>
-        <span class="transfer-label-span">Epochs:</span>
-        <input class="settings" size="5" id="epochs" value="50">
-        <span class="transfer-label-span">Fine-tuning (FT) epochs:</span>
-        <input class="settings" size="5" id="fine-tuning-epochs" value="0">
-        <span>Augment by mixing noise:</span>
-        <input type="checkbox" id="augment-by-mixing-noise">
-        <button id="start-transfer-learn" disabled="true">Start transfer learning</button>
-
-        <div id="plots">
-          <div id="loss-plot" class="plots"></div>
-          <div id="accuracy-plot" class="plots"></div>
-          <div>
-            <div>
-              <span id="eval-results" class="eval-results"></span>
-            </div>
-            <div id="roc-plot" class="plots"></div>
+      <div class="mdc-card">
+        <div class="mdc-layout-grid">
+          <div class="mdc-typography--subtitle1">Training</div>
+          <div class="mdc-text-field trainig-setting-number-field">
+            <input class="mdc-text-field__input" type="number" min="0" id="epochs" value="50">
+            <label class="mdc-floating-label">Epochs</label>
+          </div>
+          <div class="mdc-text-field trainig-setting-number-field">
+            <input class="mdc-text-field__input" class="settings" type="number" min="0" id="fine-tuning-epochs" value="0">
+            <label class="mdc-floating-label">Fine-tune epochs</label>
           </div>
         </div>
+
+        <div class="mdc-layout-grid">
+          <div class="mdc-form-field">
+            <div class="mdc-checkbox">
+              <input type="checkbox" class="mdc-checkbox__native-control" id="augment-by-mixing-noise">
+              <div class="mdc-checkbox__background">
+                <svg class="mdc-checkbox__checkmark"
+                      viewBox="0 0 24 24">
+                  <path class="mdc-checkbox__checkmark-path"
+                        fill="none"
+                        d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                </svg>
+                <div class="mdc-checkbox__mixedmark"></div>
+              </div>
+            </div>
+            <label for="augment-by-mixing-noise">Augment by mixing noise</label>
+          </div>
+        </div>
+
+        <div class="mdc-layout-grid">
+          <button class="mdc-button mdc-button--raised" id="start-transfer-learn" disabled="true">
+            Start transfer learning
+          </button>
+        </div>
+      </div>
+
+      <div class="mdc-dialog"
+          id="training-dialog"
+          aria-modal="true"
+          aria-labelledby="training-dialog-title"
+          aria-describedby="training-dialog-content">
+        <div class="mdc-dialog__container">
+          <div class="mdc-dialog__surface training-dialog">
+            <!-- Title cannot contain leading whitespace due to mdc-typography-baseline-top() -->
+            <h2 class="mdc-dialog__title" id="training-dialog-title">
+              Transfer Learning
+            </h2>
+            <div id="plots">
+              <div id="loss-plot" class="plots"></div>
+              <div id="accuracy-plot" class="plots"></div>
+              <div>
+                <div>
+                  <span id="eval-results" class="eval-results"></span>
+                </div>
+                <div id="roc-plot" class="plots"></div>
+              </div>
+            </div>
+            <footer class="mdc-dialog__actions">
+              <!-- <button type="button" class="mdc-button mdc-dialog__button" data-mdc-dialog-action="no">
+                <span class="mdc-button__label">No</span>
+              </button> -->
+              <button type="button" class="mdc-button mdc-dialog__button" data-mdc-dialog-action="yes" id="training-dismiss">
+                <span class="mdc-button__label">Dismiss</span>
+              </button>
+            </footer>
+          </div>
+        </div>
+        <div class="mdc-dialog__scrim"></div>
       </div>
     </div>
 

@@ -33,8 +33,22 @@
   vertical-align: middle;
 }
 
+.plots {
+  position: relative;
+  width: 96%;
+}
+
 .temp-spectrogram-canvas {
   margin-left: 82px;
+}
+
+.training-dialog {
+  overflow-y: auto;
+  width: 600px;
+}
+
+.trainig-setting-number-field {
+  width: 120px;
 }
 
 .transfer-word {
@@ -46,11 +60,11 @@
 }
 
 .word-button {
-  font-size: 95%;
+  font-size: 85%;
   margin-right: 10px;
   margin-bottom: 8px;
-  max-width: 150px;
-  width: 150px;
+  max-width: 180px;
+  width: 180px;
 }
 
 .word-div {
