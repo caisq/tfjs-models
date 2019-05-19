@@ -15,6 +15,7 @@
     "@material/icon-button": "^2.1.1",
     "@material/ripple": "^2.1.1",
     "@material/select": "^2.2.0",
+    "@material/slider": "^1.1.0",
     "@material/textfield": "^2.1.1",
     "@tensorflow/tfjs": "1.1.2",
     "stats.js": "^0.17.0"

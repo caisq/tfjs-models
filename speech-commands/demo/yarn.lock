@@ -924,6 +924,18 @@
   dependencies:
     "@material/feature-targeting" "^0.44.1"
 
+"@material/slider@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@material/slider/-/slider-1.1.0.tgz#a4940b345d80e2b08d68ba284b9f724119a0a8e8"
+  integrity sha512-JV/Phpt38LUVb2sQCr2pBsf0faw0E5LI7ag3dNF3hDq1f3F9Vcu+a8oNADi2M+TNlyelltAMKnc9guARwhDLKw==
+  dependencies:
+    "@material/animation" "^1.0.0"
+    "@material/base" "^1.0.0"
+    "@material/rtl" "^0.42.0"
+    "@material/theme" "^1.1.0"
+    "@material/typography" "^1.0.0"
+    tslib "^1.9.3"
+
 "@material/textfield@^2.1.1":
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/@material/textfield/-/textfield-2.1.1.tgz#598abd824c18e9ae4766bbca87d8cf3a8dcb8b12"

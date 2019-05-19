@@ -52,10 +52,6 @@ if (gmailAPIKeyInput) {
   });
 }
 
-
-// Client ID and API key from the Developer Console
-var CLIENT_ID = '';
-
 // Array of API discovery doc URLs for APIs used by the quickstart
 var DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest"];
 const SCOPES = 'https://www.googleapis.com/auth/gmail.send';
@@ -78,6 +74,8 @@ activateGMailAPIButton.addEventListener('click', () => handleAPIAuth());
  *  listeners.
  */
 function initClient() {
+  console.log('In initClient, apiKey:',
+      gmailAPIKeyInput.value.trim());  // DEBUG
   gapi.client.init({
     apiKey: gmailAPIKeyInput.value.trim(),
     clientId: gmailAPIClientIDInput.value.trim(),
@@ -85,7 +83,7 @@ function initClient() {
     scope: SCOPES
   }).then(function () {
     console.log('initClient success');
-    activateGMailAPIButton.textContent = 'GMail API activated';
+    activateGMailAPIButton.textContent = 'GMail API activated successfully';
     activateGMailAPIButton.disabled = true;
     // Listen for sign-in state changes.
     gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);

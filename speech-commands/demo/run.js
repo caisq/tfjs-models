@@ -17,43 +17,80 @@
 
 import {drawActionTree, executeTimedMenuAction, parseActionTreeConfig} from './action-tree';
 import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferRecognizerCreationCallback, setPostLoadTransferModelCallback} from './model-io';
-import * as basicInference from './basic-inference';
+// import * as basicInference from './basic-inference';
 
 import * as SpeechCommands from '../src';
 import {TimedMenu} from '../src/';
 
-import './run-ui.js'
+import * as runUI from './run-ui.js'
+import {hideCandidateWords, logToStatusDisplay, plotPredictions, populateCandidateWords, showCandidateWords} from './ui';
 
-const modelIORegion = document.getElementById('model-io-region');
-const runRegion = document.getElementById('run-region');
 const runOptionsRegion = document.getElementById('run-options-region');
 const actionTreeConfigRegion = document.getElementById('action-tree-config-region');
 
-const startButton = document.getElementById('start');
-const stopButton = document.getElementById('stop');
-
-const runConfigButton = document.getElementById('run-config');
-const runConfigGroupDiv = document.getElementById('run-config-group');
-const pThreshSlider = document.getElementById('p-thresh');
-const pThreshDisplay = document.getElementById('p-thresh-display');
-
-const suppressionTimeSlider = document.getElementById('suppression-time');
-const suppressionTimeDisplay = document.getElementById('suppression-time-display');
-
 const startActionTreeButton = document.getElementById('start-action-tree');
 const actionTreeGroupDiv = document.getElementById('action-tree-group');
-const ttlMultiplierSlider = document.getElementById('ttl-multiplier');
-const ttlMultiplierDisplay = document.getElementById('ttl-multiplier-display');
 const messageSpan = document.getElementById('message');
 
 let recognizer;
 let transferRecognizer;
 
+const startButton = document.getElementById('start');
+const stopButton = document.getElementById('stop');
+const predictionCanvas = document.getElementById('prediction-canvas');
+
+if (startButton != null) {
+  startButton.addEventListener('click', () => {
+    populateCandidateWords(recognizer.wordLabels());
+
+    const suppressionTimeMillis = 1000;
+    const probabilityThreshold = runUI.getPThreshSliderValue();
+    console.log(`Starting listen() with p-threshold = ${probabilityThreshold}`);
+    recognizer
+        .listen(
+            result => {
+              plotPredictions(
+                  predictionCanvas, recognizer.wordLabels(),
+                  result.scores, 3, suppressionTimeMillis);
+            },
+            {
+              includeSpectrogram: true,
+              suppressionTimeMillis,
+              probabilityThreshold
+            })
+        .then(() => {
+          startButton.disabled = true;
+          stopButton.disabled = false;
+          runUI.disablePThreshSlider();
+          showCandidateWords();
+          logToStatusDisplay('Streaming recognition started.');
+        })
+        .catch(err => {
+          logToStatusDisplay(
+              'ERROR: Failed to start streaming display: ' + err.message);
+        });
+  });
+
+  stopButton.addEventListener('click', () => {
+    recognizer.stopListening()
+        .then(() => {
+          startButton.disabled = false;
+          stopButton.disabled = true;
+          runUI.enablePThreshSlider();
+          hideCandidateWords();
+          logToStatusDisplay('Streaming recognition stopped.');
+        })
+        .catch(err => {
+          logToStatusDisplay(
+              'ERROR: Failed to stop streaming display: ' + err.message);
+        });
+  });
+}
+
+
 setPostLoadTransferModelCallback(() => {
   setTimeout(() => {
-    modelIORegion.classList.add('invisible');
     setTimeout(() => {
-      runRegion.classList.remove('invisible');
       runOptionsRegion.classList.remove('invisible');
       actionTreeConfigRegion.classList.remove('invisible');
     }, 500);
@@ -62,7 +99,7 @@ setPostLoadTransferModelCallback(() => {
 
 registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
   transferRecognizer = createdTransferRecognizer;
-  basicInference.setRecognizer(transferRecognizer);
+  recognizer = transferRecognizer;
   console.log(
       `Transfer recognizer loaded with parameters: ` +
       `${JSON.stringify(transferRecognizer.params())}`);
@@ -81,23 +118,11 @@ export function refreshStartActionTreeButtonStatus() {
   }
 }
 
-const toTrainingButton = document.getElementById('to-training');
-
-toTrainingButton.addEventListener('click', () => {
-  window.location.href = './train.html';
-});
-
-runConfigButton.addEventListener('click', () => {
-  if (runConfigButton.textContent.endsWith(' >>')) {
-    runConfigGroupDiv.style.display = 'inline-block';
-    runConfigButton.textContent =
-        runConfigButton.textContent.replace(' >>', ' <<');
-  } else {
-    runConfigGroupDiv.style.display = 'none';
-    runConfigButton.textContent =
-        runConfigButton.textContent.replace(' <<', ' >>');
-  }
-});
+// TODO(cais): Restore.
+// const toTrainingButton = document.getElementById('to-training');
+// toTrainingButton.addEventListener('click', () => {
+//   window.location.href = './train.html';
+// });
 
 let timedMenu;
 
@@ -127,9 +152,7 @@ startActionTreeButton.addEventListener('click',  async () =>  {
     });
 
     const tickMillis = 250;
-    const timeToLiveMultiplier =
-        ttlMultiplierSlider == null ? 1 : ttlMultiplierSlider.value;
-    console.log(`Using time-to-live multiplier: ${timeToLiveMultiplier}`);
+    const timeToLiveMultiplier = runUI.getTTLMultiplierSliderValue();
     timedMenu = new TimedMenu(
         timedMenuConfig,
         async (stateSequence, stateChangeType, timeOutAction) => {
@@ -148,9 +171,8 @@ startActionTreeButton.addEventListener('click',  async () =>  {
       console.log(`Reset word: ${timedMenuConfig.resetWord}`);
     }
 
-    const suppressionTimeMillis =
-        Number.parseFloat(suppressionTimeSlider.value);
-    const probabilityThreshold = Number.parseFloat(pThreshSlider.value);
+    const suppressionTimeMillis = runUI.getSuppressionTimeSliderValue();
+    const probabilityThreshold = runUI.getPThreshSliderValue();
     console.log(
         `Starting listen() with p-threshold = ${probabilityThreshold}; ` +
         `suppression time = ${suppressionTimeMillis} ms`);
@@ -179,12 +201,13 @@ startActionTreeButton.addEventListener('click',  async () =>  {
         suppressionTimeMillis,
         probabilityThreshold
       });
-    pThreshSlider.disabled = true;
-    suppressionTimeSlider.disabled = true;
+    runUI.disablePThreshSlider();
+    runUI.disableSuppressionTimeSlider();
     startButton.disabled = true;
     stopButton.disabled = false;
     refreshStartActionTreeButtonStatus();
 
+    startActionTreeButton.disabled = true;
     showMessage(
         `Action tree started, words: ` +
         `${wordLabelsNoNoise.join(', ')} ` +
@@ -203,8 +226,8 @@ stopButton.addEventListener('click', () => {
     timedMenu = null;
     actionTreeGroupDiv.style.display = 'none';
   }
-  pThreshSlider.disabled = false;
-  suppressionTimeSlider.disabled = false;
+  runUI.enablePThreshSlider();
+  runUI.enableSuppressionTimeSlider();
   refreshStartActionTreeButtonStatus();
 });
 
@@ -214,13 +237,6 @@ function playAudio(audioFile) {
     cachedAudioObjects[audioFile] = new Audio(audioFile);
   }
   cachedAudioObjects[audioFile].play();
-}
-
-if (ttlMultiplierSlider != null) {
-  ttlMultiplierDisplay.textContent = `${ttlMultiplierSlider.value}`;
-  ttlMultiplierSlider.addEventListener('change', () => {
-    ttlMultiplierDisplay.textContent = `${ttlMultiplierSlider.value}`;
-  });
 }
 
 const MESSAGE_DURATION_MILLIS = 4000;
@@ -238,22 +254,11 @@ export function showMessage(message, type) {
   }, MESSAGE_DURATION_MILLIS);
 }
 
-pThreshDisplay.textContent = `threshold: ${pThreshSlider.value}`;
-pThreshSlider.addEventListener('change', () => {
-  pThreshDisplay.textContent = `threshold: ${pThreshSlider.value}`;
-});
-
-suppressionTimeDisplay.textContent = `${suppressionTimeSlider.value} ms`;
-suppressionTimeSlider.addEventListener('change', () => {
-  suppressionTimeDisplay.textContent = `${suppressionTimeSlider.value} ms`;
-});
-
 (async function() {
   recognizer = SpeechCommands.create('BROWSER_FFT');
 
   recognizer.ensureModelLoaded().then(() => {
     registerRecognizer(recognizer);
-    basicInference.setRecognizer(recognizer);
   });
 
   populateSavedTransferModelsSelect();

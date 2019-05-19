@@ -52,7 +52,7 @@
     </button>
   </div>
 
-  <div class="mdc-card start-stop invisible" id="run-region">
+  <div class="mdc-card start-stop invisible" id="run-section">
     <div class="mdc-layout-grid">
       <button class="mdc-button mdc-button--raised" id="start" disabled="true">
         <span class="material-icons">keyboard_voice</span>
@@ -70,7 +70,8 @@
 
 
     <span id="message"></span>
-    <button class="inference-switch" id="to-training">Train models ⇗</button>
+    <!-- TODO(cais): Restore. -->
+    <!-- <button class="inference-switch" id="to-training">Train models ⇗</button> -->
 
     <div id="action-tree-group" style="display:none">
       <div>
@@ -100,59 +101,154 @@
     <div id="candidate-words" class="candidate-words-hidden"></div>
   </div>
 
-  <div class="mdc-card" id="model-io-region">
+  <div class="mdc-card" id="model-io-section">
     <div class="mdc-typography--subtitle1">
       Load a model first.
     </div>
     <div id="transfer-model-save-load-inner">
       <div>
+        <div class="mdc-select" id="saved-transfer-models-div">
+          <i class="mdc-select__dropdown-icon"></i>
+          <select class="mdc-select__native-control" id="saved-transfer-models"></select>
+          <label class="mdc-floating-label">Models saved in browser</label>
+          <div class="mdc-line-ripple"></div>
+        </div>
         <button class="mdc-button mdc-button--raised" id="load-transfer-model" disabled="true">
           Load transfer model
         </button>
-        <select id="saved-transfer-models">
-          <option value="1"></option>
-        </select>
       </div>
     </div>
   </div>
 
-  <div class="collapsible-region invisible" id="action-tree-config-region">
+  <div class="mdc-card" id="action-tree-config-region">
     <div class="collapsible-region-inner" id="action-tree-config-inner">
-      <div>
-        <span>Time-to-Live Multiplier:</span>
-        <input type="range" min="1" max="5" value="1" class="slider" id="ttl-multiplier">
-        <span id="ttl-multiplier-display"></span>
+      <div class="mdc-slider mdc-slider--discrete" tabindex="0" role="slider"
+          aria-valuemin="1" aria-valuemax="5" aria-valuenow="1"
+          aria-label="TTL Multiplier"
+          id="ttl-multiplier">
+        <div class="mdc-slider__track-container">
+          <div class="mdc-slider__track"></div>
+        </div>
+        <div class="mdc-slider__thumb-container">
+          <div class="mdc-slider__pin">
+            <span class="mdc-slider__pin-value-marker"></span>
+          </div>
+          <svg class="mdc-slider__thumb" width="21" height="21">
+            <circle cx="10.5" cy="10.5" r="7.875"></circle>
+          </svg>
+          <div class="mdc-slider__focus-ring"></div>
+        </div>
+        <label class="mdc-floating-label">TTL Multiplier</label>
       </div>
 
-      <div>
-        <span>Saved action trees:</span>
-        <select id="saved-trees">
-          <option value="1"></option>
-        </select>
-        <button id="load-tree">Load tree</button>
-        <button id="save-tree">Save tree</button>
-        <button id="delete-tree" disabled="true">Delete tree</button>
-        <button id="new-tree">New tree</button>
+      <div class="mdc-layout-grid">
+        <div class="mdc-select" id="saved-trees-div">
+          <i class="mdc-select__dropdown-icon"></i>
+          <select class="mdc-select__native-control" id="saved-trees"></select>
+          <label class="mdc-floating-label">Saved acion trees</label>
+          <div class="mdc-line-ripple"></div>
+        </div>
+        <button class="mdc-button mdc-button--raised" id="load-tree">Load tree</button>
+        <button class="mdc-button mdc-button--raised" id="save-tree">Save tree</button>
+        <button class="mdc-button mdc-button--raised delete-button" id="delete-tree" disabled="true">Delete tree</button>
+        <button class="mdc-button mdc-button--raised" id="new-tree">
+          <span class="material-icons">add</span>
+          New tree
+        </button>
       </div>
       <div id="json-editor"></div>
     </div>
   </div>
 
-  <div class="collapsible-region invisible" id="run-options-region">
-    <button id="run-config">Run Options >></button>
-    <div id="run-config-group" style="display:none">
-      <div>
-        <span>Probability threshold:</span>
-        <input id="p-thresh" type="range" min="0.5" max="1.0" value="0.6" step="0.025">
-        <span id="p-thresh-display"></span>
+  <div class="mdc-card" id="run-options-region">
+    <div class="mdc-card">
+      <div class="mdc-typography--subtitle1">
+        Recognition options
       </div>
-      <div>
-        <span>Suppression time (ms):</span>
-        <input id="suppression-time" type="range" min="250" max="1000" value="1000" step="250">
-        <span id="suppression-time-display"></span>
+      <div id="run-config-group">
+        <div class="mdc-slider" role="slider"
+            aria-valuemin="0.0" aria-valuemax="1.0" aria-valuenow="0.6" aria-step="0.025"
+            aria-label="Probability threshold"
+            id="p-thresh">
+          <div class="mdc-slider__track-container">
+            <div class="mdc-slider__track"></div>
+          </div>
+          <div class="mdc-slider__thumb-container">
+            <div class="mdc-slider__pin">
+              <span class="mdc-slider__pin-value-marker"></span>
+            </div>
+            <svg class="mdc-slider__thumb" width="21" height="21">
+              <circle cx="10.5" cy="10.5" r="7.875"></circle>
+            </svg>
+            <div class="mdc-slider__focus-ring"></div>
+          </div>
+          <label class="mdc-floating-label">Probability threshold</label>
+        </div>
+        <div class="mdc-slider mdc-slider--discrete" role="slider"
+            aria-valuemin="250" aria-valuemax="1000" aria-valuenow="1000" data-step="250"
+            aria-label="Suppression time (ms)"
+            id="suppression-time">
+          <div class="mdc-slider__track-container">
+            <div class="mdc-slider__track"></div>
+          </div>
+          <div class="mdc-slider__thumb-container">
+            <div class="mdc-slider__pin">
+              <span class="mdc-slider__pin-value-marker"></span>
+            </div>
+            <svg class="mdc-slider__thumb" width="21" height="21">
+              <circle cx="10.5" cy="10.5" r="7.875"></circle>
+            </svg>
+            <div class="mdc-slider__focus-ring"></div>
+          </div>
+          <label class="mdc-floating-label">Suppression time (ms)</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="mdc-card">
+      <div class="mdc-typography--subtitle1">
+        GMail options
+      </div>
+      <div class="mdc-text-field">
+        <input type="text" id="gmail-api-client-id" class="mdc-text-field__input">
+        <label class="mdc-floating-label" for="gmail-api-client-id">
+          GMail API client ID
+        </label>
+        <div class="mdc-line-ripple"></div>
+      </div>
+      <div class="mdc-text-field">
+        <input type="password" id="gmail-api-key" class="mdc-text-field__input">
+        <label class="mdc-floating-label" for="gmail-api-client-id">
+          GMail API key
+        </label>
+        <div class="mdc-line-ripple"></div>
+      </div>
+      <button class="mdc-button mdc-button--raised" id="activate-gmail-api">
+        Activate GMail API
+      </button>
+    </div>
+
+    <div class="mdc-card">
+      <div class="mdc-typography--subtitle1">
+        SMS options
+      </div>
+      <div class="mdc-text-field">
+        <input type="text" id="twilio-sid" class="mdc-text-field__input">
+        <label class="mdc-floating-label" for="gmail-api-client-id">
+          Twilio SID
+        </label>
+        <div class="mdc-line-ripple"></div>
+      </div>
+      <div class="mdc-text-field">
+        <input type="password" id="twilio-secret" class="mdc-text-field__input">
+        <label class="mdc-floating-label" for="gmail-api-client-id">
+          Twilio secret
+        </label>
+        <div class="mdc-line-ripple"></div>
       </div>
     </div>
   </div>
+
 
   <div class="footer" style="display: none;">
     <textarea id="status-display" style="display: none" cols="80" readonly="true"></textarea>
@@ -169,33 +265,6 @@
     <div style="display:none;">
       <span>Email message</span>
       <input id="email-text" size="100"></input>
-    </div>
-
-    <div class="credential-region">
-      <div class="credential-sub-region">
-        <div>
-          <span class="action-config-header">GMail API Client ID:</span>
-          <input id="gmail-api-client-id" class="action-config-textbox">
-        </div>
-        <div>
-          <span class="action-config-header">GMail API key:</span>
-          <input id="gmail-api-key" class="action-config-textbox" type="password">
-        </div>
-        <div>
-          <button id="activate-gmail-api">Activate GMail API</button>
-        </div>
-      </div>
-
-      <div class="credential-sub-region">
-        <div>
-          <span class="action-config-header">Twilio SID:</span>
-          <input id="twilio-sid" class="action-config-textbox">
-        </div>
-        <div>
-          <span class="action-config-header">Twilio secret:</span>
-          <input id="twilio-secret" class="action-config-textbox" type="password">
-        </div>
-      </div>
     </div>
   </div>
 

@@ -21,7 +21,6 @@ import Plotly from 'plotly.js-dist';
 import '@tensorflow/tfjs';
 import * as SpeechCommands from '../src';
 
-import * as basicInference from './basic-inference';
 import {saveDatasetToIndexedDB, getSavedDatasetsInfo, loadSerializedDatasetFromIndexedDB, deleteDatasetFromIndexedDB} from './dataset-indexeddb';
 import {DatasetViz, removeNonFixedChildrenFromWordDiv} from './dataset-vis';
 import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferRecognizer, registerTransferRecognizerCreationCallback, enableLoadAndDeleteModelButtons, enableSaveModelButton, clickSaveModelButton} from './model-io';
@@ -74,7 +73,6 @@ let transferDurationMultiplier;
 
 registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
   transferRecognizer = createdTransferRecognizer;
-  basicInference.setRecognizer(transferRecognizer);
 });
 
 (async function() {
@@ -97,7 +95,6 @@ registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
   recognizer.ensureModelLoaded()
       .then(() => {
         registerRecognizer(recognizer);
-        basicInference.setRecognizer(recognizer);
         enterLearnWordsButton.textContent = enterLearnWordsButtonOriginalText;
         enterLearnWordsButton.disabled = false;
         enableLoadAndDeleteModelButtons();
@@ -689,7 +686,6 @@ async function loadDatasetInTransferRecognizer(serialized, datasetName) {
   if (transferRecognizer == null) {
     transferRecognizer = recognizer.createTransfer(modelName);
     registerTransferRecognizer(transferRecognizer);
-    basicInference.setRecognizer(transferRecognizer);
   }
   transferRecognizer.loadExamples(serialized);
   const exampleCounts = transferRecognizer.countExamples();

@@ -174,7 +174,6 @@ export function createMdcFloatingActionButton(iconName) {
 }
 
 export function createMdcSelect(labelText) {
-
   const div = document.createElement('div');
   div.classList.add('mdc-select');
   const icon = document.createElement('i');
