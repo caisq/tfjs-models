@@ -1,3 +1,18 @@
+.candidate-word {
+  border: 1px solid gray;
+  background-color: lightyellow;
+  margin: 5px;
+  border-radius: 3px;
+  width: 10vw;
+  padding: 15px;
+  text-align: center;
+}
+
+.candidate-word-active {
+  border: 2px solid gray;
+  background-color: lightgreen;
+}
+
 .delete-button {
   background-color: rgb(255, 80, 60);
 }
@@ -24,4 +39,8 @@
 
 .mdc-text-field {
   margin: 5px;
+}
+
+.run-dialog {
+  width: 600px;
 }

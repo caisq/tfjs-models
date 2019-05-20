@@ -53,20 +53,17 @@
   </div>
 
   <div class="mdc-card" id="model-io-section" style="display:none">
-    <div class="mdc-typography--subtitle1">
-      Load model
-    </div>
     <div id="transfer-model-save-load-inner">
       <div>
+        <button class="mdc-button mdc-button--raised" id="load-transfer-model" disabled="true">
+          Load transfer model
+        </button>
         <div class="mdc-select" id="saved-transfer-models-div">
           <i class="mdc-select__dropdown-icon"></i>
           <select class="mdc-select__native-control" id="saved-transfer-models"></select>
           <label class="mdc-floating-label">Models saved in browser</label>
           <div class="mdc-line-ripple"></div>
         </div>
-        <button class="mdc-button mdc-button--raised" id="load-transfer-model" disabled="true">
-          Load transfer model
-        </button>
       </div>
     </div>
   </div>
@@ -80,10 +77,6 @@
       <button class="mdc-button mdc-button--raised" id="start-action-tree" disabled="true">
         <span class="material-icons">device_hub</span>
         Start Action Tree
-      </button>
-      <button class="mdc-button mdc-button--raised" id="stop" disabled="true">
-        <span class="material-icons">stop</span>
-        Stop
       </button>
     </div>
 
@@ -113,14 +106,32 @@
     </div>
   </div>
 
-  <div class='main-model'>
-    <div class="settings">
-      <span style="display:none">Prob. threshold:</span>
+  <div class="mdc-dialog"
+      id="run-dialog"
+      aria-modal="true"
+      aria-labelledby="run-dialog-title"
+      aria-describedby="run-dialog-content">
+    <div class="mdc-dialog__container">
+      <div class="mdc-dialog__surface run-dialog">
+        <!-- Title cannot contain leading whitespace due to mdc-typography-baseline-top() -->
+        <h2 class="mdc-dialog__title" id="run-dialog-title">
+          Model running
+        </h2>
+        <div class="mdc-layout-grid">
+          <div id="candidate-words" class="candidate-words-hidden"></div>
+        </div>
+        <footer class="mdc-dialog__actions">
+          <button class="mdc-button mdc-button--raised" id="stop" disabled="true">
+            <span class="material-icons">stop</span>
+            Stop
+          </button>
+        </footer>
+      </div>
     </div>
-    <div id="candidate-words" class="candidate-words-hidden"></div>
+    <div class="mdc-dialog__scrim"></div>
   </div>
 
-  <div class="mdc-card" id="action-tree-section" style="display:none">
+  <div class="mdc-card" id="action-tree-section">
     <div class="collapsible-region-inner" id="action-tree-config-inner">
       <div class="mdc-slider mdc-slider--discrete" tabindex="0" role="slider"
           aria-valuemin="1" aria-valuemax="5" aria-valuenow="1"
@@ -160,7 +171,7 @@
     </div>
   </div>
 
-  <div class="mdc-card" id="options-section" style="display:none">
+  <div class="mdc-card" id="options-section">
     <div class="mdc-card">
       <div class="mdc-typography--subtitle1">
         Recognition options

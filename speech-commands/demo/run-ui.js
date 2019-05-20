@@ -15,9 +15,10 @@
  * =============================================================================
  */
 
+import {MDCDialog} from '@material/dialog';
 import {MDCSelect} from '@material/select';
 import {MDCSlider} from '@material/slider';
-import {MDCTextField} from '@material/textfield'
+import {MDCTextField} from '@material/textfield';
 
 /**
  * Logic for the top tabs.
@@ -142,5 +143,25 @@ export function enableSuppressionTimeSlider() {
  */
 const mdcTextFields = document.querySelectorAll('.mdc-text-field');
 mdcTextFields.forEach(textField => new MDCTextField(textField));
+
+/**
+ * Logic for dialog(s).
+ */
+const runDialog = new MDCDialog(document.getElementById('run-dialog'));
+export function openRunDialog() {
+  runDialog.open();
+}
+export function closeRunDialog() {
+  runDialog.close();
+}
+
+const trainingDialogDismissButton = document.getElementById('run-dismiss');
+export function disableTrainingDialogDismissButton() {
+  trainingDialogDismissButton.disabled = true;
+}
+export function enableTrainingDialogDismissButton() {
+  trainingDialogDismissButton.disabled = false;
+}
+
 
 updateTabStatus();

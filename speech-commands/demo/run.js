@@ -38,6 +38,7 @@ const predictionCanvas = document.getElementById('prediction-canvas');
 
 if (startButton != null) {
   startButton.addEventListener('click', () => {
+    runUI.openRunDialog();
     populateCandidateWords(recognizer.wordLabels());
 
     const suppressionTimeMillis = 1000;
@@ -75,6 +76,7 @@ if (startButton != null) {
           stopButton.disabled = true;
           runUI.enablePThreshSlider();
           hideCandidateWords();
+          runUI.closeRunDialog();
           logToStatusDisplay('Streaming recognition stopped.');
         })
         .catch(err => {

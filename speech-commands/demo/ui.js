@@ -54,6 +54,7 @@ export function populateCandidateWords(words) {
     const wordSpan = document.createElement('span');
     wordSpan.textContent = word;
     wordSpan.classList.add('candidate-word');
+    wordSpan.classList.add('mdc-typography--body1');
     candidateWordsContainer.appendChild(wordSpan);
     candidateWordSpans[word] = wordSpan;
   }
