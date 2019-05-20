@@ -25,9 +25,6 @@ import {TimedMenu} from '../src/';
 import * as runUI from './run-ui.js'
 import {hideCandidateWords, logToStatusDisplay, plotPredictions, populateCandidateWords, showCandidateWords} from './ui';
 
-const runOptionsRegion = document.getElementById('run-options-region');
-const actionTreeConfigRegion = document.getElementById('action-tree-config-region');
-
 const startActionTreeButton = document.getElementById('start-action-tree');
 const actionTreeGroupDiv = document.getElementById('action-tree-group');
 const messageSpan = document.getElementById('message');
@@ -86,16 +83,6 @@ if (startButton != null) {
         });
   });
 }
-
-
-setPostLoadTransferModelCallback(() => {
-  setTimeout(() => {
-    setTimeout(() => {
-      runOptionsRegion.classList.remove('invisible');
-      actionTreeConfigRegion.classList.remove('invisible');
-    }, 500);
-  }, 1000);
-});
 
 registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
   transferRecognizer = createdTransferRecognizer;

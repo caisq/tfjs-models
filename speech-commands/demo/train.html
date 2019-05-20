@@ -60,36 +60,44 @@
   <div class="transfer-learn-section">
     <div class="collapsible-region" id="transfer-learn-section">
 
-      <div class="mdc-layout-grid">
-        <div class="mdc-text-field">
-          <input
-              type="text" id="transfer-model-name" class="mdc-text-field__input"
-              value="(Loading base model...)">
-          <label class="mdc-floating-label" for="transfer-model-name">
-            Model name
-          </label>
-          <div class="mdc-line-ripple"></div>
-        </div>
-      </div>
-
-      <div class="mdc-layout-grid">
-        <div class="mdc-text-field">
-          <input
-              type="text" id="learn-words" class="mdc-text-field__input"
-              value="red,green">
-          <label class="mdc-floating-label" for="learn-words">
-            Words (separate with commas)
-          </label>
-          <div class="mdc-line-ripple"></div>
+      <div class="mdc-card">
+        <div class="mdc-layout-grid">
+          <div class="mdc-text-field">
+            <input
+                type="text" id="transfer-model-name" class="mdc-text-field__input"
+                value="(Loading base model...)">
+            <label class="mdc-floating-label" for="transfer-model-name">
+              Model name
+            </label>
+            <div class="mdc-line-ripple"></div>
+          </div>
         </div>
 
-        <button id="enter-learn-words" class="mdc-button mdc-button--raised" disabled="true">
-          Enter transfer words
-        </button>
+        <div class="mdc-layout-grid">
+          <div class="mdc-text-field">
+            <input
+                type="text" id="learn-words" class="mdc-text-field__input"
+                value="red,green">
+            <label class="mdc-floating-label" for="learn-words">
+              Words (separate with commas)
+            </label>
+            <div class="mdc-line-ripple"></div>
+          </div>
+        </div>
+
+        <div class="mdc-layout-grid">
+          <button id="enter-learn-words" class="mdc-button mdc-button--raised" disabled="true">
+            Enter transfer words
+          </button>
+        </div>
       </div>
 
       <div id="transfer-learn-history"></div>
-      <div class="mdc-card" id="collect-words"></div>
+      <div class="mdc-card" id="collect-words">
+        <div class="mdc-layout-grid">
+          <div class="mdc-typography--subtitle1">Waiting for transfer words...</div>
+        </div>
+      </div>
 
       <div class="mdc-card">
         <div class="mdc-layout-grid">

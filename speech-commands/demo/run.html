@@ -52,11 +52,30 @@
     </button>
   </div>
 
-  <div class="mdc-card start-stop invisible" id="run-section">
+  <div class="mdc-card" id="model-io-section" style="display:none">
+    <div class="mdc-typography--subtitle1">
+      Load model
+    </div>
+    <div id="transfer-model-save-load-inner">
+      <div>
+        <div class="mdc-select" id="saved-transfer-models-div">
+          <i class="mdc-select__dropdown-icon"></i>
+          <select class="mdc-select__native-control" id="saved-transfer-models"></select>
+          <label class="mdc-floating-label">Models saved in browser</label>
+          <div class="mdc-line-ripple"></div>
+        </div>
+        <button class="mdc-button mdc-button--raised" id="load-transfer-model" disabled="true">
+          Load transfer model
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="mdc-card start-stop invisible" id="run-section" style="display:none">
     <div class="mdc-layout-grid">
       <button class="mdc-button mdc-button--raised" id="start" disabled="true">
         <span class="material-icons">keyboard_voice</span>
-        Start
+        Test
       </button>
       <button class="mdc-button mdc-button--raised" id="start-action-tree" disabled="true">
         <span class="material-icons">device_hub</span>
@@ -101,26 +120,7 @@
     <div id="candidate-words" class="candidate-words-hidden"></div>
   </div>
 
-  <div class="mdc-card" id="model-io-section">
-    <div class="mdc-typography--subtitle1">
-      Load a model first.
-    </div>
-    <div id="transfer-model-save-load-inner">
-      <div>
-        <div class="mdc-select" id="saved-transfer-models-div">
-          <i class="mdc-select__dropdown-icon"></i>
-          <select class="mdc-select__native-control" id="saved-transfer-models"></select>
-          <label class="mdc-floating-label">Models saved in browser</label>
-          <div class="mdc-line-ripple"></div>
-        </div>
-        <button class="mdc-button mdc-button--raised" id="load-transfer-model" disabled="true">
-          Load transfer model
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <div class="mdc-card" id="action-tree-config-region">
+  <div class="mdc-card" id="action-tree-section" style="display:none">
     <div class="collapsible-region-inner" id="action-tree-config-inner">
       <div class="mdc-slider mdc-slider--discrete" tabindex="0" role="slider"
           aria-valuemin="1" aria-valuemax="5" aria-valuenow="1"
@@ -160,7 +160,7 @@
     </div>
   </div>
 
-  <div class="mdc-card" id="run-options-region">
+  <div class="mdc-card" id="options-section" style="display:none">
     <div class="mdc-card">
       <div class="mdc-typography--subtitle1">
         Recognition options
