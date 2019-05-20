@@ -77,9 +77,14 @@
   margin: 5px;
 }
 
+.mdc-dialog .mdc-dialog__surface {
+  max-width: calc(100vw - 32px);
+  height: calc(100vh - 32px);
+}
+
 .run-dialog {
-  width: 600px;
-  height: 800px;
+  width: calc(100vw - 32px);
+  height: calc(100vh - 32px);
 }
 
 #action-tree {
