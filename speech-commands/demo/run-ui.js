@@ -154,6 +154,9 @@ export function openRunDialog() {
 export function closeRunDialog() {
   runDialog.close();
 }
+export function registerRunDialogClosingFunction(func) {
+  runDialog.listen('MDCDialog:closing', func);
+}
 
 const trainingDialogDismissButton = document.getElementById('run-dismiss');
 export function disableTrainingDialogDismissButton() {

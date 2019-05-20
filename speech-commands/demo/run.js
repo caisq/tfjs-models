@@ -17,7 +17,6 @@
 
 import {drawActionTree, executeTimedMenuAction, parseActionTreeConfig} from './action-tree';
 import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferRecognizerCreationCallback, setPostLoadTransferModelCallback} from './model-io';
-// import * as basicInference from './basic-inference';
 
 import * as SpeechCommands from '../src';
 import {TimedMenu} from '../src/';
@@ -69,6 +68,10 @@ if (startButton != null) {
         });
   });
 
+  runUI.registerRunDialogClosingFunction(() => {
+    stopButton.click();
+  });
+
   stopButton.addEventListener('click', () => {
     recognizer.stopListening()
         .then(() => {
@@ -117,6 +120,7 @@ let timedMenu;
 
 startActionTreeButton.addEventListener('click',  async () =>  {
   try {
+    runUI.openRunDialog();
     actionTreeGroupDiv.style.display = 'block';
     const activeRecognizer =
         transferRecognizer == null ? recognizer : transferRecognizer;

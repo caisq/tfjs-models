@@ -285,7 +285,7 @@ function getTreantConfig(containerId, timedMenuConfig) {
     chart: {
       container: containerId.startsWith('#') ? containerId : `#${containerId}`,
       nodeAlign: 'BOTTOM',
-      rootOrientation: 'WEST',
+      rootOrientation: 'NORTH',
       siblingSeparation: 5,
       levelSeparation: 40,
       subTeeSeparation: 5,

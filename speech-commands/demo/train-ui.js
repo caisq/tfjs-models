@@ -52,12 +52,18 @@ mdcFormFields.forEach(formField => new MDCFormField(formField));
 /**
  * Logic for dialog(s).
  */
-const runDialog = new MDCDialog(document.getElementById('run-dialog'));
-export function openRunDialog() {
-  runDialog.open();
+const trainingDialog = new MDCDialog(document.getElementById('training-dialog'));
+export function openTrainingDialog() {
+  trainingDialog.open();
 }
 
-// const trainingDialogDismissButton = document.getElementById('training-dismiss');
+const trainingDialogDismissButton = document.getElementById('training-dismiss');
+export function disableTrainingDialogDismissButton() {
+  trainingDialogDismissButton.disabled = true;
+}
+export function enableTrainingDialogDismissButton() {
+  trainingDialogDismissButton.disabled = false;
+}
 
 /**
  * Logic for the top tabs.

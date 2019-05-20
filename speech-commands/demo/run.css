@@ -1,3 +1,39 @@
+/* Style for Treant. */
+.Treant > p {
+  font-family: sans-serif;
+  font-weight: bold;
+  font-size: 13px;
+  background-color: #A2BDFD;
+  text-align: center;
+}
+
+.node-name {
+  font-weight: bold;
+}
+
+.node-element {
+  padding: 1px;
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+  background-color: #ffffff;
+  border: 1px solid #000;
+  width: 150px;
+  font-family: sans-serif;
+  font-size: 15px;
+  text-align: center;
+  word-wrap: break-word;
+}
+
+.green {
+    background-color: #00F000;
+}
+
+.blue {
+    background-color: #A2BDFD;
+}
+/* ~Style for Treant. */
+
 .candidate-word {
   border: 1px solid gray;
   background-color: lightyellow;
@@ -43,4 +79,21 @@
 
 .run-dialog {
   width: 600px;
+  height: 800px;
+}
+
+#action-tree {
+  margin: 5px;
+  position: fixed;
+  /* left: 0%;
+  top: 0%; */
+  width: 90%;
+  height: 90%;
+  resize: both;
+  scroll-behavior: smooth;
+}
+
+#json-editor {
+  width: 80vw;
+  height: 80vh;
 }
