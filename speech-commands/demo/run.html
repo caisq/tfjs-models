@@ -21,6 +21,12 @@
 
 <body>
   <div id="top-tabs">
+    <button class="mdc-tab" role="tab" id="drawer-tab">
+      <span class="mdc-tab__content">
+        <span class="material-icons">list</span>
+      </span>
+      <span class="mdc-tab__ripple"></span>
+    </button>
     <button class="mdc-tab mdc-tab--active" role="tab" aria-selected="true" id="run-tab">
       <span class="mdc-tab__content">
         <span class="material-icons">keyboard_voice</span>
@@ -262,6 +268,19 @@
     </div>
   </div>
 
+  <aside class="mdc-drawer mdc-drawer--dismissible">
+    <div class="mdc-drawer__content">
+      <nav class="mdc-list">
+        <a class="mdc-list-item mdc-list-item--activated" href="javascript:void(0);" id="dismiss-drawer">
+          <i class="material-icons mdc-list-item__graphic" aria-hidden="true">close</i>
+        </a>
+        <a class="mdc-list-item mdc-list-item--activated" href="./train.html" aria-current="page">
+          <i class="material-icons mdc-list-item__graphic" aria-hidden="true">train</i>
+          <span class="mdc-list-item__text">Train models</span>
+        </a>
+      </nav>
+    </div>
+  </aside>
 
   <div class="footer" style="display: none;">
     <textarea id="status-display" style="display: none" cols="80" readonly="true"></textarea>

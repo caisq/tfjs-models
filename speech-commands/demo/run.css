@@ -53,6 +53,10 @@
   background-color: rgb(255, 80, 60);
 }
 
+.material-icons {
+  font-size: 14px;
+}
+
 .mdc-button {
   margin: 5px;
 }
@@ -63,6 +67,11 @@
   padding: 5px;
 }
 
+.mdc-drawer {
+  top: 0%;
+  z-index: 200;
+}
+
 .mdc-slider {
   margin: 15px;
   width: 300px;
@@ -70,7 +79,7 @@
 
 .mdc-tab {
   display: inline-block;
-  font-size: 80%;
+  font-size: 62%;
 }
 
 .mdc-text-field {

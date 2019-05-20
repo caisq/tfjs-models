@@ -6,6 +6,10 @@
   width: 60px;
 }
 
+.material-icons {
+  font-size: 14px;
+}
+
 .mdc-button {
   margin: 5px;
 }
@@ -16,6 +20,11 @@
   padding: 5px;
 }
 
+.mdc-drawer {
+  top: 0%;
+  z-index: 200;
+}
+
 .mdc-fab {
   margin-left: 2px;
   margin-right: 2px;
@@ -24,7 +33,7 @@
 
 .mdc-tab {
   display: inline-block;
-  font-size: 80%;
+  font-size: 62%;
 }
 
 .spectrogram-canvas {

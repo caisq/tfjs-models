@@ -17,9 +17,18 @@
 
 import {MDCCheckbox} from '@material/checkbox';
 import {MDCDialog} from '@material/dialog';
+import {MDCDrawer} from "@material/drawer";
+import {MDCList} from "@material/list";
 import {MDCFormField} from '@material/form-field';
 import {MDCSelect} from '@material/select';
 import {MDCTextField} from '@material/textfield';
+
+/**
+ * Drawer logic.
+ */
+const list = MDCList.attachTo(document.querySelector('.mdc-list'));
+list.wrapFocus = true;
+const drawer = MDCDrawer.attachTo(document.querySelector('.mdc-drawer'));
 
 /**
  * Logic for the select inputs.
@@ -139,6 +148,14 @@ export function updateTabStatus(forceTab) {
     savedTransferModelsSelect.focus();
   }
 }
+
+document.getElementById('drawer-tab').addEventListener('click', () => {
+  drawer.open = true;
+});
+
+document.getElementById('dismiss-drawer').addEventListener('click', () => {
+  drawer.open = false;
+});
 
 const mdcTextFields = document.querySelectorAll('.mdc-text-field');
 mdcTextFields.forEach(textField => new MDCTextField(textField));

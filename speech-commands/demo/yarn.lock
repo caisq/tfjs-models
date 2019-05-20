@@ -766,6 +766,23 @@
   dependencies:
     tslib "^1.9.3"
 
+"@material/drawer@^2.1.1":
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/@material/drawer/-/drawer-2.1.1.tgz#ccdc3404bba60f3f72b153d04f9a8967c06a7df6"
+  integrity sha512-z0q2Kwb79ZMng4Kb7u2UgIxQJPNLcTq/Bj/J7EJlTlUPSMXe4N/geAhSFHyGBG/iXQupdQw5E2Wu7Fo2sfx7sg==
+  dependencies:
+    "@material/animation" "^1.0.0"
+    "@material/base" "^1.0.0"
+    "@material/elevation" "^1.1.0"
+    "@material/list" "^2.1.1"
+    "@material/ripple" "^2.1.1"
+    "@material/rtl" "^0.42.0"
+    "@material/shape" "^1.1.1"
+    "@material/theme" "^1.1.0"
+    "@material/typography" "^1.0.0"
+    focus-trap "^5.0.0"
+    tslib "^1.9.3"
+
 "@material/elevation@^1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@material/elevation/-/elevation-1.1.0.tgz#def23c360ae067b43c1632a331b9883b9f679cc5"

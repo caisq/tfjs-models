@@ -16,9 +16,18 @@
  */
 
 import {MDCDialog} from '@material/dialog';
-import {MDCSelect} from '@material/select';
+import {MDCDrawer} from "@material/drawer";
+import {MDCList} from "@material/list";
+import {MDCSelect, } from '@material/select';
 import {MDCSlider} from '@material/slider';
 import {MDCTextField} from '@material/textfield';
+
+/**
+ * Drawer logic.
+ */
+const list = MDCList.attachTo(document.querySelector('.mdc-list'));
+list.wrapFocus = true;
+const drawer = MDCDrawer.attachTo(document.querySelector('.mdc-drawer'));
 
 /**
  * Logic for the top tabs.
@@ -93,6 +102,14 @@ export function updateTabStatus(forceTab) {
     optionsSection.style['display'] = 'block';
   }
 }
+
+document.getElementById('drawer-tab').addEventListener('click', () => {
+  drawer.open = true;
+});
+
+document.getElementById('dismiss-drawer').addEventListener('click', () => {
+  drawer.open = false;
+});
 
 /**
  * Logic for selects.
