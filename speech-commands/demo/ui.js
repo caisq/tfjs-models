@@ -239,3 +239,30 @@ export function showInfoOnButton(button, infoMsg, timeoutMs) {
     button.disabled = false;
   }, timeoutMs);
 }
+
+/** Get the base name of the downloaded files based on current dataset. */
+export function getDateString() {
+  const d = new Date();
+  const year = `${d.getFullYear()}`;
+  let month = `${d.getMonth() + 1}`;
+  let day = `${d.getDate()}`;
+  if (month.length < 2) {
+    month = `0${month}`;
+  }
+  if (day.length < 2) {
+    day = `0${day}`;
+  }
+  let hour = `${d.getHours()}`;
+  if (hour.length < 2) {
+    hour = `0${hour}`;
+  }
+  let minute = `${d.getMinutes()}`;
+  if (minute.length < 2) {
+    minute = `0${minute}`;
+  }
+  let second = `${d.getSeconds()}`;
+  if (second.length < 2) {
+    second = `0${second}`;
+  }
+  return `${year}-${month}-${day}T${hour}.${minute}.${second}`;
+}

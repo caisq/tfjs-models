@@ -24,7 +24,7 @@ import * as SpeechCommands from '../src';
 import {saveDatasetToIndexedDB, getSavedDatasetsInfo, loadSerializedDatasetFromIndexedDB, deleteDatasetFromIndexedDB} from './dataset-indexeddb';
 import {DatasetViz, removeNonFixedChildrenFromWordDiv} from './dataset-vis';
 import {populateSavedTransferModelsSelect, registerRecognizer, registerTransferRecognizer, registerTransferRecognizerCreationCallback, enableLoadAndDeleteModelButtons, enableSaveModelButton, clickSaveModelButton} from './model-io';
-import {logToStatusDisplay, plotSpectrogram, showErrorOnButton, showInfoOnButton} from './ui';
+import {getDateString, logToStatusDisplay, plotSpectrogram, showErrorOnButton, showInfoOnButton} from './ui';
 import {populateWebDatasetsSelect, registerWebDatasetLoaderFunc} from './web-datasets';
 import {concatenateFloat32Arrays} from '../src/generic_utils';
 
@@ -621,33 +621,6 @@ deleteDatasetFromIndexedDBButton.addEventListener('click', async () => {
         deleteDatasetFromIndexedDBButton, 'Deletion cancelled.', 1000);
   }
 });
-
-/** Get the base name of the downloaded files based on current dataset. */
-function getDateString() {
-  const d = new Date();
-  const year = `${d.getFullYear()}`;
-  let month = `${d.getMonth() + 1}`;
-  let day = `${d.getDate()}`;
-  if (month.length < 2) {
-    month = `0${month}`;
-  }
-  if (day.length < 2) {
-    day = `0${day}`;
-  }
-  let hour = `${d.getHours()}`;
-  if (hour.length < 2) {
-    hour = `0${hour}`;
-  }
-  let minute = `${d.getMinutes()}`;
-  if (minute.length < 2) {
-    minute = `0${minute}`;
-  }
-  let second = `${d.getSeconds()}`;
-  if (second.length < 2) {
-    second = `0${second}`;
-  }
-  return `${year}-${month}-${day}T${hour}.${minute}.${second}`;
-}
 
 uploadFilesButton.addEventListener('click', async () => {
   const files = datasetFileInput.files;

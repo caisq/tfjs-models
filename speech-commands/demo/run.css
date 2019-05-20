@@ -68,8 +68,9 @@
 }
 
 .mdc-drawer {
+  width: 400px;
+  max-width: 80vw;
   top: 0%;
-  z-index: 200;
 }
 
 .mdc-slider {

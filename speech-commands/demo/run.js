@@ -22,7 +22,7 @@ import * as SpeechCommands from '../src';
 import {TimedMenu} from '../src/';
 
 import * as runUI from './run-ui.js'
-import {hideCandidateWords, logToStatusDisplay, plotPredictions, populateCandidateWords, showCandidateWords} from './ui';
+import {getDateString, hideCandidateWords, logToStatusDisplay, plotPredictions, populateCandidateWords, showCandidateWords} from './ui';
 
 const startActionTreeButton = document.getElementById('start-action-tree');
 const actionTreeGroupDiv = document.getElementById('action-tree-group');
@@ -31,23 +31,103 @@ const messageSpan = document.getElementById('message');
 let recognizer;
 let transferRecognizer;
 
+// Keep track of positive examples.
+let positiveDataset;
+
 const startButton = document.getElementById('start');
 const stopButton = document.getElementById('stop');
 const predictionCanvas = document.getElementById('prediction-canvas');
+
+const runDialogTitle = document.getElementById('run-dialog-title');
+
+const downloadPositiveExamples =
+    document.getElementById('download-positive-examples');
+const downloadPositiveExamplesSpan =
+    document.getElementById('download-positive-examples-span');
+
+function refreshDownloadPositiveExamples(dataset) {
+  if (dataset == null) {
+    downloadPositiveExamplesSpan.textContent = `Download positive examples (0)`;
+  } else {
+    downloadPositiveExamplesSpan.textContent =
+        `Download positive examples ` +
+        `(${dataset.getExampleCounts()[SpeechCommands.BACKGROUND_NOISE_TAG]})`;
+  }
+}
+refreshDownloadPositiveExamples(null);
+
+downloadPositiveExamples.addEventListener('click', () => {
+  if (positiveDataset != null) {
+    const basename = `${transferRecognizer.name}_fp_${getDateString()}`;
+    const artifacts = positiveDataset.serialize();
+
+    // Trigger downloading of the data .bin file.
+    const anchor = document.createElement('a');
+    anchor.download = `${basename}.bin`;
+    anchor.href = window.URL.createObjectURL(
+        new Blob([artifacts], {type: 'application/octet-stream'}));
+    anchor.click();
+  }
+});
+
+let tTestBegin;
+let countJob;
+function updateRunDialogTitle() {
+  runDialogTitle.textContent =
+    `"${transferRecognizer.name}" running ` +
+    `(${((new Date().getTime() - tTestBegin) / 1e3).toFixed(0)} s)`;
+  if (positiveDataset != null) {
+    let positiveCount =
+        positiveDataset.getExampleCounts()[SpeechCommands.BACKGROUND_NOISE_TAG];
+    if (positiveCount == null) {
+      positiveCount = 0;
+    }
+    runDialogTitle.textContent += ` (#positive: ${positiveCount})`;
+  } else {
+    runDialogTitle.textContent += ` (#positive: 0)`;
+  }
+}
 
 if (startButton != null) {
   startButton.addEventListener('click', () => {
     runUI.openRunDialog();
     populateCandidateWords(recognizer.wordLabels());
 
+    positiveDataset = new SpeechCommands.Dataset();
+    refreshDownloadPositiveExamples(null);
+
     const suppressionTimeMillis = 1000;
     const probabilityThreshold = runUI.getPThreshSliderValue();
     console.log(`Starting listen() with p-threshold = ${probabilityThreshold}`);
+    const wordLabels = recognizer.wordLabels();
+
+    runDialogTitle.textContent = `"${transferRecognizer.name}" running`;
+
+    countJob = setInterval(() => updateRunDialogTitle(), 1e3);
+    tTestBegin = new Date().getTime();
     recognizer
         .listen(
             result => {
+              // Append the exapmle to the positive dataset.
+              let maxScore = -Infinity;
+              let label;
+              for (let i = 0; i < wordLabels.length; ++i) {
+                if (result.scores[i] > maxScore) {
+                  maxScore = result.scores[i];
+                  label = wordLabels[i];
+                }
+              }
+              if (label != SpeechCommands.BACKGROUND_NOISE_TAG) {
+                positiveDataset.addExample({
+                  label: SpeechCommands.BACKGROUND_NOISE_TAG,
+                  spectrogram: result.spectrogram
+                });
+                downloadPositiveExamplesSpan.textContent =
+                    `Download positive examples ()`;
+              }
+              refreshDownloadPositiveExamples(positiveDataset);
               plotPredictions(
-                  predictionCanvas, recognizer.wordLabels(),
+                  predictionCanvas, wordLabels,
                   result.scores, 3, suppressionTimeMillis);
             },
             {
@@ -75,6 +155,9 @@ if (startButton != null) {
   stopButton.addEventListener('click', () => {
     recognizer.stopListening()
         .then(() => {
+          if (countJob != null) {
+            clearInterval(countJob);
+          }
           startButton.disabled = false;
           stopButton.disabled = true;
           runUI.enablePThreshSlider();
