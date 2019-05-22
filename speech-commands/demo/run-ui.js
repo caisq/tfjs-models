@@ -127,12 +127,14 @@ new MDCSelect(savedActionTreesSelectDiv);
 /**
  * Logic for sliders
  */
-const ttlMultiplierSlider = new MDCSlider(document.getElementById('ttl-multiplier'));
+const ttlMultiplierSlider =
+    new MDCSlider(document.getElementById('ttl-multiplier'));
 export function getTTLMultiplierSliderValue() {
   return Number.parseInt(ttlMultiplierSlider.value);
 }
 
-const pThreshSlider = new MDCSlider(document.getElementById('p-thresh'));
+const pThreshSlider =
+    new MDCSlider(document.getElementById('p-thresh'));
 export function getPThreshSliderValue() {
   return Number.parseFloat(pThreshSlider.value);
 }
@@ -142,6 +144,17 @@ export function disablePThreshSlider() {
 export function enablePThreshSlider() {
   pThreshSlider.disabled = false;
 }
+
+let pThreshChangeCallback;
+export function registerPThreshSliderChangeCallback(callback) {
+  pThreshChangeCallback = callback;
+}
+
+pThreshSlider.listen('MDCSlider:change', () => {
+  if (pThreshChangeCallback != null) {
+    pThreshChangeCallback(pThreshSlider.value);
+  }
+});
 
 const suppressionTimeSlider =
     new MDCSlider(document.getElementById('suppression-time'));

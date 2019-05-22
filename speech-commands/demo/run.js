@@ -72,9 +72,9 @@ downloadPositiveExamples.addEventListener('click', () => {
 
 let tTestBegin;
 let countJob;
-function updateRunDialogTitle() {
+function updateRunDialogTitle(pThresh) {
   runDialogTitle.textContent =
-    `"${transferRecognizer.name}" running ` +
+    `"${transferRecognizer.name}" running (p-thresh=${pThresh.toFixed(2)}) ` +
     `(${((new Date().getTime() - tTestBegin) / 1e3).toFixed(0)} s)`;
   if (positiveDataset != null) {
     let positiveCount =
@@ -103,7 +103,8 @@ if (startButton != null) {
 
     runDialogTitle.textContent = `"${transferRecognizer.name}" running`;
 
-    countJob = setInterval(() => updateRunDialogTitle(), 1e3);
+    countJob = setInterval(
+        () => updateRunDialogTitle(probabilityThreshold), 1e3);
     tTestBegin = new Date().getTime();
     recognizer
         .listen(
@@ -305,6 +306,11 @@ stopButton.addEventListener('click', () => {
   runUI.enablePThreshSlider();
   runUI.enableSuppressionTimeSlider();
   refreshStartActionTreeButtonStatus();
+});
+
+const currPThreshValue = document.getElementById('current-p-thresh-value');
+runUI.registerPThreshSliderChangeCallback(value => {
+  currPThreshValue.textContent = value.toFixed(2);
 });
 
 const cachedAudioObjects = {};
