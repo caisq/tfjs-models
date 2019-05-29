@@ -1174,29 +1174,16 @@ class TransferBrowserFftSpeechCommandRecognizer extends
 
   private evaluateOnTensors(
       xs: tf.Tensor, ys: tf.Tensor, config: EvaluateConfig): EvaluateResult {
-  // async evaluate(config: EvaluateConfig): Promise<EvaluateResult> {
-  //   tf.util.assert(
-  //       config.wordProbThresholds != null &&
-  //           config.wordProbThresholds.length > 0,
-  //       () => `Received null or empty wordProbThresholds`);
-
-  //   // TODO(cais): Maybe relax this requirement.
-  //   const NOISE_CLASS_INDEX = 0;
-  //   tf.util.assert(
-  //       this.words[NOISE_CLASS_INDEX] === BACKGROUND_NOISE_TAG,
-  //       () => `Cannot perform evaluation when the first tag is not ` +
-  //           `${BACKGROUND_NOISE_TAG}`);
-
     return tf.tidy(() => {
       const rocCurve: ROCCurve = [];
       let auc = 0;
 
       // TODO(cais): Maybe relax this requirement.
-      const NOISE_CLASS_INDEX = 0;
+      const noiseClassIndex = this.words.indexOf(BACKGROUND_NOISE_TAG);
       tf.util.assert(
-          this.words[NOISE_CLASS_INDEX] === BACKGROUND_NOISE_TAG,
-          () => `Cannot perform evaluation when the first tag is not ` +
-              `${BACKGROUND_NOISE_TAG}`);
+          noiseClassIndex !== -1,
+          () => `Cannot perform evaluation when the class ` +
+              `${BACKGROUND_NOISE_TAG} does not exist.`);
 
       const indices = ys.argMax(-1).dataSync();
       const probs = this.model.predict(xs) as tf.Tensor;
@@ -1219,7 +1206,7 @@ class TransferBrowserFftSpeechCommandRecognizer extends
         let falsePositives = 0;
         let truePositives = 0;
         for (let i = 0; i < total; ++i) {
-          if (indices[i] === NOISE_CLASS_INDEX) {
+          if (indices[i] === noiseClassIndex) {
             negatives++;
             if (isWord[i]) {
               falsePositives++;
