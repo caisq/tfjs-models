@@ -34,7 +34,11 @@ let transferRecognizer;
 // Keep track of positive examples.
 let positiveDataset;
 
+// Records all examples, with the "__unlabeled__" label.
+let fullTestDataset;
+
 const startButton = document.getElementById('start');
+const startRecordFullDatasetButton = document.getElementById('start-record-full-dataset');
 const stopButton = document.getElementById('stop');
 const predictionCanvas = document.getElementById('prediction-canvas');
 
@@ -88,89 +92,140 @@ function updateRunDialogTitle(pThresh) {
   }
 }
 
-if (startButton != null) {
-  startButton.addEventListener('click', () => {
-    runUI.openRunDialog();
-    populateCandidateWords(recognizer.wordLabels());
+let lastTestRecognitionEventTime;
 
-    positiveDataset = new SpeechCommands.Dataset();
-    refreshDownloadPositiveExamples(null);
+function startTestingCallback(recordFullDataset) {
+  if (recordFullDataset) {
+    // TODO(cais): Draw real-time probability curves if
+    // recordFullDataset is true.
+    fullTestDataset = new SpeechCommands.Dataset();
+  }
+  positiveDataset = new SpeechCommands.Dataset();
 
-    const suppressionTimeMillis = 1000;
-    const probabilityThreshold = runUI.getPThreshSliderValue();
-    console.log(`Starting listen() with p-threshold = ${probabilityThreshold}`);
-    const wordLabels = recognizer.wordLabels();
+  runUI.openRunDialog();
+  populateCandidateWords(recognizer.wordLabels());
 
-    runDialogTitle.textContent = `"${transferRecognizer.name}" running`;
+  refreshDownloadPositiveExamples(null);
 
-    countJob = setInterval(
-        () => updateRunDialogTitle(probabilityThreshold), 1e3);
-    tTestBegin = new Date().getTime();
-    recognizer
-        .listen(
-            result => {
-              // Append the exapmle to the positive dataset.
-              let maxScore = -Infinity;
-              let label;
-              for (let i = 0; i < wordLabels.length; ++i) {
-                if (result.scores[i] > maxScore) {
-                  maxScore = result.scores[i];
-                  label = wordLabels[i];
-                }
+  const probabilityThreshold = runUI.getPThreshSliderValue();
+  console.log(`Starting listen() with p-threshold = ${probabilityThreshold}`);
+  const wordLabels = recognizer.wordLabels();
+
+  runDialogTitle.textContent = `"${transferRecognizer.name}" running`;
+
+  countJob = setInterval(
+      () => updateRunDialogTitle(probabilityThreshold), 1e3);
+  tTestBegin = new Date().getTime();
+  const suppressionTimeMillis = runUI.getSuppressionTimeSliderValue();
+  recognizer
+      .listen(
+          result => {
+            // console.log(`result:`, result);  // DEBUG
+
+            // Append the example to the positive dataset.
+            let maxScore = -Infinity;
+            let label;
+            for (let i = 0; i < wordLabels.length; ++i) {
+              if (result.scores[i] > maxScore) {
+                maxScore = result.scores[i];
+                label = wordLabels[i];
               }
-              if (label != SpeechCommands.BACKGROUND_NOISE_TAG) {
-                positiveDataset.addExample({
-                  label: SpeechCommands.BACKGROUND_NOISE_TAG,
-                  spectrogram: result.spectrogram
-                });
-                downloadPositiveExamplesSpan.textContent =
-                    `Download positive examples ()`;
-              }
-              refreshDownloadPositiveExamples(positiveDataset);
-              plotPredictions(
-                  predictionCanvas, wordLabels,
-                  result.scores, 3, suppressionTimeMillis);
-            },
-            {
-              includeSpectrogram: true,
-              suppressionTimeMillis,
-              probabilityThreshold
-            })
-        .then(() => {
-          startButton.disabled = true;
-          stopButton.disabled = false;
-          runUI.disablePThreshSlider();
-          showCandidateWords();
-          logToStatusDisplay('Streaming recognition started.');
-        })
-        .catch(err => {
-          logToStatusDisplay(
-              'ERROR: Failed to start streaming display: ' + err.message);
-        });
-  });
+            }
+
+            if (maxScore < probabilityThreshold ||
+                label === SpeechCommands.BACKGROUND_NOISE_TAG) {
+              return;
+            }
+
+            const timeNow = new Date().getTime();
+            if (lastTestRecognitionEventTime != null &&
+                timeNow - lastTestRecognitionEventTime <
+                    suppressionTimeMillis) {
+              return;
+            }
+            lastTestRecognitionEventTime = timeNow;
+
+            if (label != SpeechCommands.BACKGROUND_NOISE_TAG) {
+              positiveDataset.addExample({
+                label: SpeechCommands.BACKGROUND_NOISE_TAG,
+                spectrogram: result.spectrogram
+              });
+              downloadPositiveExamplesSpan.textContent =
+                  `Download positive examples ()`;
+            }
+
+            if (recordFullDataset) {
+              fullTestDataset.addExample({
+                label: null,
+                spectrogram: result.spectrogram
+              });
+              console.log('Added example to fullTestDataset');  // DEBUG
+            }
+
+            refreshDownloadPositiveExamples(positiveDataset);
+            plotPredictions(
+                predictionCanvas, wordLabels, result.scores, 3, 1000);
+          },
+          {
+            includeSpectrogram: true,
+            // During testing, we let the callback be invoked for every
+            // window, in order to support recording all spectrograms.
+            suppressionTimeMillis: 0,
+            probabilityThreshold: 0,
+            invokeCallbackOnNoiseAndUnknown: true
+          })
+      .then(() => {
+        startButton.disabled = true;
+        startRecordFullDatasetButton.disabled = true;
+        stopButton.disabled = false;
+        runUI.disablePThreshSlider();
+        showCandidateWords();
+        logToStatusDisplay('Streaming recognition started.');
+      })
+      .catch(err => {
+        logToStatusDisplay(
+            'ERROR: Failed to start streaming display: ' + err.message);
+      });
 
   runUI.registerRunDialogClosingFunction(() => {
     stopButton.click();
   });
+}
 
-  stopButton.addEventListener('click', () => {
-    recognizer.stopListening()
-        .then(() => {
-          if (countJob != null) {
-            clearInterval(countJob);
-          }
-          startButton.disabled = false;
-          stopButton.disabled = true;
-          runUI.enablePThreshSlider();
-          hideCandidateWords();
-          runUI.closeRunDialog();
-          logToStatusDisplay('Streaming recognition stopped.');
-        })
-        .catch(err => {
-          logToStatusDisplay(
-              'ERROR: Failed to stop streaming display: ' + err.message);
-        });
-  });
+function stopCallback() {
+  recognizer.stopListening()
+      .then(() => {
+        if (countJob != null) {
+          clearInterval(countJob);
+        }
+        startButton.disabled = false;
+        startRecordFullDatasetButton.disabled = false;
+        stopButton.disabled = true;
+        runUI.enablePThreshSlider();
+        hideCandidateWords();
+        runUI.closeRunDialog();
+        logToStatusDisplay('Streaming recognition stopped.');
+      })
+      .catch(err => {
+        logToStatusDisplay(
+            'ERROR: Failed to stop streaming display: ' + err.message);
+      });
+}
+
+if (startButton != null) {
+  const recordFullDataset = false;
+  startButton.addEventListener(
+      'click', () => startTestingCallback(recordFullDataset));
+}
+
+if (startRecordFullDatasetButton != null) {
+  const recordFullDataset = true;
+  startRecordFullDatasetButton.addEventListener(
+      'click', () => startTestingCallback(recordFullDataset));
+}
+
+if (stopButton != null) {
+  stopButton.addEventListener('click', stopCallback);
 }
 
 registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
@@ -180,6 +235,7 @@ registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
       `Transfer recognizer loaded with parameters: ` +
       `${JSON.stringify(transferRecognizer.params())}`);
   startButton.disabled = false;
+  startRecordFullDatasetButton.disabled = false;
   refreshStartActionTreeButtonStatus();
 });
 
@@ -281,6 +337,7 @@ startActionTreeButton.addEventListener('click',  async () =>  {
     runUI.disablePThreshSlider();
     runUI.disableSuppressionTimeSlider();
     startButton.disabled = true;
+    startRecordFullDatasetButton.disabled = true;
     stopButton.disabled = false;
     refreshStartActionTreeButtonStatus();
 
