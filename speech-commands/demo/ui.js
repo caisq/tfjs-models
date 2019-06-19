@@ -15,11 +15,15 @@
  * =============================================================================
  */
 
+import Plotly from 'plotly.js-dist';
+
 import * as SpeechCommands from '../src';
 import {BACKGROUND_NOISE_TAG, UNKNOWN_TAG} from '../src';
 
 const statusDisplay = document.getElementById('status-display');
 const candidateWordsContainer = document.getElementById('candidate-words');
+const realTimeProbabilitiesDiv =
+    document.getElementById('real-time-probabilities');
 
 /**
  * Log a message to a textarea.
@@ -66,6 +70,82 @@ export function showCandidateWords() {
 
 export function hideCandidateWords() {
   candidateWordsContainer.classList.add('candidate-words-hidden');
+}
+
+let probabilitiesPlotT0;
+const maxProbabilityPlotPoints = 100;
+let plottedWordProbs = [];
+
+export function plotRealTimeProbabilities(wordLabels, probs, probThreshold) {
+  if (wordLabels.length !== probs.length) {
+    throw new Error('wordLabels and probs have mismatching lengths');
+  }
+
+  let minX = Infinity;
+  let maxX = -Infinity;
+  const names = plottedWordProbs.map(entry => entry.name);
+  wordLabels.forEach((wordLabel, i) => {
+    const timeSec = (new Date().getTime() - probabilitiesPlotT0) / 1e3;
+    const index = names.indexOf(wordLabel);
+    if (index === -1) {
+      plottedWordProbs.push({
+        x: [timeSec],
+        y: [probs[i]],
+        name: wordLabel
+      });
+      if (timeSec < minX) {
+        minX = timeSec;
+      }
+      if (timeSec > maxX) {
+        maxX = timeSec;
+      }
+    } else {
+      plottedWordProbs[index].x.push(timeSec);
+      plottedWordProbs[index].y.push(probs[i]);
+      if (plottedWordProbs[index].x.length > maxProbabilityPlotPoints) {
+        plottedWordProbs[index].x.shift();
+        plottedWordProbs[index].y.shift();
+      }
+      const xs = plottedWordProbs[index].x;
+      if (xs[0] < minX) {
+        minX = xs[0];
+      }
+      if (xs[xs.length - 1] > maxX) {
+        maxX = xs[xs.length - 1];
+      }
+    }
+  });
+
+  const plottedData = plottedWordProbs.slice();
+  if (probThreshold != null) {
+    plottedData.push({
+      x: [minX - 1, maxX + 1],
+      y: [probThreshold, probThreshold],
+      name: 'Threshold',
+      line: {
+        widht: 1,
+        dash: 'dash'
+      }
+    });
+  }
+  Plotly.newPlot(
+    'real-time-probabilities',
+    plottedData,
+    {
+      width: '100%',
+      height: 300,
+      xaxis: {title: 'Time (s)'},
+      yaxis: {title: 'Probability score'}
+    });
+}
+
+export function clearRealTimeProbabilities() {
+  plottedWordProbs = [];
+  while (realTimeProbabilitiesDiv.firstChild) {
+    realTimeProbabilitiesDiv.removeChild(
+        realTimeProbabilitiesDiv.firstChild);
+  }
+  probabilitiesPlotT0 = new Date().getTime();
 }
 
 /**

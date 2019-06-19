@@ -22,7 +22,7 @@ import * as SpeechCommands from '../src';
 import {TimedMenu} from '../src/';
 
 import * as runUI from './run-ui.js'
-import {getDateString, hideCandidateWords, logToStatusDisplay, plotPredictions, populateCandidateWords, showCandidateWords} from './ui';
+import {clearRealTimeProbabilities, getDateString, hideCandidateWords, logToStatusDisplay, plotPredictions, plotRealTimeProbabilities, populateCandidateWords, showCandidateWords} from './ui';
 
 const startActionTreeButton = document.getElementById('start-action-tree');
 const actionTreeGroupDiv = document.getElementById('action-tree-group');
@@ -149,6 +149,7 @@ function startTestingCallback(recordFullDataset) {
       () => updateRunDialogTitle(probabilityThreshold), 1e3);
   tTestBegin = new Date().getTime();
   const suppressionTimeMillis = runUI.getSuppressionTimeSliderValue();
+  clearRealTimeProbabilities();
   recognizer
       .listen(
           result => {
@@ -168,6 +169,10 @@ function startTestingCallback(recordFullDataset) {
                 spectrogram: result.spectrogram
               });
               refreshDownloadFullExamples(fullTestDataset);
+
+              // Plot probabilites in real time.
+              plotRealTimeProbabilities(
+                  wordLabels, result.scores, probabilityThreshold);
             }
 
             if (maxScore < probabilityThreshold ||
