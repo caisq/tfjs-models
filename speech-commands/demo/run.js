@@ -44,10 +44,16 @@ const predictionCanvas = document.getElementById('prediction-canvas');
 
 const runDialogTitle = document.getElementById('run-dialog-title');
 
+const UNLABELED = '__unlabeled__';
+
 const downloadPositiveExamples =
     document.getElementById('download-positive-examples');
 const downloadPositiveExamplesSpan =
     document.getElementById('download-positive-examples-span');
+const downloadFullExamples =
+    document.getElementById('download-full-examples');
+const downloadFullExamplesSpan =
+    document.getElementById('download-full-examples-span');
 
 function refreshDownloadPositiveExamples(dataset) {
   if (dataset == null) {
@@ -60,10 +66,35 @@ function refreshDownloadPositiveExamples(dataset) {
 }
 refreshDownloadPositiveExamples(null);
 
+function refreshDownloadFullExamples(dataset) {
+  if (dataset == null) {
+    downloadFullExamplesSpan.textContent = `Download full examples (0)`;
+  } else {
+    downloadFullExamplesSpan.textContent =
+        `Download full examples ` +
+        `(${dataset.getExampleCounts()[UNLABELED]})`;
+  }
+}
+refreshDownloadFullExamples(null);
+
 downloadPositiveExamples.addEventListener('click', () => {
   if (positiveDataset != null) {
     const basename = `${transferRecognizer.name}_fp_${getDateString()}`;
     const artifacts = positiveDataset.serialize();
+
+    // Trigger downloading of the data .bin file.
+    const anchor = document.createElement('a');
+    anchor.download = `${basename}.bin`;
+    anchor.href = window.URL.createObjectURL(
+        new Blob([artifacts], {type: 'application/octet-stream'}));
+    anchor.click();
+  }
+});
+
+downloadFullExamples.addEventListener('click', () => {
+  if (fullTestDataset != null) {
+    const basename = `${transferRecognizer.name}_full_${getDateString()}`;
+    const artifacts = fullTestDataset.serialize();
 
     // Trigger downloading of the data .bin file.
     const anchor = document.createElement('a');
@@ -106,6 +137,7 @@ function startTestingCallback(recordFullDataset) {
   populateCandidateWords(recognizer.wordLabels());
 
   refreshDownloadPositiveExamples(null);
+  refreshDownloadFullExamples(null);
 
   const probabilityThreshold = runUI.getPThreshSliderValue();
   console.log(`Starting listen() with p-threshold = ${probabilityThreshold}`);
@@ -120,8 +152,6 @@ function startTestingCallback(recordFullDataset) {
   recognizer
       .listen(
           result => {
-            // console.log(`result:`, result);  // DEBUG
-
             // Append the example to the positive dataset.
             let maxScore = -Infinity;
             let label;
@@ -130,6 +160,14 @@ function startTestingCallback(recordFullDataset) {
                 maxScore = result.scores[i];
                 label = wordLabels[i];
               }
+            }
+
+            if (recordFullDataset) {
+              fullTestDataset.addExample({
+                label: UNLABELED,
+                spectrogram: result.spectrogram
+              });
+              refreshDownloadFullExamples(fullTestDataset);
             }
 
             if (maxScore < probabilityThreshold ||
@@ -152,14 +190,6 @@ function startTestingCallback(recordFullDataset) {
               });
               downloadPositiveExamplesSpan.textContent =
                   `Download positive examples ()`;
-            }
-
-            if (recordFullDataset) {
-              fullTestDataset.addExample({
-                label: null,
-                spectrogram: result.spectrogram
-              });
-              console.log('Added example to fullTestDataset');  // DEBUG
             }
 
             refreshDownloadPositiveExamples(positiveDataset);
