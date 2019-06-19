@@ -156,7 +156,6 @@ let datasetViz;
  * @returns {Object} An object mapping word to th div element created for it.
  */
 function createWordDivs(transferWords) {
-  console.log('In createWordDivs');  // DEBUG
   // Clear collectButtonsDiv first.
   while (collectButtonsDiv.firstChild) {
     collectButtonsDiv.removeChild(collectButtonsDiv.firstChild);

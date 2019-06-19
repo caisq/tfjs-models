@@ -1135,7 +1135,8 @@ class TransferBrowserFftSpeechCommandRecognizer extends
     const fineTuningHistory = await this.model.fitDataset(trainDataset, {
       epochs: config.fineTuningEpochs,
       validationData: valDataset,
-      callbacks: config.callback == null ? null : [config.callback]
+      callbacks: config.fineTuningCallback == null ?
+          null : [config.fineTuningCallback]
     });
     // Set the trainable attribute of the fine-tuning layer to its
     // previous value.
@@ -1163,8 +1164,7 @@ class TransferBrowserFftSpeechCommandRecognizer extends
       validationData: valData,
       batchSize: config.batchSize,
       callbacks: config.fineTuningCallback == null ?
-          null :
-          [config.fineTuningCallback]
+          null : [config.fineTuningCallback]
     });
     // Set the trainable attribute of the fine-tuning layer to its
     // previous value.
