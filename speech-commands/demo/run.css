@@ -37,6 +37,7 @@
 .candidate-word {
   border: 1px solid gray;
   background-color: lightyellow;
+  display: inline-block;
   margin: 5px;
   border-radius: 3px;
   width: 10vw;
