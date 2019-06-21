@@ -63,6 +63,9 @@ const startTransferLearnButton =
     document.getElementById('start-transfer-learn');
 const trainingDialogTitle = document.getElementById('training-dialog-title');
 
+const recognizerParametersDiv =
+    document.getElementById('recognizer-parameters');
+
 // Minimum required number of examples per class for transfer learning.
 const MIN_EXAMPLES_PER_CLASS = 16;
 
@@ -288,6 +291,8 @@ function createWordDivs(transferWords) {
 
       const spectrogram = await transferRecognizer.collectExample(
           word, collectExampleOptions);
+      recognizerParametersDiv.textContent =
+          `Sample rate: ${transferRecognizer.parameters.sampleRateHz} Hz`;
 
       if (intervalJob != null) {
         clearInterval(intervalJob);

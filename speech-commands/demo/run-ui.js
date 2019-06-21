@@ -148,11 +148,54 @@ export function enablePThreshSlider() {
 let pThreshChangeCallback;
 export function registerPThreshSliderChangeCallback(callback) {
   pThreshChangeCallback = callback;
+  if (pThreshChangeCallback != null) {
+    pThreshChangeCallback(pThreshSlider.value);
+  }
+}
+
+const P_THRESH_KEY = 'euphonia-voice-command-p-thresh';
+
+function savePThresh() {
+  window.localStorage.setItem(P_THRESH_KEY, `${pThreshSlider.value.toFixed(2)}`);
+  console.log(
+      `Saved voice-command p-threshold to localStorage: ` +
+      `${pThreshSlider.value.toFixed(2)}`);
 }
 
 pThreshSlider.listen('MDCSlider:change', () => {
   if (pThreshChangeCallback != null) {
     pThreshChangeCallback(pThreshSlider.value);
+    savePThresh();
+  }
+});
+
+const savedPThreshValue =
+    Number.parseFloat(window.localStorage.getItem(P_THRESH_KEY));
+if (savedPThreshValue != null) {
+  pThreshSlider.value = savedPThreshValue;
+}
+
+const P_THRESH_INCREMENT = 0.01;
+
+const pThreshUpButton = document.getElementById('p-thresh-up');
+pThreshUpButton.addEventListener('click', () => {
+  if (pThreshSlider.value + P_THRESH_INCREMENT <= 1) {
+    pThreshSlider.value += P_THRESH_INCREMENT;
+    savePThresh();
+    if (pThreshChangeCallback != null) {
+      pThreshChangeCallback(pThreshSlider.value);
+    }
+  }
+});
+
+const pThreshDownButton = document.getElementById('p-thresh-down');
+pThreshDownButton.addEventListener('click', () => {
+  if (pThreshSlider.value - P_THRESH_INCREMENT >= 0) {
+    pThreshSlider.value -= P_THRESH_INCREMENT;
+    savePThresh();
+    if (pThreshChangeCallback != null) {
+      pThreshChangeCallback(pThreshSlider.value);
+    }
   }
 });
 

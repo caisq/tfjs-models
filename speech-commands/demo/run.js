@@ -43,6 +43,8 @@ const stopButton = document.getElementById('stop');
 const predictionCanvas = document.getElementById('prediction-canvas');
 
 const runDialogTitle = document.getElementById('run-dialog-title');
+const recognizerParametersDiv =
+    document.getElementById('recognizer-parameters');
 
 const UNLABELED = '__unlabeled__';
 
@@ -153,6 +155,8 @@ function startTestingCallback(recordFullDataset) {
   recognizer
       .listen(
           result => {
+            recognizerParametersDiv.textContent =
+                `Sample rate: ${recognizer.parameters.sampleRateHz} Hz`;
             // Append the example to the positive dataset.
             let maxScore = -Infinity;
             let label;
