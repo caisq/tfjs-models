@@ -171,7 +171,7 @@ pThreshSlider.listen('MDCSlider:change', () => {
 
 const savedPThreshValue =
     Number.parseFloat(window.localStorage.getItem(P_THRESH_KEY));
-if (savedPThreshValue != null) {
+if (savedPThreshValue != null && Number.isFinite(savedPThreshValue)) {
   pThreshSlider.value = savedPThreshValue;
 }
 
