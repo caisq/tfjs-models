@@ -71,7 +71,7 @@ export function create(
 }
 
 export {BACKGROUND_NOISE_TAG, Dataset, GetDataConfig as GetSpectrogramsAsTensorsConfig, getMaxIntensityFrameIndex, spectrogram2IntensityCurve, SpectrogramAndTargetsTfDataset} from './dataset';
-export {AudioDataAugmentationOptions, Example, FFT_TYPE, RecognizerParams, SpectrogramData, SpeechCommandRecognizer, SpeechCommandRecognizerResult, StreamingRecognitionConfig, TransferLearnConfig, TransferSpeechCommandRecognizer} from './types';
+export {AudioDataAugmentationOptions, Example, FFT_TYPE, LabelMap, RecognizerParams, SpectrogramData, SpeechCommandRecognizer, SpeechCommandRecognizerResult, StreamingRecognitionConfig, TransferLearnConfig, TransferSpeechCommandRecognizer} from './types';
 export {deleteSavedTransferModel, listSavedTransferModels, UNKNOWN_TAG} from './browser_fft_recognizer';
 export {StateChangeType, TimedMenu, TimedMenuAction, TimedMenuSpec, TimedMenuNodeSpec} from './timed_menu';
 export {version} from './version';

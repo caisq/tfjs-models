@@ -1,0 +1,10 @@
+yarn run v1.16.0
+$ ts-node src/offline_train.ts /usr/local/google/home/cais/Downloads/office-sniff-2-base.bin,/usr/local/google/home/cais/Downloads/office-sniff-2_full_2019-06-20T16.56.11.bin --labelMap __unlabeled__-
+TensorFlow.js version: { 'tfjs-core': '1.1.2',
+  'tfjs-data': '1.1.2',
+  'tfjs-layers': '1.1.2',
+  'tfjs-converter': '1.1.2',
+  tfjs: '1.1.2',
+  'tfjs-node': '1.1.2' }
+SpeechCommands version: 0.3.0
+Done in 1.45s.

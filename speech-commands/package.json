@@ -18,6 +18,7 @@
   "devDependencies": {
     "@tensorflow/tfjs": "1.1.2",
     "@tensorflow/tfjs-node": "1.1.2",
+    "@tensorflow/tfjs-node-gpu": "1.1.2",
     "@types/argparse": "^1.0.36",
     "@types/jasmine": "~2.8.8",
     "@types/rimraf": "^2.0.2",

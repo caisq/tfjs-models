@@ -23,7 +23,7 @@ import {loadMetadataJson, normalize, normalizeFloat32Array} from './browser_fft_
 import {BACKGROUND_NOISE_TAG, Dataset} from './dataset';
 import {concatenateFloat32Arrays} from './generic_utils';
 import {balancedTrainValSplit} from './training_utils';
-import {AudioDataAugmentationOptions, EvaluateConfig, EvaluateResult, Example, ExampleCollectionOptions, RecognizeConfig, RecognizerCallback, RecognizerParams, ROCCurve, SpectrogramData, SpeechCommandRecognizer, SpeechCommandRecognizerResult, StreamingRecognitionConfig, TransferLearnConfig, TransferSpeechCommandRecognizer} from './types';
+import {AudioDataAugmentationOptions, EvaluateConfig, EvaluateResult, Example, ExampleCollectionOptions, RecognizeConfig, RecognizerCallback, RecognizerParams, ROCCurve, SpectrogramData, SpeechCommandRecognizer, SpeechCommandRecognizerResult, StreamingRecognitionConfig, TransferLearnConfig, TransferSpeechCommandRecognizer, LabelMap} from './types';
 import {version} from './version';
 
 export const UNKNOWN_TAG = '_unknown_';
@@ -838,8 +838,11 @@ class TransferBrowserFftSpeechCommandRecognizer extends
    * @param serialized The examples in their serialized format.
    * @param clearExisting Whether to clear the existing examples while
    *   performing the loading (default: false).
+   * @param labelMap An optional mapping for labels.
    */
-  loadExamples(serialized: ArrayBuffer, clearExisting = false): void {
+  loadExamples(serialized: ArrayBuffer,
+               clearExisting = false,
+               labelMap: LabelMap): void {
     const incomingDataset = new Dataset(serialized);
     if (clearExisting) {
       this.clearExamples();
@@ -849,7 +852,16 @@ class TransferBrowserFftSpeechCommandRecognizer extends
     for (const label of incomingVocab) {
       const examples = incomingDataset.getExamples(label);
       for (const example of examples) {
-        this.dataset.addExample(example.example);
+        if (labelMap == null) {
+          this.dataset.addExample(example.example);
+        } else {
+          const exampleWithMappedLabel = Object.assign({}, example);
+          if (labelMap[exampleWithMappedLabel.example.label] != null) {
+            exampleWithMappedLabel.example.label =
+                labelMap[exampleWithMappedLabel.example.label];
+          }
+          this.dataset.addExample(exampleWithMappedLabel.example);
+        }
       }
     }
 

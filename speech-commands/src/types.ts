@@ -151,6 +151,8 @@ export interface ExampleCollectionOptions {
   snippetCallback?: (spectrogram: SpectrogramData) => Promise<void>;
 }
 
+export type LabelMap = {[originalLabel: string]: string};
+
 /**
  * Interface for a transfer-learning speech command recognizer.
  *
@@ -237,7 +239,9 @@ export interface TransferSpeechCommandRecognizer extends
    * @param clearExisting Whether to clear the existing examples while
    *   performing the loading (default: false).
    */
-  loadExamples(serialized: ArrayBuffer, clearExisting?: boolean): void;
+  loadExamples(serialized: ArrayBuffer,
+               clearExisting?: boolean,
+               labelMap?: LabelMap): void;
 
   /** Serialize the existing examples. */
   serializeExamples(): ArrayBuffer;

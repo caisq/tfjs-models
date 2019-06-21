@@ -15,12 +15,11 @@
  * =============================================================================
  */
 
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs-node-gpu';
 import * as argparse from 'argparse';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import {Dataset} from './dataset';
 import * as speechCommands from './index';
 import {TransferSpeechCommandRecognizer} from './types';
 
@@ -62,6 +61,11 @@ function parseArgs() {
     defaultValue: null,
     help: 'Path at which the trained transfer model will be saved (optional)'
   });
+  parser.addArgument('--labelMap', {
+    type: 'string',
+    defaultValue: null,
+    help: 'A mapping for labels. Syntax examle: ("label1->label2,label3->label4)"',
+  })
   return parser.parseArgs();
 }
 
@@ -76,7 +80,8 @@ function toArrayBuffer(myBuf: Buffer): ArrayBuffer {
 
 function loadDataset(
     trasnferRecognizer: TransferSpeechCommandRecognizer,
-    datasetPath: string): void {
+    datasetPath: string,
+    labelMap?: speechCommands.LabelMap): void {
   let paths: string[];
   if (datasetPath.indexOf(',') === -1) {
     paths = [datasetPath];
@@ -86,7 +91,8 @@ function loadDataset(
   paths.forEach(filePath => {
     console.log(`Loading data from path: ${filePath}`);
     const serializedData = toArrayBuffer(fs.readFileSync(filePath));
-    trasnferRecognizer.loadExamples(serializedData);
+    const clearExisting = false;
+    trasnferRecognizer.loadExamples(serializedData, clearExisting, labelMap);
   });
   console.log(trasnferRecognizer.countExamples());
 }
@@ -101,7 +107,26 @@ async function main() {
   await baseRecognizer.ensureModelLoaded();
   const trasnferRecognizer = baseRecognizer.createTransfer('transfer');
 
-  loadDataset(trasnferRecognizer, args.datasetPath);
+  let labelMap: speechCommands.LabelMap = null;
+  if (args.labelMap != null) {
+    labelMap = {};
+    let items: string[] = args.labelMap.split(',');
+    items = items.filter(item => item.trim().length > 0);
+    items.forEach(item => {
+      const mappingItems = item.split('->');
+      if (mappingItems.length !== 2 ||
+          mappingItems[0].trim().length === 0 ||
+          mappingItems[1].trim().length === 0) {
+        throw new Error(`Invalid item in labelMap options: "${item}"`);
+      }
+      const originalLabel = mappingItems[0].trim();
+      const targetLabel = mappingItems[1].trim();
+      labelMap[originalLabel] = targetLabel;
+    });
+    console.log(`labelMap = ${JSON.stringify(labelMap)}`);
+  }
+
+  loadDataset(trasnferRecognizer, args.datasetPath, labelMap);
 
   console.log(`Starting training...`);
   const tBegin = tf.util.now();
