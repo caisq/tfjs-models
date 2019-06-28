@@ -24,7 +24,9 @@ import {sendTextMessage} from './sms.js';
 import {ttsSpeak} from './tts';
 
 const savedTreesSelect = document.getElementById('saved-trees');
+const savedTreesSelectQuickAccess = document.getElementById('saved-trees-select-quick-access');
 const loadTreeButton = document.getElementById('load-tree');
+const loadTreeQuickAccessButton = document.getElementById('load-tree-quick-access');
 const saveTreeButton = document.getElementById('save-tree');
 const deleteTreeButton = document.getElementById('delete-tree');
 const newTreeButton = document.getElementById('new-tree');
@@ -192,34 +194,48 @@ function createOrLoadTreeSet() {
 let treeSet;
 if (savedTreesSelect != null) {
   treeSet = createOrLoadTreeSet();
-  populateSavedTreeSelect(treeSet);
+  populateSavedTreeSelect(treeSet, savedTreesSelect);
   saveTreeButton.disabled = true;
   deleteTreeButton.disabled = false;
+
+  if (savedTreesSelectQuickAccess != null) {
+    const treeNames = treeSet.names();
+    loadTreeQuickAccessButton.disabled = treeNames.length === 0;
+    populateSavedTreeSelect(treeSet, savedTreesSelectQuickAccess);
+  }
 }
 
-function populateSavedTreeSelect(treeSet) {
-  while(savedTreesSelect.firstChild) {
-    savedTreesSelect.removeChild(savedTreesSelect.firstChild);
+function populateSavedTreeSelect(treeSet, selectElement) {
+  while(selectElement.firstChild) {
+    selectElement.removeChild(selectElement.firstChild);
   }
   const names = treeSet.names();
   names.sort();
   for (const name of names) {
     const option = document.createElement('option');
     option.textContent = name;
-    savedTreesSelect.appendChild(option);
+    selectElement.appendChild(option);
   }
 }
 
 if (loadTreeButton != null) {
-  loadTreeButton.addEventListener('click', () => {
+  function loadTreeCallback() {
     actionTreeNeedsRedraw = true;
     const actionTree = treeSet.get(savedTreesSelect.value);
     savedTreesSelect.disabled = true;
     loadTreeButton.disabled = true;
+    if (loadTreeQuickAccessButton != null) {
+      loadTreeQuickAccessButton.disabled = true;
+    }
     actionTreeJSONEditor.set(actionTree);
     saveTreeButton.disabled = false;
     refreshStartActionTreeButtonStatus();
-  });
+  }
+
+  loadTreeButton.addEventListener('click', loadTreeCallback);
+  if (loadTreeQuickAccessButton != null) {
+    loadTreeQuickAccessButton.addEventListener('click', loadTreeCallback);
+  }
 }
 
 if (saveTreeButton != null) {
@@ -271,6 +287,9 @@ if (newTreeButton != null) {
       deleteTreeButton.disabled = false;
       savedTreesSelect.disabled = true;
       loadTreeButton.disabled = true;
+      if (loadTreeQuickAccessButton != null) {
+        loadTreeQuickAccessButton.disabled = true;
+      }
       actionTreeJSONEditor.set(treeSet.get(newTreeName));
       saveTreeButton.disabled = false;
     }

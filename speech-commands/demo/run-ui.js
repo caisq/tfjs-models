@@ -51,6 +51,8 @@ optionsTab.addEventListener('click', () => {
 
 const runSection = document.getElementById('run-section');
 const modelIOSection = document.getElementById('model-io-section');
+const actionTreeQuickAccess =
+    document.getElementById('saved-trees-quick-access');
 const actionTreeSection = document.getElementById('action-tree-section');
 const optionsSection = document.getElementById('options-section');
 
@@ -72,10 +74,12 @@ export function updateTabStatus(forceTab) {
     optionsIndicator.classList.remove('mdc-tab-indicator--active');
     runSection.style['display'] = 'block';
     modelIOSection.style['display'] = 'block';
+    actionTreeQuickAccess.style['display'] = 'block';
     actionTreeSection.style['display'] = 'none';
     optionsSection.style['display'] = 'none';
 
     setTimeout(() => savedTransferModelsSelect.focus(), 500);
+    setTimeout(() => actionTreeSelectQuickAccess.focus(), 500);
   } else if (activeTab === 'action-tree-tab') {
     runTab.classList.remove('mdc-tab--active');
     actionTreeTab.classList.add('mdc-tab--active');
@@ -85,6 +89,7 @@ export function updateTabStatus(forceTab) {
     optionsIndicator.classList.remove('mdc-tab-indicator--active');
     runSection.style['display'] = 'none';
     modelIOSection.style['display'] = 'none';
+    actionTreeQuickAccess.style['display'] = 'none';
     actionTreeSection.style['display'] = 'block';
     optionsSection.style['display'] = 'none';
 
@@ -98,6 +103,7 @@ export function updateTabStatus(forceTab) {
     optionsIndicator.classList.add('mdc-tab-indicator--active');
     runSection.style['display'] = 'none';
     modelIOSection.style['display'] = 'none';
+    actionTreeQuickAccess.style['display'] = 'none';
     actionTreeSection.style['display'] = 'none';
     optionsSection.style['display'] = 'block';
   }
@@ -123,6 +129,24 @@ new MDCSelect(savedTransferModelsSelectDiv);
 const savedActionTreesSelectDiv = document.getElementById('saved-trees-div');
 const savedActionTreesSelect = document.getElementById('saved-trees');
 new MDCSelect(savedActionTreesSelectDiv);
+
+/**
+ * Logic for action tree quick access.
+ */
+const actionTreeSelectQuickAccessDiv =
+    document.getElementById('saved-trees-select-quick-access-div');
+const actionTreeSelectQuickAccess =
+    document.getElementById('saved-trees-select-quick-access');
+new MDCSelect(actionTreeSelectQuickAccessDiv);
+
+// Synchronize the two action-tree selects.
+actionTreeSelectQuickAccess.addEventListener('change', () => {
+  savedActionTreesSelect.value = actionTreeSelectQuickAccess.value;
+});
+
+savedActionTreesSelect.addEventListener('change', () => {
+  actionTreeSelectQuickAccess.value = savedActionTreesSelect.value;
+});
 
 /**
  * Logic for sliders
