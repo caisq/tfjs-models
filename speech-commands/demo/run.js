@@ -279,15 +279,19 @@ registerTransferRecognizerCreationCallback(createdTransferRecognizer => {
 });
 
 export function refreshStartActionTreeButtonStatus() {
+  startActionTreeButton.textContent = 'Start action tree';
   try {
     parseActionTreeConfig();
     if (transferRecognizer != null) {
       startActionTreeButton.disabled = false;
     }
   } catch (err) {
+    startActionTreeButton.textContent += ' (load tree first)';
     startActionTreeButton.disabled = true;
   }
 }
+
+refreshStartActionTreeButtonStatus();
 
 // TODO(cais): Restore.
 // const toTrainingButton = document.getElementById('to-training');

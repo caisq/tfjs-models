@@ -244,12 +244,22 @@ mdcTextFields.forEach(textField => new MDCTextField(textField));
 /**
  * Logic for dialog(s).
  */
+const runDialogInternal = document.getElementById('run-dialog');
 const runDialog = new MDCDialog(document.getElementById('run-dialog'));
+
 export function openRunDialog() {
   runDialog.open();
 }
+
 export function closeRunDialog() {
+  console.log('In closeRunDialog()');  // DEBUG
   runDialog.close();
+
+  // Clear run dialog content.
+  // while (runDialogInternal.firstChild) {
+  //   console.log('Removing:', runDialog.firstChild);  // DEBUG
+  //   runDialogInternal.removeChild(runDialog.firstChild);
+  // }
 }
 export function registerRunDialogClosingFunction(func) {
   runDialog.listen('MDCDialog:closing', func);
