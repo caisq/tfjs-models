@@ -19,11 +19,21 @@ import Plotly from 'plotly.js-dist';
 
 import * as SpeechCommands from '../src';
 import {BACKGROUND_NOISE_TAG, UNKNOWN_TAG} from '../src';
+import {MDCSnackbar} from '@material/snackbar';
 
 const statusDisplay = document.getElementById('status-display');
 const candidateWordsContainer = document.getElementById('candidate-words');
 const realTimeProbabilitiesDiv =
     document.getElementById('real-time-probabilities');
+
+const snackBar = new MDCSnackbar(document.getElementById('main-snackbar'));
+console.log(snackBar);
+
+export function showSnackbar(message, timeoutMs = 4000) {
+  snackBar.labelText = message;
+  snackBar.timeoutMs = timeoutMs;
+  snackBar.open();
+}
 
 /**
  * Log a message to a textarea.

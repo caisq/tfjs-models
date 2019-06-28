@@ -18,7 +18,7 @@
 import * as tf from '@tensorflow/tfjs';
 import * as SpeechCommands from '../src';
 
-import {showErrorOnButton, showInfoOnButton} from './ui';
+import {showErrorOnButton, showInfoOnButton, showSnackbar} from './ui';
 
 const loadTransferModelButton = document.getElementById('load-transfer-model');
 const saveTransferModelButton = document.getElementById('save-transfer-model');
@@ -111,6 +111,8 @@ if (loadTransferModelButton != null) {
     if (postLoadTransferModelCallback != null) {
       postLoadTransferModelCallback();
     }
+
+    showSnackbar(`Loaded model "${transferModelName}"`);
   });
 }
 

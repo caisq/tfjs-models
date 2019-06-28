@@ -22,7 +22,7 @@ import * as SpeechCommands from '../src';
 import {TimedMenu} from '../src/';
 
 import * as runUI from './run-ui.js'
-import {clearRealTimeProbabilities, getDateString, hideCandidateWords, logToStatusDisplay, plotPredictions, plotRealTimeProbabilities, populateCandidateWords, showCandidateWords} from './ui';
+import {clearRealTimeProbabilities, getDateString, hideCandidateWords, logToStatusDisplay, plotPredictions, plotRealTimeProbabilities, populateCandidateWords, showCandidateWords, showSnackbar} from './ui';
 
 const startActionTreeButton = document.getElementById('start-action-tree');
 const actionTreeGroupDiv = document.getElementById('action-tree-group');
@@ -244,6 +244,7 @@ function stopCallback() {
         hideCandidateWords();
         runUI.closeRunDialog();
         logToStatusDisplay('Streaming recognition stopped.');
+        showSnackbar(`Model "${recognizer.name}" has stopped.`);
       })
       .catch(err => {
         logToStatusDisplay(
@@ -390,6 +391,10 @@ startActionTreeButton.addEventListener('click',  async () =>  {
         `${wordLabelsNoNoise.join(', ')} ` +
         `(p-thresh: ${probabilityThreshold}; ` +
         `supression: ${suppressionTimeMillis} ms)`);
+
+    showSnackbar(
+        `Model "${activeRecognizer.name}" started with ` +
+        `p-threshold=${probabilityThreshold.toFixed(2)}`);
   } catch (err) {
     console.error(err);
     actionTreeGroupDiv.style.display = 'none';

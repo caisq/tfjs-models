@@ -19,9 +19,10 @@ import {util} from '@tensorflow/tfjs';
 
 import {handleEmailAuthClick} from './emailing';
 import {MorseTextBox} from './morse-text-box';
-import {showMessage, refreshStartActionTreeButtonStatus} from './run';
+import {refreshStartActionTreeButtonStatus} from './run';
 import {sendTextMessage} from './sms.js';
 import {ttsSpeak} from './tts';
+import {showSnackbar} from './ui';
 
 const savedTreesSelect = document.getElementById('saved-trees');
 const savedTreesSelectQuickAccess = document.getElementById('saved-trees-select-quick-access');
@@ -230,6 +231,8 @@ if (loadTreeButton != null) {
     actionTreeJSONEditor.set(actionTree);
     saveTreeButton.disabled = false;
     refreshStartActionTreeButtonStatus();
+
+    showSnackbar(`Loaded action tree "${savedTreesSelect.value}"`);
   }
 
   loadTreeButton.addEventListener('click', loadTreeCallback);
@@ -245,9 +248,9 @@ if (saveTreeButton != null) {
       const tree = actionTreeJSONEditor.get();
       treeSet.set(savedTreesSelect.value, tree);
       treeSet.save();
-      showMessage(`Tree "${savedTreesSelect.value}" is saved.`);
+      showSnackbar(`Saved tree "${savedTreesSelect.value}"`);
     } catch (err) {
-      showMessage(err.message, 'error');
+      showSnackbar(err.message);
     }
   });
 }
@@ -261,10 +264,10 @@ if (deleteTreeButton != null) {
         treeSet.remove(treeName);
         treeSet.save();
         populateSavedTreeSelect(treeSet);
-        showMessage(`Tree ${treeName} has been deleted.`);
+        showSnackbar(`Tree ${treeName} has been deleted.`);
       }
     } catch (error) {
-      showMessage(error.message, 'error');
+      showSnackbar(error.message);
     }
   });
 }
@@ -273,12 +276,12 @@ if (newTreeButton != null) {
   newTreeButton.addEventListener('click', () => {
     const newTreeName = window.prompt('Enter name for new model:');
     if (newTreeName == null || newTreeName.length === 0) {
-      showMessage('Model name cannot be empty!', 'error');
+      showSnackbar('ERROR: Model name cannot be empty!');
     }
     if (treeSet.names ().indexOf(newTreeName) !== -1) {
-      showMessage(
-          `Cannot create tree: There is already a tree with the name ` +
-          `"${newTreeName}"`, 'error');
+      showSnackbar(
+          `ERROR: Cannot create tree: There is already a tree with the name ` +
+          `"${newTreeName}"`);
     } else {
       treeSet.set(newTreeName, defaultNewTreeConfig);
       treeSet.save();
