@@ -73,49 +73,6 @@ export function setPostLoadTransferModelCallback(callback) {
   postLoadTransferModelCallback = callback;
 }
 
-if (loadTransferModelButton != null) {
-  loadTransferModelButton.addEventListener('click', async () => {
-    const transferModelName = savedTransferModelsSelect.value;
-    const loadedTransferRecognizer =
-        recognizer.createTransfer(transferModelName);
-    await loadedTransferRecognizer.load();
-    if (transferModelNameInput != null) {
-      transferModelNameInput.value = transferModelName;
-      transferModelNameInput.disabled = true;
-    }
-    if (learnWordsInput != null) {
-      learnWordsInput.value = loadedTransferRecognizer.wordLabels().join(',');
-      learnWordsInput.disabled = true;
-    }
-    if (durationMultiplierSelect != null) {
-      durationMultiplierSelect.disabled = true;
-    }
-    if (enterLearnWordsButton != null) {
-      enterLearnWordsButton.disabled = true;
-    }
-    if (saveTransferModelButton != null) {
-      saveTransferModelButton.disabled = true;
-    }
-    if (loadTransferModelButton != null) {
-      loadTransferModelButton.disabled = true;
-      if (downloadTransferModelAsFilesButton != null) {
-        downloadTransferModelAsFilesButton.disabled = false;
-      }
-      loadTransferModelButton.textContent = 'Model loaded!';
-    }
-    if (transferRecognizerCreationCallback != null) {
-      registerTransferRecognizer(loadedTransferRecognizer);
-      transferRecognizerCreationCallback(loadedTransferRecognizer);
-    }
-
-    if (postLoadTransferModelCallback != null) {
-      postLoadTransferModelCallback();
-    }
-
-    showSnackbar(`Loaded model "${transferModelName}"`);
-  });
-}
-
 if (downloadTransferModelAsFilesButton != null) {
   downloadTransferModelAsFilesButton.addEventListener('click', async () => {
     if (transferRecognizer == null) {
